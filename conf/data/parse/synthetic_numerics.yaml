@@ -1,0 +1,11 @@
+_target_: sat.data.dataset.parse_synthetic_numerics.synthetic
+source: ${data_source}
+processed_dir: ${modelhub}
+train_ratio: 0.6
+validation_ratio: 0.1
+test_ratio: 0.3
+scale_method: standard
+scale_numerics: true
+min_scale_numerics: 1.0
+name: ${dataset}
+kfold: ${cv.kfold}

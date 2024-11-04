@@ -1,0 +1,12 @@
+# @package _global_
+task: pretrain
+
+defaults:
+  - _self_
+  - defaults
+
+
+hydra:
+  launcher:
+    environment:
+      conda_env: envs/satcuda118py310.yml

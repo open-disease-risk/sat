@@ -1,0 +1,28 @@
+# @package _global_
+
+
+transformer_layer_norm: false
+initializer_range: 0.001
+label_transform_scheme: equidistant
+label_transform_cuts: 4
+
+one_calibration_bins: 10
+ranking_loss_coeff: 0.1
+event_ranking_loss_coeff: 0.1
+ranking_loss_sigma: 0.25
+event_ranking_loss_sigma: 0.25
+
+detect_anomalies: true
+
+brier_per_horizon: false
+nllpch_per_event: false
+l1_per_event: false
+mse_per_event: false
+ce_per_event: false
+
+survival_shared_intermediate_size: 4
+survival_shared_num_hidden_layers: 0
+regression_shared_intermediate_size: 4
+regression_shared_num_hidden_layers: 0
+classification_shared_intermediate_size: 4
+classification_shared_num_hidden_layers: 0

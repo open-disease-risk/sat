@@ -1,0 +1,4 @@
+max_seq_length: 10
+
+defaults:
+  - default

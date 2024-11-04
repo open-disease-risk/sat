@@ -1,0 +1,12 @@
+- _target_: sat.evaluate.eval_modules.ComputeCrossEntropyLoss
+  event_time_thr: ${classification_event_time_thr}
+  training_set: ${data.label_transform.save_dir}/transformed_train_labels.csv
+  l_type: margin
+  importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
+  num_events: ${data.num_events}
+  per_event: ${ce_per_event}
+- _target_: sat.evaluate.eval_modules.ComputeOneCalibration
+  bins: ${one_calibration_bins}
+  num_events: ${data.num_events}
+  duration_cuts: ${data.label_transform.save_dir}/duration_cuts.csv
+  event_time_thr: ${classification_event_time_thr}

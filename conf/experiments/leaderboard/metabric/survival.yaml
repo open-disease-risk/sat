@@ -1,0 +1,45 @@
+# @package _global_
+dataset: metabric
+modelname: survival
+
+defaults:
+  - override /data/load: metabric
+  - override /data/parse: ${data/load}
+  - override /tokenizers: ${data/load}
+  - override /transformers: bert
+  - override /tasks: survival
+  - override /trainer: ${data/load}/default
+
+finetuned_transformer_dir: ${modelhub}/${dataset}/${modelname}/
+
+label_transform_scheme: equidistant
+label_transform_cuts: 4
+
+learning_rate: 0.001
+warmup_steps: 20
+weight_decay: 0
+
+sentence_emb: 3
+dropout: 0.05
+
+transformer_hidden_size: 4
+transformer_num_hidden_layers: 3
+transformer_num_attention_heads: 4
+transformer_intermediate_size: 64
+transformer_attention_probs_dropout_prob: ${dropout}
+transformer_hidden_probs_dropout: ${dropout}
+
+shared_intermediate_size: 64
+shared_batch_norm: true
+shared_hidden_dropout_prob: ${dropout}
+shared_bias: true
+shared_num_hidden_layers: 1
+shared_num_labels: 0
+
+survival_max_time: 0
+survival_intermediate_size: 16
+survival_batch_norm: false
+survival_hidden_dropout_prob: ${dropout}
+survival_bias: true
+survival_num_hidden_layers: 0
+survival_loss_weight: 1.0

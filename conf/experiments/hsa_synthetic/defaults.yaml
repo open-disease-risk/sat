@@ -1,0 +1,35 @@
+# @package _global_
+defaults:
+  - ../defaults
+
+learning_rate: 0.001
+warmup_steps: 40
+weight_decay: 0.001
+ranking_loss_coeff: 0.05
+event_ranking_loss_coeff: 0.05
+
+select_hidden_layers: null
+
+sentence_emb: 3
+token_emb: 2
+dropout: 0.1
+
+# from durations cut equivalent to the median time
+classification_event_time_thr: 60.5
+
+transformer_layer_norm: true
+transformer_hidden_size: 16
+transformer_num_hidden_layers: 2
+transformer_num_attention_heads: 4
+transformer_intermediate_size: 16
+transformer_attention_probs_dropout_prob: ${dropout}
+transformer_hidden_probs_dropout: ${dropout}
+
+shared_intermediate_size: 64
+shared_batch_norm: true
+shared_hidden_dropout_prob: 0.05
+shared_bias: true
+shared_num_hidden_layers: 0
+shared_num_labels: 8
+
+survival_max_time: 150

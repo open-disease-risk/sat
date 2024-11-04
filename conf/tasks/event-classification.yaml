@@ -1,0 +1,41 @@
+defaults:
+  - losses: cross-entropy
+  - metrics: cross-entropy-one-calibration
+
+eval_metric: "eval_ce_loss"
+eval_metric_greater_is_better: False
+
+config:
+  _target_: sat.models.tasks.config.MTLConfig
+  _convert_: "partial"
+  freeze_transformer: false
+  initializer_range: ${initializer_range}
+  initializer: "kaiming_uniform"
+  pretrained_params: ${transformers}
+  sentence_emb: ${sentence_emb}
+  token_emb: ${token_emb}
+  hidden_size: ${transformer_hidden_size}
+  num_features: ${tokenizers.max_seq_length}
+  intermediate_size: ${shared_intermediate_size}
+  num_labels: ${shared_num_labels}
+  batch_norm: ${shared_batch_norm}
+  hidden_dropout_prob: ${shared_hidden_dropout_prob}
+  bias: ${shared_bias}
+  num_hidden_layers: ${shared_num_hidden_layers}
+  select_hidden_layers: ${select_hidden_layers}
+  return_dict: true
+  task_heads:
+    - _target_: sat.models.tasks.config.EventClassificationTaskConfig
+      _recursive_: false
+      num_features: ${shared_num_labels}
+      intermediate_size: ${classification_intermediate_size}
+      num_labels: 1
+      indiv_intermediate_size: ${classification_intermediate_size}
+      indiv_num_hidden_layers: ${classification_num_hidden_layers}
+      batch_norm: ${classification_batch_norm}
+      hidden_dropout_prob: ${classification_hidden_dropout_prob}
+      bias: ${classification_bias}
+      num_hidden_layers: ${classification_num_hidden_layers}
+      event_time_thr: ${classification_event_time_thr}
+      loss: ${tasks.losses}
+      loss_weight: ${classification_loss_weight}

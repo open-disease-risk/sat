@@ -1,0 +1,9 @@
+# @package _global_
+
+data:
+  label_transform:
+    buffer_size: 20000
+    cuts: ${label_transform_cuts}
+    scheme: ${label_transform_scheme}
+    save_dir: ${modelhub}/${dataset}
+    event_type: null

@@ -1,0 +1,45 @@
+tokenizer_dir: ${modelhub}/${dataset}/tokenizer
+tokenize_column: "x"
+is_split_into_words: false
+
+do_padding: true
+padding_args:
+  direction: right
+  pad_to_multiple_of: 1
+  padding: "max_length"
+  length: ${tokenizers.max_seq_length}
+
+do_truncation: true
+truncation_args:
+  direction: left
+  max_length: ${tokenizers.max_seq_length}
+
+
+pad_token: "[PAD]"
+mask_token: "[MASK]"
+unk_token: "[UNK]"
+cls_token: "[CLS]"
+sep_token: "[SEP]"
+
+tokenizer:
+  _target_: tokenizers.Tokenizer
+  model:
+    _target_: tokenizers.models.WordLevel
+    unk_token: ${tokenizers.unk_token}
+
+pre_tokenizer:
+  _target_: tokenizers.pre_tokenizers.WhitespaceSplit
+
+trainer:
+  _target_: tokenizers.trainers.WordLevelTrainer
+
+special_tokens:
+  "unk_token": ${tokenizers.unk_token}
+  "sep_token": ${tokenizers.sep_token}
+  "pad_token": ${tokenizers.pad_token}
+  "cls_token": ${tokenizers.cls_token}
+  "mask_token": ${tokenizers.mask_token}
+
+num_proc: 4
+
+cls_model_type: "BERT"

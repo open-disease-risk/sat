@@ -1,0 +1,2 @@
+- _target_: sat.evaluate.eval_modules.ComputeTTERanking
+  num_events: ${data.num_events}

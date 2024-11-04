@@ -1,0 +1,8 @@
+- _target_: sat.evaluate.eval_modules.ComputeL1
+  training_set: ${data.label_transform.save_dir}/transformed_train_labels.csv
+  importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
+  l1_type: uncensored
+  num_events: ${data.num_events}
+  per_event: ${l1_per_event}
+- _target_: sat.evaluate.eval_modules.ComputeTTERanking
+  num_events: ${data.num_events}

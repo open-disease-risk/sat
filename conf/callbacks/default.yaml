@@ -1,0 +1,2 @@
+- _target_: transformers.EarlyStoppingCallback
+  early_stopping_patience: 10

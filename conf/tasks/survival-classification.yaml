@@ -1,0 +1,56 @@
+defaults:
+  - metrics: default
+  - losses: default
+
+eval_metric: "eval_ipcw_avg"
+eval_metric_greater_is_better: False
+
+config:
+  _target_: sat.models.tasks.config.MTLConfig
+  _convert_: "partial"
+  freeze_transformer: false
+  initializer_range: ${initializer_range}
+  initializer: "kaiming_uniform"
+  pretrained_params: ${transformers}
+  sentence_emb: ${sentence_emb}
+  token_emb: ${token_emb}
+  hidden_size: ${transformer_hidden_size}
+  num_features: ${tokenizers.max_seq_length}
+  intermediate_size: ${shared_intermediate_size}
+  num_labels: ${shared_num_labels}
+  batch_norm: ${shared_batch_norm}
+  hidden_dropout_prob: ${shared_hidden_dropout_prob}
+  bias: ${shared_bias}
+  num_hidden_layers: ${shared_num_hidden_layers}
+  select_hidden_layers: ${select_hidden_layers}
+  return_dict: true
+  task_heads:
+    - _target_: sat.models.tasks.config.SurvivalConfig
+      _recursive_: false
+      num_features: ${shared_num_labels}
+      intermediate_size: ${survival_intermediate_size}
+      num_labels: ${data.label_transform.cuts}
+      batch_norm: ${survival_batch_norm}
+      hidden_dropout_prob: ${survival_hidden_dropout_prob}
+      indiv_intermediate_size: ${survival_intermediate_size}
+      indiv_num_hidden_layers: ${survival_num_hidden_layers}
+      bias: ${survival_bias}
+      num_hidden_layers: ${survival_num_hidden_layers}
+      loss_weight: ${survival_loss_weight}
+      loss: ${tasks.losses}
+      num_events: ${data.num_events}
+
+    - _target_: sat.models.tasks.config.EventClassificationTaskConfig
+      _recursive_: false
+      num_features: ${shared_num_labels}
+      intermediate_size: ${classification_intermediate_size}
+      num_labels: 1
+      batch_norm: ${classification_batch_norm}
+      hidden_dropout_prob: ${classification_hidden_dropout_prob}
+      bias: ${classification_bias}
+      indiv_intermediate_size: ${classification_intermediate_size}
+      indiv_num_hidden_layers: ${classification_num_hidden_layers}
+      num_hidden_layers: ${classification_num_hidden_layers}
+      event_time_thr: ${classification_event_time_thr}
+      loss: ${tasks.losses}
+      loss_weight: ${classification_loss_weight}

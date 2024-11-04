@@ -1,0 +1,15 @@
+config:
+  _target_: transformers.GPT2Config
+  n_positions: ${tokenizers.max_seq_length}
+  n_embd: ${transformer_intermediate_size}
+  n_layer: ${transformer_num_hidden_layers}
+  n_head: ${transformer_num_attention_heads}
+  n_inner: ${transformer_hidden_size}
+  activation_function: 'gelu_new'
+  resid_pdrop: ${transformer_hidden_probs_dropout}
+  embd_pdrop: ${transformer_hidden_probs_dropout}
+  attn_pdrop: ${transformer_attention_probs_dropout_prob}
+  initializer_range: ${initializer_range}
+  output_attentions: False
+  output_hidden_states: True
+  return_dict: true

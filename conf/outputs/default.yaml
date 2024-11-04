@@ -1,0 +1,10 @@
+# @package _global_
+
+hydra:
+  launcher:
+    job:
+      outputs:
+        - name: kjfqqser5bd8evastoacc
+          path: "/survival/"
+          ftype: "uri_folder"
+          cli: "base_dir"

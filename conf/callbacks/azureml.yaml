@@ -1,0 +1,3 @@
+- _target_: transformers.EarlyStoppingCallback
+  early_stopping_patience: 20
+- _target_: transformers.integrations.AzureMLCallback

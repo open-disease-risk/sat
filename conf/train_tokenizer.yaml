@@ -1,0 +1,13 @@
+# @package _global_
+task: train_tokenizer
+
+defaults:
+  - _self_
+  - defaults
+  - override optional aml: cpu
+
+# Set the experiment name
+hydra:
+  launcher:
+    environment:
+      conda_env: envs/satpy310.yml

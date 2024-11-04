@@ -1,0 +1,2 @@
+- _target_: sat.evaluate.eval_modules.ComputeNLLPHazardLoss
+  per_event: ${nllpch_per_event}

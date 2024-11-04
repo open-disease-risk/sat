@@ -1,0 +1,14 @@
+# @package _global_
+
+hydra:
+  launcher:
+    job:
+      inputs:
+        - name: synthetic
+          version: "1"
+          path: ${data_source}
+          ftype: "uri_file"
+          description: "Synthetic Dataset from DeepHit Paper"
+          registered: true
+          cli: "data_source"
+          force: false

@@ -1,0 +1,5 @@
+- _target_: sat.evaluate.eval_modules.ComputeMSELoss
+  training_set: ${data.label_transform.save_dir}/transformed_train_labels.csv
+  l2_type: uncensored
+  num_events: ${data.num_events}
+  per_event: ${mse_per_event}

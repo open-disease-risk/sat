@@ -1,0 +1,12 @@
+# @package _global_
+task: prepare_data
+
+defaults:
+  - _self_
+  - defaults
+  - override optional aml: cpu
+
+hydra:
+  launcher:
+    environment:
+      conda_env: envs/satpy310.yml

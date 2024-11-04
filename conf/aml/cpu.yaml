@@ -1,0 +1,9 @@
+# @package _global_
+
+hydra:
+  launcher:
+    compute:
+      docker_image: "mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu22.04"
+      target: dd-cluster-d64s-v3
+      size: Standard_D64s_v3
+      max_instances: 50

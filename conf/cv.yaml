@@ -1,0 +1,15 @@
+# @package _global_
+task: kfold_cv
+
+defaults:
+  - _self_
+  - defaults
+
+hydra:
+  launcher:
+    environment:
+      conda_env: envs/satcuda118py310.yml
+
+multiple_replications: true
+cv_kfold: 5
+cv_kfold_reuse: true

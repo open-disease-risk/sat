@@ -1,0 +1,44 @@
+# @package _global_
+dataset: metabric_numeric
+modelname: event-quantile-regression
+
+
+defaults:
+  - metabric_numeric/defaults
+  - override /data/load: metabric_numeric
+  - override /data/parse: ${data/load}
+  - override /tokenizers: metabric
+  - override /transformers: numeric_bert
+  - override /tasks: event-quantile-regression
+  - override /trainer: metabric/default
+
+learning_rate: 0.01
+
+# Dropout fails when:
+# When using dropout during training, the activations are scaled in order to
+# preserve their mean value after the dropout layer. The variance, however, is not
+# preserved. Going through a non-linear layer (Linear+ReLU) translates this shift
+# in variance to a shift in the mean of the activations, going in to the final
+# linear projection layer. The final projection (which is essentially just a
+# weight sum and a scalar bias), will be trained to fit the training-time
+# statistics and thus fail at validation time when Dropout is switched off.
+
+# Batchnorm fails when:
+# A feature of BatchNorm in training mode is that it changes the absolute scale of
+# the features according to the batch statistics, which is a random variable,
+# while the relative distances between features are preserved. This is completely
+# fine for e.g. classification and segmentation tasks, where semantics of the
+# image are invariant to arbitrary scaling and shifting of the channel values.
+# Imagine, for example, that you run a batch of photos through BatchNorm. The
+# absolute color information is lost, but the dogs will still look like dogs and
+# cats will still look like cats. The information in the image data is preserved
+# and the images can still be classified or segmented.
+
+regression_quantiles: [0.25, 0.5]
+regression_intermediate_size: 16
+regression_batch_norm: false
+regression_hidden_dropout_prob: false
+regression_bias: true
+regression_num_hidden_layers: 1
+regression_loss_weight: 1.0
+regression_num_labels: ${len:${regression_quantiles}}

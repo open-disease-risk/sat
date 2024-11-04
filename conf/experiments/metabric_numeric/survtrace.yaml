@@ -1,0 +1,60 @@
+# @package _global_
+dataset: metabric_numeric
+modelname: survtrace
+
+defaults:
+  - override /data/load: metabric_numeric
+  - override /data/parse: ${data/load}
+  - override /tokenizers: metabric
+  - override /transformers: numeric_bert
+  - override /tasks: survival
+  - override /trainer: metabric/default
+  - override /tasks/losses: nllpch
+
+transformer_layer_norm: false
+initializer_range: 0.001
+label_transform_scheme: equidistant
+label_transform_cuts: 4
+
+detect_anomalies: true
+
+brier_per_horizon: false
+nllpch_per_event: false
+l1_per_event: false
+mse_per_event: false
+ce_per_event: false
+
+learning_rate: 0.001
+warmup_steps: 80
+weight_decay: 0.001
+
+select_hidden_layers: [3]
+
+token_emb: 1
+sentence_emb: 1
+dropout: 0.0
+
+transformer_hidden_size: 16
+transformer_num_hidden_layers: 3
+transformer_num_attention_heads: 2
+transformer_intermediate_size: 64
+transformer_attention_probs_dropout_prob: ${dropout}
+transformer_hidden_probs_dropout: ${dropout}
+
+shared_intermediate_size: 64
+shared_batch_norm: true
+shared_hidden_dropout_prob: 0.00
+shared_bias: true
+shared_num_hidden_layers: 0
+shared_num_labels: 64
+
+survival_max_time: 400
+
+survival_shared_intermediate_size: 4
+survival_shared_num_hidden_layers: 0
+survival_intermediate_size: 64
+survival_batch_norm: true
+survival_hidden_dropout_prob: false
+survival_bias: true
+survival_num_hidden_layers: 0
+survival_loss_weight: 1.0

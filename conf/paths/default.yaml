@@ -1,0 +1,40 @@
+# @package _global_
+
+# flags
+do_sweep: false
+do_data_parse: true
+do_data_transform: true
+do_tokenize: true
+do_pretrain: false
+do_finetune: true
+
+
+# environment variables available when running a job in Azure
+run_id: ${oc.env:AZUREML_RUN_ID, ""}
+parent_run_id: ${oc.env:AZUREML_ROOT_RUN_ID, "."}
+
+# path to root directory
+# this requires PROJECT_ROOT environment variable to exist
+# you can replace it with "." if you want the root to be the current working directory
+# ${oc.env:PROJECT_ROOT}
+base_dir: .
+
+# use this directory structure for sweep runs
+model_dir: ${parent_run_id}/${run_id}
+
+# path to data directory
+data_dir: ${base_dir}/data
+
+# path to logging directory
+log_dir: ${base_dir}/logs
+
+# path to output directory, created dynamically by hydra
+# path generation pattern is specified in `configs/hydra/default.yaml`
+# use it to store all files generated during the run, like ckpts and metrics
+output_dir: ${hydra:runtime.output_dir}
+
+# path to working directory
+work_dir: ${hydra:runtime.cwd}
+
+# path to hugging face local model hub
+modelhub: ${data_dir}/model-hub

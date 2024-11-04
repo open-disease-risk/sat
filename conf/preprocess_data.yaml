@@ -1,0 +1,14 @@
+# @package _global_
+task: preprocess_data
+
+defaults:
+  - _self_
+  - defaults
+
+max_shard_size: "1GB"
+
+
+hydra:
+  launcher:
+    environment:
+      conda_env: envs/satcuda118py310.yml

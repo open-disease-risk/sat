@@ -1,0 +1,19 @@
+# @package _global_
+dataset: synthetic_numerics
+modelname: survival
+
+defaults:
+  - synthetic_numerics/defaults
+  - override /data/load: synthetic
+  - override /data/parse: synthetic_numerics
+  - override /tokenizers: synthetic
+  - override /transformers: numeric_bert
+  - override /tasks: survival
+  - override /trainer: synthetic/default
+
+survival_intermediate_size: 64
+survival_batch_norm: false
+survival_hidden_dropout_prob: false
+survival_bias: true
+survival_num_hidden_layers: 2
+survival_loss_weight: 1.0

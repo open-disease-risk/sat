@@ -1,0 +1,14 @@
+# @package _global_
+
+hydra:
+  launcher:
+    job:
+      inputs:
+        - name: metabric
+          version: "1"
+          path: ${data_source}
+          ftype: "uri_file"
+          description: "The Molecular Taxonomy of Breast Cancer International Consortium (METABRIC)."
+          registered: true
+          cli: "data_source"
+          force: false

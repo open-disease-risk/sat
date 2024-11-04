@@ -1,0 +1,21 @@
+# @package _global_
+dataset: metabric
+modelname: event-classification
+
+defaults:
+  - metabric/defaults
+  - override /data/load: metabric
+  - override /data/parse: ${data/load}
+  - override /tokenizers: ${data/load}
+  - override /transformers: bert
+  - override /tasks: event-classification
+  - override /trainer: ${data/load}/default
+
+classification_event_time_thr: 0.5 # not tuned yet
+
+classification_intermediate_size: 64
+classification_batch_norm: false
+classification_hidden_dropout_prob: false
+classification_bias: true
+classification_num_hidden_layers: 0
+classification_loss_weight: 1.0

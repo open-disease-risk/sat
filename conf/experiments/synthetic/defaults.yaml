@@ -1,0 +1,29 @@
+# @package _global_
+
+defaults:
+  - ../defaults
+
+learning_rate: 0.001
+warmup_steps: 80
+weight_decay: 0.01
+
+select_hidden_layers: null
+sentence_emb: 3
+token_emb: 2
+dropout: 0.0
+
+transformer_hidden_size: 64
+transformer_num_hidden_layers: 2
+transformer_num_attention_heads: 8
+transformer_intermediate_size: 32
+transformer_attention_probs_dropout_prob: ${dropout}
+transformer_hidden_probs_dropout: ${dropout}
+
+shared_intermediate_size: 32
+shared_batch_norm: true
+shared_hidden_dropout_prob: false
+shared_bias: true
+shared_num_hidden_layers: 2
+shared_num_labels: 8
+
+bootstrap_sample_size: 1000

@@ -1,0 +1,7 @@
+sat-transformer-event-duration:
+  _target_: sat.models.tasks.loss.QuantileLoss
+  quantiles: ${regression_quantiles}
+  importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
+  training_set: ${data.label_transform.save_dir}/transformed_train_labels.csv
+  l_type: margin
+  num_events: ${data.num_events}

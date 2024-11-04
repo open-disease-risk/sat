@@ -1,0 +1,3 @@
+pretrained_model_name_or_path: ${finetuned_transformer_dir}
+config:
+  hidden_size: ${transformer_hidden_size}

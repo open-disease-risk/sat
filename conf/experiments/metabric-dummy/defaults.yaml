@@ -1,0 +1,29 @@
+# @package _global_
+
+label_transform_scheme: equidistant
+label_transform_cuts: 4
+
+learning_rate: 0.1
+warmup_steps: 40
+weight_decay: 0
+
+select_hidden_layers: null
+sentence_emb: 3
+token_emb: 2
+dropout: 0.05
+
+transformer_hidden_size: 8
+transformer_num_hidden_layers: 2
+transformer_num_attention_heads: 1
+transformer_intermediate_size: 32
+transformer_attention_probs_dropout_prob: 0.1
+transformer_hidden_probs_dropout: 0.0
+
+shared_intermediate_size: 64
+shared_batch_norm: true
+shared_hidden_dropout_prob: 0.0
+shared_bias: true
+shared_num_hidden_layers: 1
+shared_num_labels: 0
+
+survival_max_time: 0

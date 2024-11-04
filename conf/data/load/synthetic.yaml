@@ -1,0 +1,25 @@
+# @package _global_
+
+data_source: ${base_dir}/data/synthetic/synthetic_comprisk.csv
+
+data:
+  preprocess_data: false
+  perform_split: true
+  id_col: index
+  split_col: split
+  duration_col: duration
+  event_col: event
+  num_events: 2
+  transformed_duration_cols:
+    - t
+    - f
+  splits:
+    - train
+    - valid
+    - test
+  load:
+    _target_: datasets.load_dataset
+    path: json
+    data_files:
+      - ${modelhub}/${dataset}/${dataset}.json
+    streaming: false

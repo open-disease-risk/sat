@@ -1,0 +1,11 @@
+# @package _global_
+dataset: metabric
+modelname: best-survival
+
+defaults:
+  - metabric/survival
+  - override /tokenizers: metabric-finetuned
+  - override /transformers: metabric/finetuned
+
+tokenizer_dir: ${modelhub}/metabric/${modelname}
+transformer_dir: ${modelhub}/metabric/${modelname}

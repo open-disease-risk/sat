@@ -1,0 +1,14 @@
+# @package _global_
+
+hydra:
+  launcher:
+    job:
+      inputs:
+        - name: SEER
+          version: "1"
+          path: ${data_source}
+          ftype: "uri_file"
+          description: "SEER IS AN AUTHORITATIVE SOURCE FOR CANCER STATISTICS IN THE UNITED STATES."
+          registered: true
+          cli: "data_source"
+          force: false

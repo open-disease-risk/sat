@@ -1,0 +1,25 @@
+# @package _global_
+dataset: metabric
+modelname: event-regression
+
+
+defaults:
+  - metabric/defaults
+  - override /data/load: metabric
+  - override /data/parse: ${data/load}
+  - override /tokenizers: ${data/load}
+  - override /transformers: bert
+  - override /tasks: event-regression
+  - override /trainer: ${data/load}/default
+
+sentence_emb: 1
+
+learning_rate: 0.01
+
+regression_intermediate_size: 32
+regression_batch_norm: false
+regression_hidden_dropout_prob: false
+regression_bias: true
+regression_num_hidden_layers: 0
+regression_loss_weight: 1.0
+regression_num_labels: 1

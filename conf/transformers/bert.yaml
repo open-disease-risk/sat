@@ -1,0 +1,13 @@
+config:
+  _target_: transformers.BertConfig
+  hidden_size: ${transformer_hidden_size}
+  num_hidden_layers: ${transformer_num_hidden_layers}
+  num_attention_heads: ${transformer_num_attention_heads}
+  intermediate_size: ${transformer_intermediate_size}
+  attention_probs_dropout_prob: ${transformer_attention_probs_dropout_prob}
+  hidden_act: 'gelu'
+  hidden_dropout_prob: ${transformer_hidden_probs_dropout}
+  output_attentions: False
+  output_hidden_states: True
+  initializer_range: ${initializer_range}
+  return_dict: true
