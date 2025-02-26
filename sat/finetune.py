@@ -7,7 +7,6 @@ import hydra
 import json
 import mlflow
 import os
-import sys
 import torch
 
 import pandas as pd
@@ -230,7 +229,7 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
     data_collator = collator.DefaultSATDataCollator(device=device_str)
 
     # Using the standard setup without custom accelerator since we downgraded accelerate to be compatible
-    
+
     # Configure trainer kwargs
     trainer_kwargs = {
         "model": model,
@@ -241,7 +240,7 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
         "compute_metrics": compute_metrics,
         "callbacks": callbacks,
     }
-    
+
     # Create trainer
     trainer = Trainer(**trainer_kwargs)
 
