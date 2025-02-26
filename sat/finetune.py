@@ -108,6 +108,16 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
         def map_label(element):
             return sa_features(element)
 
+        # Create cache directory for tokenized data if it doesn't exist
+        cache_dir = (
+            f"{cfg.data.cache_dir}/tokenized_dataset"
+            if hasattr(cfg.data, "cache_dir")
+            else None
+        )
+        if cache_dir:
+            os.makedirs(cache_dir, exist_ok=True)
+
+        # Use caching for tokenized datasets to avoid redundant processing
         tokenized_dataset = dataset.map(
             tokenize_function,
             batched=True,
@@ -120,12 +130,45 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
                 "padding": cfg.tokenizers.padding_args.padding,
                 "pad_to_multiple_of": cfg.tokenizers.padding_args.pad_to_multiple_of,
             },
+            cache_file_name=(
+                f"{cache_dir}/tokenized_dataset.arrow" if cache_dir else None
+            ),
+            num_proc=4,  # Parallel processing for tokenization
         )
 
         logger.debug(f"Dataset columns: {tokenized_dataset.column_names}")
-        mapped_labels_dataset = tokenized_dataset.map(map_label, batched=True)
+        # Create cache for label mapping
+        labels_cache_dir = (
+            f"{cfg.data.cache_dir}/labels_dataset"
+            if hasattr(cfg.data, "cache_dir")
+            else None
+        )
+        if labels_cache_dir:
+            os.makedirs(labels_cache_dir, exist_ok=True)
+
+        # Apply label mapping with caching
+        mapped_labels_dataset = tokenized_dataset.map(
+            map_label,
+            batched=True,
+            cache_file_name=(
+                f"{labels_cache_dir}/mapped_labels.arrow" if labels_cache_dir else None
+            ),
+            num_proc=4,  # Parallel processing for label mapping
+        )
+
+        # Process numerics if present
         if "numerics" in mapped_labels_dataset.column_names[cfg.data.splits[0]]:
             logger.debug("Numerics present, so processing padding/truncation")
+
+            # Cache for numerics processing
+            numerics_cache_dir = (
+                f"{cfg.data.cache_dir}/numerics_processed"
+                if hasattr(cfg.data, "cache_dir")
+                else None
+            )
+            if numerics_cache_dir:
+                os.makedirs(numerics_cache_dir, exist_ok=True)
+
             mapped_labels_dataset = mapped_labels_dataset.map(
                 tokenizing.numerics_padding_and_truncation,
                 fn_kwargs={
@@ -134,6 +177,12 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
                     "padding_direction": cfg.tokenizers.padding_args.direction,
                     "token_emb": cfg.token_emb,
                 },
+                cache_file_name=(
+                    f"{numerics_cache_dir}/numerics_processed.arrow"
+                    if numerics_cache_dir
+                    else None
+                ),
+                num_proc=4,  # Parallel processing for numerics padding/truncation
             )
 
         logger.debug(f"labels mapped in dataset: {mapped_labels_dataset}")
