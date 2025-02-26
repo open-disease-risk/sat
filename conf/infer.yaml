@@ -9,8 +9,3 @@ select_id: null
 infer_data: null
 interpolate: true
 interpolate_points: 10
-
-hydra:
-  launcher:
-    environment:
-      conda_env: envs/satcuda118py310.yml

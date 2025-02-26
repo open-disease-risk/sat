@@ -13,9 +13,6 @@ defaults:
   - tasks: null
   - trainer: null
   - callbacks: default
-  - optional aml: gpu
-  - inputs: ${data/load}/default
-  - outputs: default
   - sweep: null
   - hydra: default
   - experiments: null
@@ -26,16 +23,7 @@ defaults:
   # debugging config (enable through command line, e.g. `python train.py debug=default)
   - debug: null
 
-  - override hydra/launcher: aml
-
 task_name: sat-${task}-${modelname}-${dataset}-${job}
-
-# Set the experiment name
-hydra:
-  launcher:
-    lib_module_as_script: True
-    experiment_name: ${task_name}
-
 
 cv:
   kfold: ${oc.select:cv_kfold,0}

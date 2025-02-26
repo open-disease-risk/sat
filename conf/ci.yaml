@@ -5,11 +5,6 @@ defaults:
   - _self_
   - defaults
 
-hydra:
-  launcher:
-    environment:
-      conda_env: envs/satcuda118py310.yml
-
 multiple_replications: true
 alpha: 0.05
 error: 0.1
