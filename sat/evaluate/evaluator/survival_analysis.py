@@ -69,22 +69,35 @@ class SurvivalAnalysisEvaluator(Evaluator):
         self.size = size
 
     def predictions_processor(self, predictions, label_mapping):
-        preds = np.stack(  # batches
-            [
-                np.stack(
-                    [
-                        np.stack(instance[1]),  # num events x hazard (duration cuts)
-                        np.stack(instance[2]),  # num events x risk (duration cuts)
-                        np.stack(instance[3]),  # num events x survival (duration cuts)
-                    ]
-                )
-                for instance in predictions
-            ]
-        ).squeeze(
-            axis=3
-        )  # we squeeze a dimension we do not need. TODO: fix it
+        """
+        Process predictions more efficiently by avoiding multiple nested stack operations.
+        """
+        # Get dimensions from first prediction to allocate memory efficiently
+        batch_size = len(predictions)
+        if batch_size == 0:
+            return {"predictions": np.array([])}
 
-        return {"predictions": preds}
+        sample = predictions[0]
+        num_vars = 3  # hazard, risk, survival
+        num_events = len(sample[1])
+        duration_cuts = len(sample[1][0])
+
+        # Pre-allocate output array with correct shape
+        result = np.empty(
+            (batch_size, num_vars, num_events, duration_cuts), dtype=np.float32
+        )
+
+        # Fill the array directly without nested stacks
+        for b, instance in enumerate(predictions):
+            for v in range(num_vars):
+                # Copy data for each variable (hazard at idx 1, risk at idx 2, survival at idx 3)
+                for e in range(num_events):
+                    result[b, v, e, :] = instance[v + 1][e]
+
+        # Squeeze unnecessary dimension
+        result = result.squeeze(axis=3)
+
+        return {"predictions": result}
 
     def prepare_data(
         self,

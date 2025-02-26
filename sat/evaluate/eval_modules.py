@@ -1,5 +1,4 @@
-""" Evaluation modules for survival analysis.
-"""
+"""Evaluation modules for survival analysis."""
 
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
@@ -21,19 +20,22 @@ logger = logging.get_default_logger()
 
 class SurvivalEvaluationModule(EvaluationModule):
     def survival_predictions(self, predictions):
-        predictions = np.transpose(
-            np.stack(
-                [
-                    predictions["hazard"][
-                        :, :, 1:
-                    ],  # we have results for all cutpoints so cut out the zeroth
-                    predictions["risk"][:, :, 1:],
-                    predictions["survival"][:, :, 1:],
-                ]
-            ),
-            (1, 0, 2, 3),
-        )  # need this to be batch x variables x events x duration cuts
-        return predictions
+        # Optimize numpy operations by pre-allocating memory and using direct indexing
+        # Get dimensions for more efficient allocation
+        hazard_shape = predictions["hazard"][:, :, 1:].shape
+        batch_size = hazard_shape[0]
+        event_size = hazard_shape[1]
+        duration_cuts = hazard_shape[2]
+
+        # Pre-allocate the result array - more efficient than stack+transpose
+        result = np.empty((batch_size, 3, event_size, duration_cuts), dtype=np.float32)
+
+        # Direct assignment to avoid stack and transpose operations
+        result[:, 0, :, :] = predictions["hazard"][:, :, 1:]  # Cut out the zeroth point
+        result[:, 1, :, :] = predictions["risk"][:, :, 1:]
+        result[:, 2, :, :] = predictions["survival"][:, :, 1:]
+
+        return result
 
 
 class ComputeBrier(SurvivalEvaluationModule):
