@@ -1,5 +1,4 @@
-"""Logging utilities
-"""
+"""Logging utilities"""
 
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"

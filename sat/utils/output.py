@@ -1,5 +1,4 @@
-"""Output Utilities
-"""
+"""Output Utilities"""
 
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"

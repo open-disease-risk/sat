@@ -1,5 +1,4 @@
-"""Interpolating hazard rates
-"""
+"""Interpolating hazard rates"""
 
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"

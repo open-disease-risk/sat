@@ -15,7 +15,7 @@ logger = logging.get_default_logger()
 
 # def rand_seed():
 #
-# def rand_seed() is licensed under CC-BY-SA 4.0 (since it was taken from Stack Overflow after 2018) and CC-BY-SA 4.0 
+# def rand_seed() is licensed under CC-BY-SA 4.0 (since it was taken from Stack Overflow after 2018) and CC-BY-SA 4.0
 # is incompatible with GPL; accordingly, this portion needs to be rewritten or code licensed under a GPL-compatible
 # license needs to be used
 #

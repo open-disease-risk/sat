@@ -1,5 +1,4 @@
-""" Configuration for task heads
-"""
+"""Configuration for task heads"""
 
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
@@ -41,7 +40,7 @@ class BaseConfig(abc.ABC, PretrainedConfig):
         initializer: str = "kaiming_uniform",
         num_events: int = 1,
         loss: Dict[str, Any] = {},
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.freeze_transformer = freeze_transformer
@@ -100,7 +99,7 @@ class SurvivalConfig(BaseConfig):
         bias: bool = True,
         max_time=400,
         duration_cuts=[],
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.num_inputs = num_inputs
@@ -129,7 +128,7 @@ class EventClassificationTaskConfig(BaseConfig):
         batch_norm: bool = True,
         hidden_dropout_prob: float = 0.05,
         bias: bool = True,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.num_inputs = num_inputs
@@ -156,7 +155,7 @@ class EventDurationTaskConfig(BaseConfig):
         batch_norm: bool = True,
         hidden_dropout_prob: float = 0.05,
         bias: bool = True,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.num_inputs = num_inputs
@@ -184,7 +183,7 @@ class MTLConfig(BaseConfig):
         sentence_emb: SentenceEmbedding = SentenceEmbedding.NONE,
         token_emb: TokenEmbedding = TokenEmbedding.CAT,
         select_hidden_layers: List[int] = None,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(**kwargs)
         self.task_heads = task_heads

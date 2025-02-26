@@ -126,14 +126,14 @@ class OneCalibration(evaluate.Metric):
             if self.config_name == "survival":
                 # iterate over all labels except the last one
                 for j in range(len(duration_cuts)):
-                    metric_dict[
-                        f"1-calibration_{e}th_event_{horizons[j]}"
-                    ] = one_calibration(
-                        durations,
-                        event_indicator,
-                        predictions[:, e, j],
-                        time=duration_cuts[j],
-                        bins=bins,
+                    metric_dict[f"1-calibration_{e}th_event_{horizons[j]}"] = (
+                        one_calibration(
+                            durations,
+                            event_indicator,
+                            predictions[:, e, j],
+                            time=duration_cuts[j],
+                            bins=bins,
+                        )
                     )
             elif self.config_name == "classification":
                 metric_dict[f"1-calibration_{e}th_event"] = one_calibration(
