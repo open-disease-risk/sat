@@ -1,5 +1,4 @@
-""" PyTorch Dataset and Dataloader classes
-"""
+"""PyTorch Dataset and Dataloader classes"""
 
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"

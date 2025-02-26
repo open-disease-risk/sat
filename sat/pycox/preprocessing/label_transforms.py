@@ -1,5 +1,4 @@
-""" label transformation functions from pycox copied here to reduce dependencies
-"""
+"""label transformation functions from pycox copied here to reduce dependencies"""
 
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"

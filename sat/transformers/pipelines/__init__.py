@@ -1,5 +1,4 @@
-""" Initialize the SA pipeline.
-"""
+"""Initialize the SA pipeline."""
 
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"

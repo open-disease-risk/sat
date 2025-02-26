@@ -1,5 +1,4 @@
-""" Feature extractor for a transformer model for survival analysis.
-"""
+"""Feature extractor for a transformer model for survival analysis."""
 
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"

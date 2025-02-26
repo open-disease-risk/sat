@@ -1,5 +1,4 @@
-""" Train a tokenizer
-"""
+"""Train a tokenizer"""
 
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"

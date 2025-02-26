@@ -1,5 +1,4 @@
-""" Loss functions for survival analysis
-"""
+"""Loss functions for survival analysis"""
 
 __authors__ = ["Dominik Dahlem", "Mahed Abroshan"]
 __status__ = "Development"

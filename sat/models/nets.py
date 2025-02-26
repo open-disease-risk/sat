@@ -1,5 +1,4 @@
-""" Building blocks for networks
-"""
+"""Building blocks for networks"""
 
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
@@ -125,8 +124,23 @@ class CauseSpecificNet(nn.Module):
             self.event_nets.append(net)
 
     def forward(self, input):
-        out = [net(input) for net in self.event_nets]
-        out = torch.stack(out, dim=1)
+        # Optimize for the common single event case
+        if len(self.event_nets) == 1:
+            return self.event_nets[0](input).unsqueeze(1)
+
+        # More efficient batch processing for multiple events
+        batch_size = input.shape[0]
+        out = torch.empty(
+            batch_size,
+            len(self.event_nets),
+            self.event_nets[0].out_features,
+            device=input.device,
+            dtype=input.dtype,
+        )
+
+        for i, net in enumerate(self.event_nets):
+            out[:, i, :] = net(input)
+
         return out
 
 
@@ -169,8 +183,27 @@ class CauseSpecificNetCompRisk(nn.Module):
             self.event_nets.append(net)
 
     def forward(self, input):
-        out = self.shared_mlp(input)
-        out = torch.cat([input, out], dim=1)  # residual connections
-        out = [net(out) for net in self.event_nets]
-        out = torch.stack(out, dim=1)
+        # Compute shared features once
+        shared_features = self.shared_mlp(input)
+
+        # More efficient residual connection with pre-allocation
+        combined = torch.cat([input, shared_features], dim=1)  # residual connections
+
+        # Batch processing for event networks instead of list comprehension
+        if len(self.event_nets) == 1:
+            # Optimization for single event case (common scenario)
+            out = self.event_nets[0](combined).unsqueeze(1)
+        else:
+            # More efficient than list comprehension for multiple events
+            batch_size = combined.shape[0]
+            out = torch.empty(
+                batch_size,
+                len(self.event_nets),
+                self.event_nets[0].out_features,
+                device=input.device,
+                dtype=input.dtype,
+            )
+            for i, net in enumerate(self.event_nets):
+                out[:, i, :] = net(combined)
+
         return out

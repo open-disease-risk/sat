@@ -1,5 +1,4 @@
-"""Adaptations to BERT config to link with the BERT w/ numeric embeddings.
-"""
+"""Adaptations to BERT config to link with the BERT w/ numeric embeddings."""
 
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
@@ -78,6 +77,7 @@ class NumericBertConfig(hf_bert.BertConfig):
     ```
 
     """
+
     model_type = "bert_numerics"
 
     def __init__(

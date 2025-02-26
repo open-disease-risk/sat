@@ -1,5 +1,4 @@
-""" SAT setup script
-"""
+"""SAT setup script"""
 
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"

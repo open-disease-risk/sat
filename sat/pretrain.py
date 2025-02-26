@@ -1,5 +1,4 @@
-""" Preprocess data.
-"""
+"""Preprocess data."""
 
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"

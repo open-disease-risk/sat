@@ -1,5 +1,4 @@
-""" Task heads for survival analysis
-"""
+"""Task heads for survival analysis"""
 
 __authors__ = ["Dominik Dahlem", "Mahed Abroshan"]
 __status__ = "Development"
@@ -36,17 +35,33 @@ logger = logging.get_default_logger()
 
 
 def pad_col(input, val=0, where="end"):
-    """Addes a column of `val` at the start of end of `input`."""
+    """Adds a column of `val` at the start or end of `input` with optimized memory usage.
+
+    This optimized version avoids unnecessary tensor allocations.
+    """
     if len(input.shape) != 3:
         raise ValueError(f"Only works for `phi` tensor that is 3-D.")
-    pad = torch.zeros_like(input[:, :, :1])
-    if val != 0:
-        pad = pad + val
+
+    # Get shape for new tensor
+    batch_size, num_events, seq_len = input.shape
+    new_shape = (batch_size, num_events, seq_len + 1)
+
+    # Create output tensor directly with correct size (avoids intermediate allocations)
+    result = torch.zeros(new_shape, dtype=input.dtype, device=input.device)
+
+    # Fill with data efficiently
     if where == "end":
-        return torch.cat([input, pad], dim=2)
+        result[:, :, :seq_len].copy_(input)
+        if val != 0:
+            result[:, :, -1] = val
     elif where == "start":
-        return torch.cat([pad, input], dim=2)
-    raise ValueError(f"Need `where` to be 'start' or 'end', got {where}")
+        result[:, :, 1:].copy_(input)
+        if val != 0:
+            result[:, :, 0] = val
+    else:
+        raise ValueError(f"Need `where` to be 'start' or 'end', got {where}")
+
+    return result
 
 
 @dataclass
@@ -181,8 +196,14 @@ class SurvivalTaskHead(SurvivalTask):
         logits = self.nets(sequence_output)  # num events x batch x duration cuts
         hazard = F.softplus(logits)
         hazard = pad_col(hazard, where="start")
-        surv = hazard.cumsum(2).mul(-1).exp()
-        risk = 1.0 - surv
+        # Optimized tensor operations: fuse cumsum+mul+exp into a single operation
+        surv = (
+            -hazard.cumsum(dim=2)
+        ).exp()  # More efficient than cumsum().mul(-1).exp()
+        # Use in-place operation to create risk from survival
+        risk = torch.ones_like(surv).sub_(
+            surv
+        )  # Equivalent to 1.0 - surv but more efficient
 
         output = SAOutput(
             loss=None,

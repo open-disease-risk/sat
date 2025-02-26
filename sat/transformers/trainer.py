@@ -1,5 +1,4 @@
-""" Training argument class that supports MPS devices.
-"""
+"""Training argument class that supports MPS devices."""
 
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
@@ -51,18 +50,29 @@ class Trainer:
             self.model.gradient_checkpointing_enable()
 
     def train(self):
+        # Enable pinned memory for faster CPU->GPU transfer
         train_dataloader = DataLoader(
             self.train_dataset,
             batch_size=self.args.per_device_train_batch_size,
             collate_fn=self.data_collator,
             shuffle=True,
+            pin_memory=torch.cuda.is_available(),  # Use pinned memory if CUDA available
+            num_workers=4,  # Parallel data loading
+            prefetch_factor=2,  # Prefetch batches
         )
         eval_dataloader = DataLoader(
             self.eval_dataset,
             batch_size=self.args.per_device_eval_batch_size,
             collate_fn=self.data_collator,
             shuffle=False,
+            pin_memory=torch.cuda.is_available(),  # Use pinned memory if CUDA available
+            num_workers=4,  # Parallel data loading
         )
+
+        # Setup mixed precision with AMP
+        from torch.cuda.amp import autocast, GradScaler
+
+        scaler = GradScaler(enabled=self.args.fp16)
 
         adam_kwargs = {
             "betas": (self.args.adam_beta1, self.args.adam_beta2),
@@ -73,22 +83,59 @@ class Trainer:
         accelerator = Accelerator(mixed_precision=mixed_precision)
         model, optimizer, train_dataloader, eval_dataloader = accelerator.prepare(
             self.model,
-            AdamW(self.model.parameters(), lr=self.args.learning_rate),
+            AdamW(self.model.parameters(), lr=self.args.learning_rate, **adam_kwargs),
             train_dataloader,
             eval_dataloader,
+        )
+
+        # Add learning rate scheduler
+        from transformers import get_linear_schedule_with_warmup
+
+        num_training_steps = len(train_dataloader) * self.args.num_train_epochs
+        num_warmup_steps = int(0.1 * num_training_steps)  # 10% warmup
+        scheduler = get_linear_schedule_with_warmup(
+            optimizer,
+            num_warmup_steps=num_warmup_steps,
+            num_training_steps=num_training_steps,
         )
 
         model.train()
         for epoch in range(self.args.num_train_epochs):
             for step, batch in enumerate(train_dataloader, start=1):
-                loss = model(**batch).loss
-                loss = loss / self.args.gradient_accumulation_steps
-                accelerator.backward(loss)
+                # Use AMP autocast for mixed precision training
+                with autocast(enabled=self.args.fp16):
+                    loss = model(**batch).loss
 
-                if step % self.args.gradient_accumulation_steps == 0:
-                    optimizer.step()
-                    optimizer.zero_grad()
+                # More efficient gradient accumulation
+                if step % self.args.gradient_accumulation_steps != 0:
+                    # Use no_sync for more efficient multi-GPU training
+                    # Only synchronize gradients when we're going to update
+                    if hasattr(model, "no_sync") and accelerator.num_processes > 1:
+                        with model.no_sync():
+                            scaler.scale(
+                                loss / self.args.gradient_accumulation_steps
+                            ).backward()
+                    else:
+                        scaler.scale(
+                            loss / self.args.gradient_accumulation_steps
+                        ).backward()
+                else:
+                    scaler.scale(
+                        loss / self.args.gradient_accumulation_steps
+                    ).backward()
+                    # Unscale before optimizer step to check for infs/NaNs
+                    scaler.unscale_(optimizer)
+                    # Apply gradient clipping
+                    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+                    # Update with scaler for mixed precision
+                    scaler.step(optimizer)
+                    scaler.update()
+                    scheduler.step()  # Update learning rate
+                    optimizer.zero_grad(
+                        set_to_none=True
+                    )  # More efficient than zero_grad()
 
+                # Evaluate periodically
                 if step % self.args.eval_steps == 0:
                     self.evaluate(eval_dataloader)
 

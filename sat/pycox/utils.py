@@ -1,5 +1,4 @@
-""" pycox utils functions copied here to reduce dependencies
-"""
+"""pycox utils functions copied here to reduce dependencies"""
 
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"

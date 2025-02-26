@@ -1,5 +1,4 @@
-"""Data processing utilities
-"""
+"""Data processing utilities"""
 
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"

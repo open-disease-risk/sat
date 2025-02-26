@@ -2,6 +2,7 @@
 
 Copied from https://github.com/haiderstats/survival_evaluation/blob/main/survival_evaluation/utilities.py.
 """
+
 from dataclasses import InitVar, dataclass, field
 
 import numpy as np  # type: ignore
