@@ -3,8 +3,9 @@ from transformers import GPT2PreTrainedModel
 from transformers.models.gpt2.modeling_gpt2 import *
 from transformers.utils.model_parallel_utils import assert_device_map, get_device_map
 from packaging import version
+import torch.nn as nn
 
-from .config import BertConfig
+from .config import SatBertConfig
 
 
 _CHECKPOINT_FOR_DOC = "bert-base-uncased"
@@ -151,7 +152,7 @@ class BertEmbeddings(nn.Module):
     BERT_START_DOCSTRING,
 )
 class BertModel(BertPreTrainedModel):
-    config_class = BertConfig
+    config_class = SatBertConfig
     """
     The model can behave as an encoder (with only self-attention) as well as a decoder, in which case a layer of
     cross-attention is added between the self-attention layers, following the architecture described in [Attention is
@@ -363,7 +364,7 @@ class BertModel(BertPreTrainedModel):
     """Bert Model with a `language modeling` head on top.""", BERT_START_DOCSTRING
 )
 class BertForMaskedLM(BertPreTrainedModel):
-    config_class = BertConfig
+    config_class = SatBertConfig
 
     _keys_to_ignore_on_load_unexpected = [r"pooler"]
     _keys_to_ignore_on_load_missing = [r"position_ids", r"predictions.decoder.bias"]
