@@ -75,9 +75,11 @@ class TestTrainer(unittest.TestCase):
             shutil.rmtree(self.test_output_dir)
 
     @patch("sat.transformers.trainer.get_linear_schedule_with_warmup")
-    def test_train(self, mock_scheduler_fn):
+    @patch("sat.transformers.trainer.set_seed")
+    def test_train(self, mock_set_seed, mock_scheduler_fn):
         """Test the train method."""
-        # The accelerator is already created in __init__, so we need to patch it
+        # Replace the accelerator instance with a mock
+        original_accelerator = self.trainer.accelerator
         self.trainer.accelerator = MagicMock()
 
         # Mock scheduler
@@ -111,21 +113,26 @@ class TestTrainer(unittest.TestCase):
         self.trainer.accelerator.get_progress_bar.return_value = mock_progress_bar
         mock_progress_bar.__iter__.return_value = mock_train_loader
 
-        # Run training
-        self.trainer.train()
+        try:
+            # Run training
+            self.trainer.train()
 
-        # Assertions
-        self.mock_model.train.assert_called_once()
-        self.trainer.accelerator.prepare.assert_called_once()
-        mock_scheduler_fn.assert_called_once()
-        self.trainer.accelerator.backward.assert_called()
-        mock_optimizer.step.assert_called()
-        mock_scheduler.step.assert_called()
-        mock_optimizer.zero_grad.assert_called_with(set_to_none=True)
+            # Assertions
+            self.mock_model.train.assert_called_once()
+            self.trainer.accelerator.prepare.assert_called_once()
+            mock_scheduler_fn.assert_called_once()
+            self.trainer.accelerator.backward.assert_called()
+            mock_optimizer.step.assert_called()
+            mock_scheduler.step.assert_called()
+            mock_optimizer.zero_grad.assert_called_with(set_to_none=True)
+        finally:
+            # Restore the original accelerator
+            self.trainer.accelerator = original_accelerator
 
     def test_evaluate(self):
         """Test the evaluate method."""
-        # Setup mock accelerator
+        # Replace the accelerator instance with a mock
+        original_accelerator = self.trainer.accelerator
         self.trainer.accelerator = MagicMock()
 
         # Setup gathered tensor
@@ -141,24 +148,29 @@ class TestTrainer(unittest.TestCase):
         mock_progress_bar.__iter__.return_value = mock_eval_dataloader
 
         # Mock the find_batch_size function
-        with patch("sat.transformers.trainer.find_batch_size", return_value=2):
-            # Run evaluation
-            result = self.trainer.evaluate(mock_eval_dataloader)
+        try:
+            with patch("sat.transformers.trainer.find_batch_size", return_value=2):
+                # Run evaluation
+                result = self.trainer.evaluate(mock_eval_dataloader)
 
-            # Assertions
-            self.mock_model.eval.assert_called_once()
-            self.mock_model.train.assert_called_once()
-            self.trainer.accelerator.gather_for_metrics.assert_called()
-            self.trainer.accelerator.log.assert_called_once()
-            self.assertIsInstance(result, float)
+                # Assertions
+                self.mock_model.eval.assert_called_once()
+                self.mock_model.train.assert_called_once()
+                self.trainer.accelerator.gather_for_metrics.assert_called()
+                self.trainer.accelerator.log.assert_called_once()
+                self.assertIsInstance(result, float)
 
-            # Reset model mocks for the next test
-            self.mock_model.eval.reset_mock()
-            self.mock_model.train.reset_mock()
+                # Reset model mocks for the next test
+                self.mock_model.eval.reset_mock()
+                self.mock_model.train.reset_mock()
+        finally:
+            # Restore the original accelerator
+            self.trainer.accelerator = original_accelerator
 
     def test_predict(self):
         """Test the predict method."""
-        # Setup mock accelerator
+        # Replace the accelerator instance with a mock
+        original_accelerator = self.trainer.accelerator
         self.trainer.accelerator = MagicMock()
 
         # Setup progress bar
@@ -180,22 +192,27 @@ class TestTrainer(unittest.TestCase):
         self.trainer.accelerator.gather_for_metrics.return_value = mock_gathered_tensor
 
         # Run prediction
-        with patch(
-            "numpy.concatenate", return_value=np.array([[0.1, 0.2], [0.3, 0.4]])
-        ):
-            predictions = self.trainer.predict(self.predict_dataset)
+        try:
+            with patch(
+                "numpy.concatenate", return_value=np.array([[0.1, 0.2], [0.3, 0.4]])
+            ):
+                predictions = self.trainer.predict(self.predict_dataset)
 
-            # Assertions
-            self.mock_model.eval.assert_called_once()
-            self.trainer.accelerator.gather_for_metrics.assert_called()
-            self.assertIsInstance(predictions, np.ndarray)
-            self.assertEqual(
-                predictions.shape, (2, 2)
-            )  # Should match our mocked return
+                # Assertions
+                self.mock_model.eval.assert_called_once()
+                self.trainer.accelerator.gather_for_metrics.assert_called()
+                self.assertIsInstance(predictions, np.ndarray)
+                self.assertEqual(
+                    predictions.shape, (2, 2)
+                )  # Should match our mocked return
+        finally:
+            # Restore the original accelerator
+            self.trainer.accelerator = original_accelerator
 
     def test_save_model(self):
         """Test the save_model method."""
-        # Setup mock accelerator
+        # Replace the accelerator instance with a mock
+        original_accelerator = self.trainer.accelerator
         self.trainer.accelerator = MagicMock()
 
         # Mock unwrap_model
@@ -208,20 +225,24 @@ class TestTrainer(unittest.TestCase):
         mock_unwrapped.config.save_pretrained = MagicMock()
 
         # Run save_model
-        output_dir = self.trainer.save_model()
+        try:
+            output_dir = self.trainer.save_model()
 
-        # Assertions
-        self.trainer.accelerator.unwrap_model.assert_called_once_with(self.mock_model)
-        self.trainer.accelerator.save.assert_called_once_with(
-            mock_unwrapped.state_dict(), f"{self.args.output_dir}/model.pt"
-        )
-        self.trainer.accelerator.save_state.assert_called_once_with(
-            self.args.output_dir
-        )
-        mock_unwrapped.config.save_pretrained.assert_called_once_with(
-            self.args.output_dir
-        )
-        self.assertEqual(output_dir, self.args.output_dir)
+            # Assertions
+            self.trainer.accelerator.unwrap_model.assert_called_once_with(self.mock_model)
+            self.trainer.accelerator.save.assert_called_once_with(
+                mock_unwrapped.state_dict(), f"{self.args.output_dir}/model.pt"
+            )
+            self.trainer.accelerator.save_state.assert_called_once_with(
+                self.args.output_dir
+            )
+            mock_unwrapped.config.save_pretrained.assert_called_once_with(
+                self.args.output_dir
+            )
+            self.assertEqual(output_dir, self.args.output_dir)
+        finally:
+            # Restore the original accelerator
+            self.trainer.accelerator = original_accelerator
 
     def test_training_arguments_mps_support(self):
         """Test the TrainingArgumentsWithMPSSupport class."""
