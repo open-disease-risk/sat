@@ -77,8 +77,8 @@ class BaseConfig(abc.ABC, PretrainedConfig):
         )
 
 
-class BertConfig(BertConfig):
-    model_type = ""
+class SatBertConfig(BertConfig):
+    model_type = "sat-bert"
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
