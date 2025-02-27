@@ -10,7 +10,16 @@ from torch.utils.data.dataloader import DataLoader
 
 from accelerate import Accelerator
 from accelerate.utils import find_batch_size, set_seed
-from transformers import TrainingArguments
+import sys
+import importlib.util
+
+# Explicitly import the transformers package using the absolute import
+# This ensures we don't get import conflicts with local modules
+if importlib.util.find_spec("transformers.training_args"):
+    from transformers.training_args import TrainingArguments
+    import transformers
+else:
+    raise ImportError("The transformers package is required but not installed")
 
 
 # Simple hack to work with MPS devices from: https://github.com/huggingface/transformers/issues/17971#issuecomment-1171579884
@@ -80,9 +89,9 @@ class Trainer:
         )
 
         # Setup mixed precision with AMP
-        from torch.cuda.amp import autocast, GradScaler
+        from torch.amp import autocast, GradScaler
 
-        scaler = GradScaler(enabled=self.args.fp16)
+        scaler = GradScaler("cuda", enabled=self.args.fp16)
 
         adam_kwargs = {
             "betas": (self.args.adam_beta1, self.args.adam_beta2),
@@ -100,11 +109,9 @@ class Trainer:
         )
 
         # Add learning rate scheduler
-        from transformers import get_linear_schedule_with_warmup
-
         num_training_steps = len(train_dataloader) * self.args.num_train_epochs
         num_warmup_steps = int(0.1 * num_training_steps)  # 10% warmup
-        scheduler = get_linear_schedule_with_warmup(
+        scheduler = transformers.get_linear_schedule_with_warmup(
             optimizer,
             num_warmup_steps=num_warmup_steps,
             num_training_steps=num_training_steps,
