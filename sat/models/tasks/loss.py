@@ -85,10 +85,7 @@ class SATNLLPCHazardLoss(Loss):
         # load the importance sampling weights if not None
         if importance_sample_weights is not None:
             df = pd.read_csv(importance_sample_weights, header=None, names=["weights"])
-            # Apply clamping to ensure weights are in a reasonable range for numerical stability
             weights = torch.tensor(df.weights.values).to(torch.float32)
-            # Clamp weights to prevent extreme values that could cause numerical issues
-            weights = torch.clamp(weights, min=1e-4, max=1e4)
         else:
             weights = torch.ones(self.num_events + 1)
 
@@ -100,30 +97,15 @@ class SATNLLPCHazardLoss(Loss):
         fraction_duration = self.fraction_with_quantile(references)[:, event_type]
         predictions = predictions[:, event_type]
 
-        # Apply the loss function with error handling
-        try:
-            loss_vals = self.loss_fct(
+        return (
+            self.loss_fct(
                 predictions,
                 duration_percentiles,
                 events,
                 fraction_duration,
-            )
-            
-            # Check for NaN or Inf values and replace them
-            invalid_mask = torch.isnan(loss_vals) | torch.isinf(loss_vals)
-            if invalid_mask.any():
-                logger.warning(f"Found {invalid_mask.sum().item()} invalid loss values. Replacing with zeros.")
-                loss_vals[invalid_mask] = 0.0
-                
-            # Apply weight with numerical stability
-            weight = torch.clamp(self.weights[event_type + 1], min=1e-4, max=1e4)
-            return loss_vals.mean() * weight
-            
-        except Exception as e:
-            logger.error(f"Error in nllp_hazard_loss: {e}")
-            # Return a small loss value to allow training to continue
-            # Create a tensor that requires grad to avoid breaking the autograd graph
-            return torch.tensor(1e-4, device=predictions.device, requires_grad=True)
+            ).mean()
+            * self.weights[event_type + 1]
+        )
 
     def forward(self, predictions: SAOutput, references: torch.Tensor) -> torch.Tensor:
         """Compute a loss.
@@ -138,32 +120,10 @@ class SATNLLPCHazardLoss(Loss):
         # variables x batch x events x duration cuts
         logits = predictions.logits
 
-        # Check if logits contain NaN or Inf values
-        if torch.isnan(logits).any() or torch.isinf(logits).any():
-            logger.warning("NaN or Inf values detected in logits. Clipping values...")
-            # Replace NaN with zeros and clip any infinite values
-            logits = torch.nan_to_num(logits, nan=0.0, posinf=1e4, neginf=-1e4)
-
         loss = 0.0
         for i in range(self.num_events):
-            event_loss = self.nllp_hazard_loss(logits, references, i)
-            
-            # Verify that the loss is valid before adding it
-            if not torch.isnan(event_loss) and not torch.isinf(event_loss):
-                loss += event_loss
-            else:
-                logger.warning(f"Invalid loss for event type {i}. Using default value.")
-                # Add a small constant to allow training to continue
-                # Create a tensor that requires grad to avoid breaking the autograd graph
-                default_loss = torch.tensor(1e-4, device=logits.device, requires_grad=True)
-                loss += default_loss
+            loss += self.nllp_hazard_loss(logits, references, i)
 
-        # Final check for NaN/Inf in the total loss
-        if torch.isnan(loss) or torch.isinf(loss):
-            logger.error("Total loss is NaN or Inf. Returning a default value.")
-            # Create a tensor that requires grad to avoid breaking the autograd graph
-            return torch.tensor(1e-4, device=logits.device, requires_grad=True)
-            
         return loss
 
 
