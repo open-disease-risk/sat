@@ -59,7 +59,7 @@ def _eval(cfg: DictConfig) -> None:
     )
 
     tokenizer = PreTrainedTokenizerFast(
-        tokenizer_file=str(Path(f"{transformer_dir}/tokenizer.json")),
+        tokenizer_file=str(Path(f"{cfg.tokenizers.tokenizer_dir}/tokenizer.json")),
         pad_token=cfg.tokenizers.pad_token,
         mask_token=cfg.tokenizers.mask_token,
     )
