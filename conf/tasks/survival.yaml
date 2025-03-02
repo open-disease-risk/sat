@@ -1,6 +1,6 @@
 
 defaults:
-  - losses: nllpch_sample_ranking
+  - losses: nllpch
   - metrics: default
 
 eval_metric: "eval_ipcw_avg"
