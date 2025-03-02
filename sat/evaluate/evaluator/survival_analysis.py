@@ -81,59 +81,74 @@ class SurvivalAnalysisEvaluator(Evaluator):
         # Make sure we can access the prediction structure
         try:
             sample = predictions[0]
-            
+
             # Check if sample has the expected structure
-            if len(sample) < 4:  # We need at least 4 elements (the first element plus hazard, risk, survival)
-                logger.warning(f"Prediction sample has unexpected format with {len(sample)} elements")
+            if (
+                len(sample) < 4
+            ):  # We need at least 4 elements (the first element plus hazard, risk, survival)
+                logger.warning(
+                    f"Prediction sample has unexpected format with {len(sample)} elements"
+                )
                 return {"predictions": np.array([])}
-                
+
             num_vars = 3  # hazard, risk, survival
-            
+
             # Validate and get number of events and duration cuts
             if not isinstance(sample[1], (list, tuple)) or len(sample[1]) == 0:
                 logger.warning("Hazard data (index 1) is empty or not a list")
                 return {"predictions": np.array([])}
-                
+
             num_events = len(sample[1])
-            
+
             # Validate event data structure
             if not isinstance(sample[1][0], (list, tuple)) or len(sample[1][0]) == 0:
                 logger.warning("First event in hazard data is empty or not a list")
                 return {"predictions": np.array([])}
-                
+
             # Get the number of time points (duration cuts)
             duration_cuts = len(sample[1][0])
-            
+
             # Pre-allocate output array with correct shape
-            result = np.zeros((batch_size, num_vars, num_events, duration_cuts), dtype=np.float32)
-            
+            result = np.zeros(
+                (batch_size, num_vars, num_events, duration_cuts), dtype=np.float32
+            )
+
             # Fill the array directly without nested stacks, with careful validation
             for b, instance in enumerate(predictions):
                 # Skip invalid instances
                 if len(instance) < 4:
                     logger.warning(f"Skipping instance {b} with insufficient elements")
                     continue
-                    
+
                 for v in range(num_vars):
                     # Get the variable index (hazard at idx 1, risk at idx 2, survival at idx 3)
                     var_idx = v + 1
-                    
+
                     # Validate that the variable exists in this instance
-                    if var_idx >= len(instance) or not isinstance(instance[var_idx], (list, tuple)):
-                        logger.warning(f"Invalid variable at index {var_idx} in instance {b}")
+                    if var_idx >= len(instance) or not isinstance(
+                        instance[var_idx], (list, tuple)
+                    ):
+                        logger.warning(
+                            f"Invalid variable at index {var_idx} in instance {b}"
+                        )
                         continue
-                        
+
                     var_data = instance[var_idx]
-                    
+
                     # Process each event
                     for e in range(min(num_events, len(var_data))):
                         # Validate the event data
-                        if not isinstance(var_data[e], (list, tuple)) or len(var_data[e]) == 0:
-                            logger.warning(f"Invalid event data at {e} for variable {var_idx} in instance {b}")
+                        if (
+                            not isinstance(var_data[e], (list, tuple))
+                            or len(var_data[e]) == 0
+                        ):
+                            logger.warning(
+                                f"Invalid event data at {e} for variable {var_idx} in instance {b}"
+                            )
                             continue
-                            
+
                         event_data = var_data[e]
-                        
+
                         # Handle potential size mismatches
                         if len(event_data) == duration_cuts:
                             # Direct assignment when sizes match
@@ -143,14 +158,14 @@ class SurvivalAnalysisEvaluator(Evaluator):
                             result[b, v, e, :] = event_data[:duration_cuts]
                         else:
                             # Pad with zeros if event data is shorter
-                            result[b, v, e, :len(event_data)] = event_data
-            
+                            result[b, v, e, : len(event_data)] = event_data
+
             # If there's only one duration cut, we can squeeze that dimension
             if duration_cuts == 1:
                 result = result.squeeze(axis=3)
-                
+
             return {"predictions": result}
-            
+
         except Exception as e:
             logger.error(f"Error processing predictions: {e}")
             return {"predictions": np.array([])}
@@ -275,25 +290,34 @@ class SurvivalAnalysisEvaluator(Evaluator):
             logger.warning(f"Missing required keys in metric_inputs for bootstrapping")
             # Return default confidence intervals
             return self._create_default_confidence_intervals(metric_keys)
-            
+
         predictions = metric_inputs["predictions"]
         references = metric_inputs["references"]
-        
+
         # Check if the shapes are suitable for bootstrapping
-        if (not hasattr(predictions, 'shape') or predictions.size == 0 or 
-            not hasattr(references, 'shape') or references.size == 0):
+        if (
+            not hasattr(predictions, "shape")
+            or predictions.size == 0
+            or not hasattr(references, "shape")
+            or references.size == 0
+        ):
             logger.warning(f"Empty arrays or invalid shapes in data for bootstrapping")
             # Return default confidence intervals
             return self._create_default_confidence_intervals(metric_keys)
-        
+
         # Check that the batch dimensions match
-        if hasattr(predictions, 'shape') and hasattr(references, 'shape'):
-            if (len(predictions.shape) > 0 and len(references.shape) > 0 and 
-                predictions.shape[0] != references.shape[0]):
-                logger.warning(f"Mismatch in batch dimensions: predictions {predictions.shape[0]} vs references {references.shape[0]}")
+        if hasattr(predictions, "shape") and hasattr(references, "shape"):
+            if (
+                len(predictions.shape) > 0
+                and len(references.shape) > 0
+                and predictions.shape[0] != references.shape[0]
+            ):
+                logger.warning(
+                    f"Mismatch in batch dimensions: predictions {predictions.shape[0]} vs references {references.shape[0]}"
+                )
                 # Return default confidence intervals
                 return self._create_default_confidence_intervals(metric_keys)
-        
+
         try:
             data = (predictions, references)
             dist = statistics.EmpiricalDistribution(data)
@@ -304,9 +328,9 @@ class SurvivalAnalysisEvaluator(Evaluator):
                     logger.debug(
                         f"args_metric: predictions in build args: {predictions} and {references} for metric key {key}"
                     )
-                    return metric.compute(predictions=predictions, references=references)[
-                        key
-                    ]
+                    return metric.compute(
+                        predictions=predictions, references=references
+                    )[key]
 
                 return args_metric
 
@@ -323,7 +347,7 @@ class SurvivalAnalysisEvaluator(Evaluator):
                 except Exception as e:
                     logger.error(f"Error computing point estimate for {key}: {e}")
                     theta_hat_dict[key] = 0.5  # Default value
-                    
+
             try:
                 bootstrap_dict = statistics.boot_interval(
                     dist,
@@ -339,45 +363,47 @@ class SurvivalAnalysisEvaluator(Evaluator):
             except Exception as e:
                 logger.error(f"Error in bootstrapping: {e}")
                 # Return default confidence intervals
-                return self._create_default_confidence_intervals(metric_keys, theta_hat_dict)
-                
+                return self._create_default_confidence_intervals(
+                    metric_keys, theta_hat_dict
+                )
+
         except Exception as e:
             logger.error(f"Error setting up bootstrapping: {e}")
             # Return default confidence intervals
             return self._create_default_confidence_intervals(metric_keys)
-            
+
     def _create_default_confidence_intervals(self, metric_keys, theta_hat_dict=None):
         """
         Create default confidence intervals when bootstrapping can't be performed.
-        
+
         Parameters:
         -----------
         metric_keys : list of str
             The metric keys to create confidence intervals for
         theta_hat_dict : dict, optional
             Point estimates if available
-            
+
         Returns:
         --------
         dict
             Dictionary with confidence intervals for each metric key
         """
         bootstrap_dict = {}
-        
+
         for key in metric_keys:
             # Use provided point estimate or default to 0.5
             point_estimate = 0.5
             if theta_hat_dict and key in theta_hat_dict:
                 point_estimate = theta_hat_dict[key]
-                
+
             # Create entry with point estimate and confidence interval of ±0.1
             bootstrap_dict[key] = {
                 "theta_hat": point_estimate,
                 "alpha": 0.025,  # Standard for 95% CI
                 "interval": [
                     max(0.0, point_estimate - 0.1),  # Lower bound (clamp to 0)
-                    min(1.0, point_estimate + 0.1)   # Upper bound (clamp to 1)
-                ]
+                    min(1.0, point_estimate + 0.1),  # Upper bound (clamp to 1)
+                ],
             }
-            
+
         return bootstrap_dict
