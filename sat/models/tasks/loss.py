@@ -434,6 +434,7 @@ class QuantileLoss(Loss):
         self,
         quantiles: List[float],
         training_set: str,
+        num_events: int,
         importance_sample_weights: str = None,
         l_type: str = "uncensored",
     ):
@@ -533,6 +534,7 @@ class CrossEntropyLoss(Loss):
         self,
         event_time_thr: float,
         training_set: str,
+        num_events: int,
         l_type: str = "margin",
         importance_sample_weights: str = None,
     ):
