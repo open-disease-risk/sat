@@ -7,7 +7,6 @@
 defaults:
  - optional local: cpu
  - override /callbacks: null
- - override /aml: cpu
 
 # sets level of all command line loggers to 'DEBUG'
 # https://hydra.cc/docs/tutorials/basic/running_your_app/logging/
