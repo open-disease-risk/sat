@@ -23,70 +23,52 @@ class SurvivalEvaluationModule(EvaluationModule):
         logger = logging.get_default_logger()
 
         try:
-            # Ensure predictions is a dictionary
+            logger.debug(f"type of predictions: {type(predictions)}")
+            # predictions can be a numpy array
+            if hasattr(predictions, "shape"):
+                logger.info(
+                    f"Predictions already has shape {predictions.shape}, returning as is"
+                )
+                return predictions
+
+            # or predictions can be a dictionary
             if not isinstance(predictions, dict):
-                logger.warning(f"Predictions is not a dictionary: {type(predictions)}")
-                # If it's not a dictionary, we can't process it
-                if hasattr(predictions, "shape"):
-                    logger.warning(
-                        f"Predictions already has shape {predictions.shape}, returning as is"
-                    )
-                    return predictions
-                return np.array([])
+                raise ValueError(
+                    f"Expected dictionary or numpy array, got {type(predictions)}"
+                )
 
             # Check if required keys exist
             required_keys = ["hazard", "risk", "survival"]
             for key in required_keys:
                 if key not in predictions:
-                    logger.warning(f"Missing required key in predictions: {key}")
-                    return np.array([])
+                    raise ValueError(f"Missing required key in predictions: {key}")
 
-            # Ensure hazard predictions have the right format
+            # Ensure predictions have the right format
             hazard_pred = predictions["hazard"]
-            if hazard_pred.ndim < 3:
-                logger.warning(
-                    f"Hazard predictions have wrong dimensions: {hazard_pred.shape}"
-                )
-                return np.array([])
-
-            # Get the shape to use for slicing
-            if hazard_pred.shape[2] <= 1:
-                logger.warning(f"Not enough time points in hazard: {hazard_pred.shape}")
-                # Cannot slice with [:, :, 1:] if there's only one or zero time point
-                return hazard_pred  # Return as is without slicing
-
-            # Get dimensions for allocation
-            batch_size = hazard_pred.shape[0]
-            event_size = hazard_pred.shape[1]
-            # For survival analysis we skip the first time point (index 0)
-            duration_cuts = hazard_pred.shape[2] - 1
-
-            # Get the other predictions
             risk_pred = predictions["risk"]
             survival_pred = predictions["survival"]
-
-            # Verify shapes match before slicing
-            if (
-                risk_pred.shape != hazard_pred.shape
-                or survival_pred.shape != hazard_pred.shape
+            if not (
+                hazard_pred.shape == risk_pred.shape
+                or hazard_pred.shape == survival_pred.shape
+                or hazard_pred.ndim < 3
             ):
-                logger.warning(
+                raise ValueError(
                     f"Shape mismatch: hazard {hazard_pred.shape}, "
                     f"risk {risk_pred.shape}, survival {survival_pred.shape}"
                 )
 
-                # Create arrays with compatible shapes for any mismatched dimensions
-                if risk_pred.shape != hazard_pred.shape:
-                    logger.warning("Reshaping risk predictions to match hazard")
-                    risk_pred = np.zeros_like(hazard_pred)
-
-                if survival_pred.shape != hazard_pred.shape:
-                    logger.warning("Reshaping survival predictions to match hazard")
-                    survival_pred = np.zeros_like(hazard_pred)
-
             # Pre-allocate the result array - more efficient than stack+transpose
+            batch_size = hazard_pred.shape[0]
+            event_size = hazard_pred.shape[1]
+            duration_cuts = hazard_pred.shape[2]
+
+            if duration_cuts <= 1:
+                error_msg = f"Duration cuts must be greater than 1, got {duration_cuts}"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+
             result = np.zeros(
-                (batch_size, 3, event_size, duration_cuts), dtype=np.float32
+                (batch_size, 3, event_size, duration_cuts - 1), dtype=np.float32
             )
 
             # Slice safely
@@ -103,6 +85,7 @@ class SurvivalEvaluationModule(EvaluationModule):
 
         except Exception as e:
             logger.error(f"Error in survival_predictions: {e}")
+            logger.debug(f"Got predictions: {predictions}")
             # Return empty array if we encounter any exception
             return np.array([])
 

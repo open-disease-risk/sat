@@ -19,6 +19,7 @@ from evaluate.utils.file_utils import add_end_docstrings, add_start_docstrings
 from numbers import Number
 
 from typing import Any, Callable, Dict, Optional, Union, List
+from transformers.utils.generic import ModelOutput
 from typing_extensions import Literal
 
 from sat.utils import logging, statistics
@@ -70,102 +71,67 @@ class SurvivalAnalysisEvaluator(Evaluator):
 
     def predictions_processor(self, predictions, label_mapping):
         """
-        Process predictions more efficiently by avoiding multiple nested stack operations.
-        Handle potential shape mismatches to prevent crashes due to recent NaN/gradient fixes.
+        Process a list of ModelOutput predictions efficiently.
+        Each prediction should contain hazard, risk, and survival probabilities.
+        
+        Args:
+            predictions: List of ModelOutput objects from the model
+            label_mapping: Optional mapping for labels (unused in survival analysis)
+            
+        Returns:
+            Dict containing processed numpy arrays of predictions
         """
-        # Get dimensions from first prediction to allocate memory efficiently
-        batch_size = len(predictions)
-        if batch_size == 0:
+        logger.debug(f"Processing {len(predictions)} predictions")
+        
+        if not predictions:
+            logger.debug("No predictions to process")
             return {"predictions": np.array([])}
-
-        # Make sure we can access the prediction structure
+            
+        # Get the first prediction to determine structure
+        sample = predictions[0]
+        if not isinstance(sample, ModelOutput):
+            logger.error(f"Expected ModelOutput object, got {type(sample)}")
+            return {"predictions": np.array([])}
+            
+        # Check required fields as attributes
+        required_fields = ["hazard", "risk", "survival"]
+        if not all(hasattr(sample, field) for field in required_fields):
+            logger.error(f"Missing required fields. Found: {[f for f in required_fields if hasattr(sample, f)]}")
+            return {"predictions": np.array([])}
+            
+        # Pre-allocate arrays for efficiency
+        batch_size = len(predictions)
+        # Get shapes from first sample tensors
+        hazard_shape = sample.hazard.shape if hasattr(sample.hazard, "shape") else None
+        if hazard_shape is None:
+            logger.error("Hazard tensor has no shape attribute")
+            return {"predictions": np.array([])}
+            
+        # Initialize arrays with correct shapes
+        # Shape should be (batch_size, num_events, time_points)
+        all_hazards = np.zeros((batch_size,) + hazard_shape[1:])
+        all_risks = np.zeros_like(all_hazards)
+        all_survivals = np.zeros_like(all_hazards)
+        
         try:
-            sample = predictions[0]
-
-            # Check if sample has the expected structure
-            if (
-                len(sample) < 4
-            ):  # We need at least 4 elements (the first element plus hazard, risk, survival)
-                logger.warning(
-                    f"Prediction sample has unexpected format with {len(sample)} elements"
-                )
-                return {"predictions": np.array([])}
-
-            num_vars = 3  # hazard, risk, survival
-
-            # Validate and get number of events and duration cuts
-            if not isinstance(sample[1], (list, tuple)) or len(sample[1]) == 0:
-                logger.warning("Hazard data (index 1) is empty or not a list")
-                return {"predictions": np.array([])}
-
-            num_events = len(sample[1])
-
-            # Validate event data structure
-            if not isinstance(sample[1][0], (list, tuple)) or len(sample[1][0]) == 0:
-                logger.warning("First event in hazard data is empty or not a list")
-                return {"predictions": np.array([])}
-
-            # Get the number of time points (duration cuts)
-            duration_cuts = len(sample[1][0])
-
-            # Pre-allocate output array with correct shape
-            result = np.zeros(
-                (batch_size, num_vars, num_events, duration_cuts), dtype=np.float32
-            )
-
-            # Fill the array directly without nested stacks, with careful validation
-            for b, instance in enumerate(predictions):
-                # Skip invalid instances
-                if len(instance) < 4:
-                    logger.warning(f"Skipping instance {b} with insufficient elements")
-                    continue
-
-                for v in range(num_vars):
-                    # Get the variable index (hazard at idx 1, risk at idx 2, survival at idx 3)
-                    var_idx = v + 1
-
-                    # Validate that the variable exists in this instance
-                    if var_idx >= len(instance) or not isinstance(
-                        instance[var_idx], (list, tuple)
-                    ):
-                        logger.warning(
-                            f"Invalid variable at index {var_idx} in instance {b}"
-                        )
-                        continue
-
-                    var_data = instance[var_idx]
-
-                    # Process each event
-                    for e in range(min(num_events, len(var_data))):
-                        # Validate the event data
-                        if (
-                            not isinstance(var_data[e], (list, tuple))
-                            or len(var_data[e]) == 0
-                        ):
-                            logger.warning(
-                                f"Invalid event data at {e} for variable {var_idx} in instance {b}"
-                            )
-                            continue
-
-                        event_data = var_data[e]
-
-                        # Handle potential size mismatches
-                        if len(event_data) == duration_cuts:
-                            # Direct assignment when sizes match
-                            result[b, v, e, :] = event_data
-                        elif len(event_data) > duration_cuts:
-                            # Truncate if event data is longer
-                            result[b, v, e, :] = event_data[:duration_cuts]
-                        else:
-                            # Pad with zeros if event data is shorter
-                            result[b, v, e, : len(event_data)] = event_data
-
-            # If there's only one duration cut, we can squeeze that dimension
-            if duration_cuts == 1:
-                result = result.squeeze(axis=3)
-
-            return {"predictions": result}
-
+            # Fill arrays efficiently using tensor operations
+            for i, pred in enumerate(predictions):
+                # Convert tensors to numpy arrays if needed
+                hazard = pred.hazard.detach().cpu().numpy() if hasattr(pred.hazard, "detach") else pred.hazard
+                risk = pred.risk.detach().cpu().numpy() if hasattr(pred.risk, "detach") else pred.risk
+                survival = pred.survival.detach().cpu().numpy() if hasattr(pred.survival, "detach") else pred.survival
+                
+                all_hazards[i] = hazard
+                all_risks[i] = risk
+                all_survivals[i] = survival
+            
+            # Stack along a new axis to combine all predictions
+            # Final shape: (batch_size, 3, num_events, time_points)
+            stacked_predictions = np.stack([all_hazards, all_risks, all_survivals], axis=1)
+            
+            logger.debug(f"Final predictions shape: {stacked_predictions.shape}")
+            return {"predictions": stacked_predictions}
+            
         except Exception as e:
             logger.error(f"Error processing predictions: {e}")
             return {"predictions": np.array([])}
