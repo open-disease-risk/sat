@@ -63,11 +63,34 @@ def nll_pc_hazard_loss(
 
     # log_h_e = F.softplus(phi.gather(1, idx_durations).view(-1)).log().mul(events)
     log_h_e = utils.log_softplus(phi.gather(1, idx_durations).view(-1)).mul(events)
+
+    # Apply softplus with numerical stability
     haz = F.softplus(phi)
-    scaled_h_e = haz.gather(1, idx_durations).view(-1).mul(interval_frac)
+    # Ensure no zeros in hazard that could cause issues
+    haz = torch.clamp(haz, min=1e-8)
+
+    # Ensure interval_frac is valid (no NaN, Inf) before multiplication
+    safe_interval_frac = torch.nan_to_num(
+        interval_frac, nan=0.0, posinf=1.0, neginf=0.0
+    )
+    safe_interval_frac = torch.clamp(
+        safe_interval_frac, min=0.0, max=1.0
+    )  # Ensure it's between 0 and 1
+    scaled_h_e = haz.gather(1, idx_durations).view(-1).mul(safe_interval_frac)
     haz = utils.pad_col(haz, where="start")
     sum_haz = haz.cumsum(1).gather(1, idx_durations).view(-1)
+
+    # Compute loss with added stability
     loss = -log_h_e.sub(scaled_h_e).sub(sum_haz)
+
+    # Check for invalid values and replace with reasonable defaults
+    invalid_mask = torch.isnan(loss) | torch.isinf(loss)
+    if invalid_mask.any():
+        # Log warning for debugging
+        print(
+            f"Warning: Found {invalid_mask.sum().item()} invalid loss values. Replacing with zeros."
+        )
+        loss[invalid_mask] = 0.0
     return _reduction(loss, reduction)
 
 

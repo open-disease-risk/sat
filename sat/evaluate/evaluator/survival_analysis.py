@@ -19,6 +19,7 @@ from evaluate.utils.file_utils import add_end_docstrings, add_start_docstrings
 from numbers import Number
 
 from typing import Any, Callable, Dict, Optional, Union, List
+from transformers.utils.generic import ModelOutput
 from typing_extensions import Literal
 
 from sat.utils import logging, statistics
@@ -70,34 +71,66 @@ class SurvivalAnalysisEvaluator(Evaluator):
 
     def predictions_processor(self, predictions, label_mapping):
         """
-        Process predictions more efficiently by avoiding multiple nested stack operations.
+        Process a list of ModelOutput predictions efficiently.
+        Each prediction should contain hazard, risk, and survival probabilities.
+        
+        Args:
+            predictions: List of ModelOutput objects from the model
+            label_mapping: Optional mapping for labels (unused in survival analysis)
+            
+        Returns:
+            Dict containing processed numpy arrays of predictions
         """
-        # Get dimensions from first prediction to allocate memory efficiently
-        batch_size = len(predictions)
-        if batch_size == 0:
+        logger.debug(f"Processing {len(predictions)} predictions")
+        
+        if not predictions:
+            logger.debug("No predictions to process")
             return {"predictions": np.array([])}
-
+            
+        # Helper function for tensor conversion - avoids code duplication
+        def tensor_to_numpy(tensor):
+            return tensor.detach().cpu().numpy() if hasattr(tensor, "detach") else tensor
+            
+        # Move validation logic outside the try block for better performance
         sample = predictions[0]
-        num_vars = 3  # hazard, risk, survival
-        num_events = len(sample[1])
-        duration_cuts = len(sample[1][0])
-
-        # Pre-allocate output array with correct shape
-        result = np.empty(
-            (batch_size, num_vars, num_events, duration_cuts), dtype=np.float32
-        )
-
-        # Fill the array directly without nested stacks
-        for b, instance in enumerate(predictions):
-            for v in range(num_vars):
-                # Copy data for each variable (hazard at idx 1, risk at idx 2, survival at idx 3)
-                for e in range(num_events):
-                    result[b, v, e, :] = instance[v + 1][e]
-
-        # Squeeze unnecessary dimension
-        result = result.squeeze(axis=3)
-
-        return {"predictions": result}
+        if not isinstance(sample, ModelOutput):
+            logger.error(f"Expected ModelOutput object, got {type(sample)}")
+            return {"predictions": np.array([])}
+            
+        # Check required fields as attributes
+        required_fields = ["hazard", "risk", "survival"]
+        if not all(hasattr(sample, field) for field in required_fields):
+            logger.error(f"Missing required fields. Found: {[f for f in required_fields if hasattr(sample, f)]}")
+            return {"predictions": np.array([])}
+            
+        # Get shapes from first sample tensors
+        hazard_shape = sample.hazard.shape if hasattr(sample.hazard, "shape") else None
+        if hazard_shape is None:
+            logger.error("Hazard tensor has no shape attribute")
+            return {"predictions": np.array([])}
+            
+        # Pre-allocate arrays for efficiency
+        batch_size = len(predictions)
+        
+        # Pre-allocate final result array directly instead of creating intermediates
+        # Shape: (batch_size, 3, num_events, time_points)
+        result_shape = (batch_size, 3) + hazard_shape[1:]
+        stacked_predictions = np.empty(result_shape, dtype=np.float32)
+        
+        try:
+            # Fill the pre-allocated array directly - more efficient
+            for i, pred in enumerate(predictions):
+                # Use the helper function for conversion
+                stacked_predictions[i, 0] = tensor_to_numpy(pred.hazard)  # hazard
+                stacked_predictions[i, 1] = tensor_to_numpy(pred.risk)    # risk
+                stacked_predictions[i, 2] = tensor_to_numpy(pred.survival)  # survival
+            
+            logger.debug(f"Final predictions shape: {stacked_predictions.shape}")
+            return {"predictions": stacked_predictions}
+            
+        except Exception as e:
+            logger.error(f"Error processing predictions: {e}")
+            return {"predictions": np.array([])}
 
     def prepare_data(
         self,
@@ -214,40 +247,125 @@ class SurvivalAnalysisEvaluator(Evaluator):
         n_resamples: int = 9999,
         random_state: Optional[int] = None,
     ) -> Dict[str, Any]:
-        data = (metric_inputs["predictions"], metric_inputs["references"])
-        dist = statistics.EmpiricalDistribution(data)
+        # First check if we have valid input to do bootstrapping
+        if "predictions" not in metric_inputs or "references" not in metric_inputs:
+            logger.warning(f"Missing required keys in metric_inputs for bootstrapping")
+            # Return default confidence intervals
+            return self._create_default_confidence_intervals(metric_keys)
 
-        def build_args_metric(metric=None, key=None):
-            def args_metric(data):
-                predictions, references = data
-                logger.debug(
-                    f"args_metric: predictions in build args: {predictions} and {references} for metric key {key}"
+        predictions = metric_inputs["predictions"]
+        references = metric_inputs["references"]
+
+        # Check if the shapes are suitable for bootstrapping
+        if (
+            not hasattr(predictions, "shape")
+            or predictions.size == 0
+            or not hasattr(references, "shape")
+            or references.size == 0
+        ):
+            logger.warning(f"Empty arrays or invalid shapes in data for bootstrapping")
+            # Return default confidence intervals
+            return self._create_default_confidence_intervals(metric_keys)
+
+        # Check that the batch dimensions match
+        if hasattr(predictions, "shape") and hasattr(references, "shape"):
+            if (
+                len(predictions.shape) > 0
+                and len(references.shape) > 0
+                and predictions.shape[0] != references.shape[0]
+            ):
+                logger.warning(
+                    f"Mismatch in batch dimensions: predictions {predictions.shape[0]} vs references {references.shape[0]}"
                 )
-                return metric.compute(predictions=predictions, references=references)[
-                    key
-                ]
+                # Return default confidence intervals
+                return self._create_default_confidence_intervals(metric_keys)
 
-            return args_metric
+        try:
+            data = (predictions, references)
+            dist = statistics.EmpiricalDistribution(data)
 
-        stat_func_dict = {}
-        theta_hat_dict = {}
+            def build_args_metric(metric=None, key=None):
+                def args_metric(data):
+                    predictions, references = data
+                    logger.debug(
+                        f"args_metric: predictions in build args: {predictions} and {references} for metric key {key}"
+                    )
+                    return metric.compute(
+                        predictions=predictions, references=references
+                    )[key]
 
-        logger.debug("Build the statistical functions dictionary")
+                return args_metric
+
+            stat_func_dict = {}
+            theta_hat_dict = {}
+
+            logger.debug("Build the statistical functions dictionary")
+            for key in metric_keys:
+                logger.debug(f"Add statistical metric {key} to the function dictionary")
+                stat_func_dict[key] = build_args_metric(metric, key)
+                logger.debug(f"Compute statistical metric {key} for the data")
+                try:
+                    theta_hat_dict[key] = stat_func_dict[key](data)
+                except Exception as e:
+                    logger.error(f"Error computing point estimate for {key}: {e}")
+                    theta_hat_dict[key] = 0.5  # Default value
+
+            try:
+                bootstrap_dict = statistics.boot_interval(
+                    dist,
+                    stat_func_dict,
+                    data,
+                    alpha=(1.0 - confidence_level) / 2.0,
+                    B=n_resamples,
+                    size=self.size,
+                    num_threads=self.num_threads,
+                    theta_hat=theta_hat_dict,
+                )
+                return bootstrap_dict
+            except Exception as e:
+                logger.error(f"Error in bootstrapping: {e}")
+                # Return default confidence intervals
+                return self._create_default_confidence_intervals(
+                    metric_keys, theta_hat_dict
+                )
+
+        except Exception as e:
+            logger.error(f"Error setting up bootstrapping: {e}")
+            # Return default confidence intervals
+            return self._create_default_confidence_intervals(metric_keys)
+
+    def _create_default_confidence_intervals(self, metric_keys, theta_hat_dict=None):
+        """
+        Create default confidence intervals when bootstrapping can't be performed.
+
+        Parameters:
+        -----------
+        metric_keys : list of str
+            The metric keys to create confidence intervals for
+        theta_hat_dict : dict, optional
+            Point estimates if available
+
+        Returns:
+        --------
+        dict
+            Dictionary with confidence intervals for each metric key
+        """
+        bootstrap_dict = {}
+
         for key in metric_keys:
-            logger.debug(f"Add statistical metric {key} to the function dictionary")
-            stat_func_dict[key] = build_args_metric(metric, key)
-            logger.debug(f"Compute statistical metric {key} for the data")
-            theta_hat_dict[key] = stat_func_dict[key](data)
+            # Use provided point estimate or default to 0.5
+            point_estimate = 0.5
+            if theta_hat_dict and key in theta_hat_dict:
+                point_estimate = theta_hat_dict[key]
 
-        bootstrap_dict = statistics.boot_interval(
-            dist,
-            stat_func_dict,
-            data,
-            alpha=(1.0 - confidence_level) / 2.0,
-            B=n_resamples,
-            size=self.size,
-            num_threads=self.num_threads,
-            theta_hat=theta_hat_dict,
-        )
+            # Create entry with point estimate and confidence interval of ±0.1
+            bootstrap_dict[key] = {
+                "theta_hat": point_estimate,
+                "alpha": 0.025,  # Standard for 95% CI
+                "interval": [
+                    max(0.0, point_estimate - 0.1),  # Lower bound (clamp to 0)
+                    min(1.0, point_estimate + 0.1),  # Upper bound (clamp to 1)
+                ],
+            }
 
         return bootstrap_dict

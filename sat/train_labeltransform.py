@@ -86,7 +86,6 @@ def _train_labeltransform(cfg: DictConfig) -> None:
 
     # Computation of importance sampling weights
     logger.debug("Compute importance sampling weights")
-    imp_sample = np.zeros(cfg.data.num_events + 1)
     events = np.array(shuffled_dataset[cfg.data.event_col])
     events = events[:, np.newaxis] if events.ndim == 1 else events
     censored = (~events.any(1)).reshape(-1, 1)

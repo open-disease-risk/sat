@@ -7,7 +7,6 @@ from transformers import AutoConfig, AutoModel
 
 import sat.models.tasks.config as config
 import sat.models.tasks.heads as heads
-import sat.models.tasks.pretrain_models as pretrain_models
 
 import sat.models.bert.configuration_bert as sat_bert_config
 import sat.models.bert.modeling_bert as sat_bert_model
@@ -19,8 +18,7 @@ AutoConfig.register(
 )
 AutoModel.register(sat_bert_config.NumericBertConfig, sat_bert_model.NumericBertModel)
 
-AutoConfig.register(config.BertConfig.model_type, config.BertConfig)
-AutoModel.register(config.BertConfig, pretrain_models.BertModel)
+AutoConfig.register(config.SatBertConfig.model_type, config.SatBertConfig)
 
 AutoConfig.register(config.SurvivalConfig.model_type, config.SurvivalConfig)
 AutoModel.register(config.SurvivalConfig, heads.SurvivalTaskHead)

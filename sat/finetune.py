@@ -7,7 +7,6 @@ import hydra
 import json
 import mlflow
 import os
-import sys
 import torch
 
 import pandas as pd
@@ -130,9 +129,6 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
                 "padding": cfg.tokenizers.padding_args.padding,
                 "pad_to_multiple_of": cfg.tokenizers.padding_args.pad_to_multiple_of,
             },
-            cache_file_name=(
-                f"{cache_dir}/tokenized_dataset.arrow" if cache_dir else None
-            ),
             num_proc=4,  # Parallel processing for tokenization
         )
 
@@ -150,9 +146,6 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
         mapped_labels_dataset = tokenized_dataset.map(
             map_label,
             batched=True,
-            cache_file_name=(
-                f"{labels_cache_dir}/mapped_labels.arrow" if labels_cache_dir else None
-            ),
             num_proc=4,  # Parallel processing for label mapping
         )
 
@@ -177,11 +170,6 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
                     "padding_direction": cfg.tokenizers.padding_args.direction,
                     "token_emb": cfg.token_emb,
                 },
-                cache_file_name=(
-                    f"{numerics_cache_dir}/numerics_processed.arrow"
-                    if numerics_cache_dir
-                    else None
-                ),
                 num_proc=4,  # Parallel processing for numerics padding/truncation
             )
 
@@ -240,15 +228,21 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
 
     data_collator = collator.DefaultSATDataCollator(device=device_str)
 
-    trainer = Trainer(
-        model=model,
-        args=args,
-        train_dataset=mapped_labels_dataset["train"],
-        eval_dataset=mapped_labels_dataset["valid"],
-        data_collator=data_collator,
-        compute_metrics=compute_metrics,
-        callbacks=callbacks,
-    )
+    # Using the standard setup without custom accelerator since we downgraded accelerate to be compatible
+
+    # Configure trainer kwargs
+    trainer_kwargs = {
+        "model": model,
+        "args": args,
+        "train_dataset": mapped_labels_dataset["train"],
+        "eval_dataset": mapped_labels_dataset["valid"],
+        "data_collator": data_collator,
+        "compute_metrics": compute_metrics,
+        "callbacks": callbacks,
+    }
+
+    # Create trainer
+    trainer = Trainer(**trainer_kwargs)
 
     logger.info("Start training")
     result = trainer.train()

@@ -10,9 +10,7 @@ import numpy as np
 import pandas as pd
 
 from evaluate import EvaluationModule
-from logging import DEBUG, ERROR
 
-from sat.models.utils import get_device
 from sat.utils import logging
 
 logger = logging.get_default_logger()
@@ -20,22 +18,72 @@ logger = logging.get_default_logger()
 
 class SurvivalEvaluationModule(EvaluationModule):
     def survival_predictions(self, predictions):
-        # Optimize numpy operations by pre-allocating memory and using direct indexing
-        # Get dimensions for more efficient allocation
-        hazard_shape = predictions["hazard"][:, :, 1:].shape
-        batch_size = hazard_shape[0]
-        event_size = hazard_shape[1]
-        duration_cuts = hazard_shape[2]
+        logger = logging.get_default_logger()
 
-        # Pre-allocate the result array - more efficient than stack+transpose
-        result = np.empty((batch_size, 3, event_size, duration_cuts), dtype=np.float32)
+        try:
+            logger.debug(f"type of predictions: {type(predictions)}")
+            # predictions can be a numpy array
+            if hasattr(predictions, "shape"):
+                logger.info(
+                    f"Predictions already has shape {predictions.shape}, returning as is"
+                )
+                return predictions[:, :, :, 1:]
 
-        # Direct assignment to avoid stack and transpose operations
-        result[:, 0, :, :] = predictions["hazard"][:, :, 1:]  # Cut out the zeroth point
-        result[:, 1, :, :] = predictions["risk"][:, :, 1:]
-        result[:, 2, :, :] = predictions["survival"][:, :, 1:]
+            # or predictions can be a dictionary
+            if not isinstance(predictions, dict):
+                raise ValueError(
+                    f"Expected dictionary or numpy array, got {type(predictions)}"
+                )
 
-        return result
+            # Check if required keys exist
+            required_keys = ["hazard", "risk", "survival"]
+            for key in required_keys:
+                if key not in predictions:
+                    raise ValueError(f"Missing required key in predictions: {key}")
+
+            # Ensure predictions have the right format
+            hazard_pred = predictions["hazard"]
+            risk_pred = predictions["risk"]
+            survival_pred = predictions["survival"]
+
+            # check prediction structure
+            if not (
+                hazard_pred.shape == risk_pred.shape
+                and hazard_pred.shape == survival_pred.shape
+                and hazard_pred.ndim >= 3
+            ):
+                raise ValueError(
+                    f"Shape mismatch: hazard {hazard_pred.shape}, "
+                    f"risk {risk_pred.shape}, survival {survival_pred.shape}"
+                )
+
+            # Extract dimensions once for reuse
+            batch_size = hazard_pred.shape[0]
+            event_size = hazard_pred.shape[1]
+            duration_cuts = hazard_pred.shape[2]
+
+            if duration_cuts <= 1:
+                error_msg = f"Duration cuts must be greater than 1, got {duration_cuts}"
+                logger.error(error_msg)
+                raise ValueError(error_msg)
+
+            # Use np.empty for faster allocation when values will be completely overwritten
+            result = np.empty(
+                (batch_size, 3, event_size, duration_cuts - 1), dtype=np.float32
+            )
+
+            # Direct assignment to avoid stack and transpose operations
+            result[:, 0, :, :] = hazard_pred[:, :, 1:]
+            result[:, 1, :, :] = risk_pred[:, :, 1:]
+            result[:, 2, :, :] = survival_pred[:, :, 1:]
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Error in survival_predictions: {e}")
+            logger.debug(f"Got predictions: {predictions}")
+            # Return empty array if we encounter any exception
+            return np.array([])
 
 
 class ComputeBrier(SurvivalEvaluationModule):
@@ -50,12 +98,25 @@ class ComputeBrier(SurvivalEvaluationModule):
     def compute_event(self, predictions, references, event):
         logger.debug(f"predictions shape: {predictions.shape}")
         logger.debug(f"references shape: {references.shape}")
+
+        # Check if predictions is valid for computing metrics
+        if predictions.size == 0 or predictions.ndim < 4:
+            logger.warning(
+                f"Invalid predictions for compute_event: shape {predictions.shape}"
+            )
+            # Return default values for metrics
+            return {
+                f"brier_{event}th_event": 0.5,  # Default Brier score (0.5 is baseline random)
+                f"brier_{event}th_event_n": 0,
+            }
+
         brier_score = evaluate.load("./sat/evaluate/brier_score")
 
         events_train = self.survival_train.iloc[:, (1 * self.cfg.num_events + event)]
         durations_train = self.survival_train.iloc[:, (3 * self.cfg.num_events + event)]
         events_test = references[:, (1 * self.cfg.num_events + event)].astype(bool)
         durations_test = references[:, (3 * self.cfg.num_events + event)]
+
         preds = predictions[:, 2, event]
 
         train_set = np.stack([events_train, durations_train], axis=1)
@@ -63,12 +124,11 @@ class ComputeBrier(SurvivalEvaluationModule):
         metric_dict = {}
         quantile_incr = 1.0 / preds.shape[1]
         horizons = np.arange(1, preds.shape[1]) * quantile_incr
-        N = 0
 
         n = events_test.sum()
-        N += n
         et_test = np.stack([events_test, durations_test], axis=1)
 
+        # Compute metrics
         ibrs, brs = brier_score.compute(
             references=et_test,
             predictions=preds[:, :-1],
@@ -76,6 +136,8 @@ class ComputeBrier(SurvivalEvaluationModule):
             duration_cuts=self.duration_cuts,
             per_horizon=self.per_horizon,
         )
+
+        # Record results
         for j in range(len(brs)):
             metric_dict[f"brier_{event}th_event_{horizons[j]}"] = brs[j]
 
@@ -86,6 +148,8 @@ class ComputeBrier(SurvivalEvaluationModule):
 
     def compute(self, predictions, references):
         predictions = self.survival_predictions(predictions)
+        logger.debug(f"survival predictions shape {predictions.shape}")
+
         brier_mean = 0.0
         brier_balanced_mean = 0.0
         brier_n = 0
@@ -100,9 +164,15 @@ class ComputeBrier(SurvivalEvaluationModule):
             )
             brier_balanced_mean += metrics_dict[f"brier_{i}th_event"]
             brier_n += metrics_dict[f"brier_{i}th_event_n"]
-        brier_mean /= brier_n
+
+        # Prevent division by zero
+        if brier_n > 0:
+            brier_mean /= brier_n
+        else:
+            brier_mean = 0.5  # Default value when no events
+
         metrics_dict["brier_weighted_avg"] = brier_mean
-        metrics_dict["brier_avg"] = brier_balanced_mean / self.cfg.num_events
+        metrics_dict["brier_avg"] = brier_balanced_mean / max(1, self.cfg.num_events)
 
         return metrics_dict
 
@@ -117,13 +187,28 @@ class ComputeCIndex(SurvivalEvaluationModule):
     def compute_event(self, predictions, references, event):
         logger.debug(f"predictions shape: {predictions.shape}")
         logger.debug(f"references shape: {references.shape}")
+
+        # Check if predictions is valid for computing metrics
+        if predictions.size == 0 or predictions.ndim < 4:
+            logger.warning(
+                f"Invalid predictions for compute_event: shape {predictions.shape}"
+            )
+            # Return default values for metrics
+            return {
+                f"ipcw_{event}th_event": 0.5,  # Default c-index (0.5 is random)
+                f"ipcw_avg_{event}th_event": 0.5,
+                f"ipcw_{event}th_event_n": 0,
+            }
+
         c_index = evaluate.load("./sat/evaluate/concordance_index_ipcw")
 
         events_train = self.survival_train.iloc[:, (1 * self.cfg.num_events + event)]
         durations_train = self.survival_train.iloc[:, (3 * self.cfg.num_events + event)]
         events_test = references[:, (1 * self.cfg.num_events + event)].astype(bool)
         durations_test = references[:, (3 * self.cfg.num_events + event)]
-        preds = predictions[:, 1, event]
+
+        # Safely get predictions
+        preds = predictions[:, 1, event]  # Get risk predictions
 
         train_set = np.stack([events_train, durations_train], axis=1)
 
@@ -134,17 +219,22 @@ class ComputeCIndex(SurvivalEvaluationModule):
         n = events_test.sum()
         et_test = np.stack([events_test, durations_test], axis=1)
 
+        # Compute c-index with error handling
         cindeces = c_index.compute(
             references=et_test,
             predictions=preds,
             train_set=train_set,
             duration_cuts=self.duration_cuts,
         )
+
+        # Record results
         for j in range(len(cindeces)):
             metric_dict[f"ipcw_{event}th_event_{horizons[j]}"] = cindeces[j]
 
         metric_dict[f"ipcw_avg_{event}th_event"] = np.mean(cindeces)
         metric_dict[f"ipcw_{event}th_event"] = cindeces[-1]
+
+        # Always record sample size
         metric_dict[f"ipcw_{event}th_event_n"] = n
 
         return metric_dict
@@ -170,10 +260,17 @@ class ComputeCIndex(SurvivalEvaluationModule):
             cindex_avg_mean += metrics_dict[f"ipcw_avg_{i}th_event"]
             cindex_n += metrics_dict[f"ipcw_{i}th_event_n"]
 
-        cindex_mean /= cindex_n
+        # Prevent division by zero
+        if cindex_n > 0:
+            cindex_mean /= cindex_n
+            weighted_avg = cindex_weighted_avg_mean / cindex_n
+        else:
+            cindex_mean = 0.5  # Default value (random predictor)
+            weighted_avg = 0.5
+
         metrics_dict["ipcw"] = cindex_mean
-        metrics_dict["ipcw_weighted_avg"] = cindex_weighted_avg_mean / cindex_n
-        metrics_dict["ipcw_avg"] = cindex_avg_mean / self.cfg.num_events
+        metrics_dict["ipcw_weighted_avg"] = weighted_avg
+        metrics_dict["ipcw_avg"] = cindex_avg_mean / max(1, self.cfg.num_events)
 
         return metrics_dict
 

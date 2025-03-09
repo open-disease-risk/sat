@@ -7,7 +7,6 @@
 defaults:
  - optional local: cpu
  - override /callbacks: null
- - override /aml: cpu
 
 # sets level of all command line loggers to 'DEBUG'
 # https://hydra.cc/docs/tutorials/basic/running_your_app/logging/
@@ -15,9 +14,15 @@ hydra:
   job_logging:
     root:
       level: DEBUG
+    formatters:
+      colorlog:
+        format: '[%(cyan)s%(asctime)s%(reset)s][%(purple)s%(name)s%(reset)s][%(log_color)s%(levelname)s%(reset)s] - %(filename)s:%(lineno)d - %(message)s'
   hydra_logging:
     root:
       level: DEBUG
+    formatters:
+      colorlog:
+        format: '[%(cyan)s%(asctime)s%(reset)s][%(purple)s%(name)s%(reset)s][%(log_color)s%(levelname)s%(reset)s] - %(filename)s:%(lineno)d - %(message)s'
 
   # use this to also set hydra loggers to 'DEBUG'
   # verbose: True
