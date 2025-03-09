@@ -18,7 +18,15 @@ logger = logging.get_default_logger()
 
 class SurvivalEvaluationModule(EvaluationModule):
     def survival_predictions(self, predictions):
-        logger = logging.get_default_logger()
+        """Process prediction data efficiently for survival analysis.
+        
+        Args:
+            predictions: Can be a numpy array, PyTorch tensor, or dictionary
+                         containing 'hazard', 'risk', and 'survival' keys.
+                         
+        Returns:
+            Processed prediction tensor with shape (batch_size, 3, event_size, duration_cuts-1)
+        """
 
         try:
             logger.debug(f"type of predictions: {type(predictions)}")
@@ -56,29 +64,29 @@ class SurvivalEvaluationModule(EvaluationModule):
                     f"Shape mismatch: hazard {hazard_pred.shape}, "
                     f"risk {risk_pred.shape}, survival {survival_pred.shape}"
                 )
-
+            
             # Extract dimensions once for reuse
             batch_size = hazard_pred.shape[0]
             event_size = hazard_pred.shape[1]
             duration_cuts = hazard_pred.shape[2]
-
+            
             if duration_cuts <= 1:
                 error_msg = f"Duration cuts must be greater than 1, got {duration_cuts}"
                 logger.error(error_msg)
                 raise ValueError(error_msg)
-
+            
             # Use np.empty for faster allocation when values will be completely overwritten
             result = np.empty(
                 (batch_size, 3, event_size, duration_cuts - 1), dtype=np.float32
             )
-
+            
             # Direct assignment to avoid stack and transpose operations
             result[:, 0, :, :] = hazard_pred[:, :, 1:]
             result[:, 1, :, :] = risk_pred[:, :, 1:]
             result[:, 2, :, :] = survival_pred[:, :, 1:]
-
+            
             return result
-
+        
         except Exception as e:
             logger.error(f"Error in survival_predictions: {e}")
             logger.debug(f"Got predictions: {predictions}")
