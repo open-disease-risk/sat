@@ -87,7 +87,11 @@ class SurvivalAnalysisEvaluator(Evaluator):
             logger.debug("No predictions to process")
             return {"predictions": np.array([])}
             
-        # Get the first prediction to determine structure
+        # Helper function for tensor conversion - avoids code duplication
+        def tensor_to_numpy(tensor):
+            return tensor.detach().cpu().numpy() if hasattr(tensor, "detach") else tensor
+            
+        # Move validation logic outside the try block for better performance
         sample = predictions[0]
         if not isinstance(sample, ModelOutput):
             logger.error(f"Expected ModelOutput object, got {type(sample)}")
@@ -99,35 +103,27 @@ class SurvivalAnalysisEvaluator(Evaluator):
             logger.error(f"Missing required fields. Found: {[f for f in required_fields if hasattr(sample, f)]}")
             return {"predictions": np.array([])}
             
-        # Pre-allocate arrays for efficiency
-        batch_size = len(predictions)
         # Get shapes from first sample tensors
         hazard_shape = sample.hazard.shape if hasattr(sample.hazard, "shape") else None
         if hazard_shape is None:
             logger.error("Hazard tensor has no shape attribute")
             return {"predictions": np.array([])}
             
-        # Initialize arrays with correct shapes
-        # Shape should be (batch_size, num_events, time_points)
-        all_hazards = np.zeros((batch_size,) + hazard_shape[1:])
-        all_risks = np.zeros_like(all_hazards)
-        all_survivals = np.zeros_like(all_hazards)
+        # Pre-allocate arrays for efficiency
+        batch_size = len(predictions)
+        
+        # Pre-allocate final result array directly instead of creating intermediates
+        # Shape: (batch_size, 3, num_events, time_points)
+        result_shape = (batch_size, 3) + hazard_shape[1:]
+        stacked_predictions = np.empty(result_shape, dtype=np.float32)
         
         try:
-            # Fill arrays efficiently using tensor operations
+            # Fill the pre-allocated array directly - more efficient
             for i, pred in enumerate(predictions):
-                # Convert tensors to numpy arrays if needed
-                hazard = pred.hazard.detach().cpu().numpy() if hasattr(pred.hazard, "detach") else pred.hazard
-                risk = pred.risk.detach().cpu().numpy() if hasattr(pred.risk, "detach") else pred.risk
-                survival = pred.survival.detach().cpu().numpy() if hasattr(pred.survival, "detach") else pred.survival
-                
-                all_hazards[i] = hazard
-                all_risks[i] = risk
-                all_survivals[i] = survival
-            
-            # Stack along a new axis to combine all predictions
-            # Final shape: (batch_size, 3, num_events, time_points)
-            stacked_predictions = np.stack([all_hazards, all_risks, all_survivals], axis=1)
+                # Use the helper function for conversion
+                stacked_predictions[i, 0] = tensor_to_numpy(pred.hazard)  # hazard
+                stacked_predictions[i, 1] = tensor_to_numpy(pred.risk)    # risk
+                stacked_predictions[i, 2] = tensor_to_numpy(pred.survival)  # survival
             
             logger.debug(f"Final predictions shape: {stacked_predictions.shape}")
             return {"predictions": stacked_predictions}

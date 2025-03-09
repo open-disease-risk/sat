@@ -10,9 +10,7 @@ import numpy as np
 import pandas as pd
 
 from evaluate import EvaluationModule
-from logging import DEBUG, ERROR
 
-from sat.models.utils import get_device
 from sat.utils import logging
 
 logger = logging.get_default_logger()
@@ -29,7 +27,7 @@ class SurvivalEvaluationModule(EvaluationModule):
                 logger.info(
                     f"Predictions already has shape {predictions.shape}, returning as is"
                 )
-                return predictions
+                return predictions[:, :, :, 1:]
 
             # or predictions can be a dictionary
             if not isinstance(predictions, dict):
@@ -47,17 +45,19 @@ class SurvivalEvaluationModule(EvaluationModule):
             hazard_pred = predictions["hazard"]
             risk_pred = predictions["risk"]
             survival_pred = predictions["survival"]
+
+            # check prediction structure
             if not (
                 hazard_pred.shape == risk_pred.shape
-                or hazard_pred.shape == survival_pred.shape
-                or hazard_pred.ndim < 3
+                and hazard_pred.shape == survival_pred.shape
+                and hazard_pred.ndim >= 3
             ):
                 raise ValueError(
                     f"Shape mismatch: hazard {hazard_pred.shape}, "
                     f"risk {risk_pred.shape}, survival {survival_pred.shape}"
                 )
 
-            # Pre-allocate the result array - more efficient than stack+transpose
+            # Extract dimensions once for reuse
             batch_size = hazard_pred.shape[0]
             event_size = hazard_pred.shape[1]
             duration_cuts = hazard_pred.shape[2]
@@ -67,19 +67,15 @@ class SurvivalEvaluationModule(EvaluationModule):
                 logger.error(error_msg)
                 raise ValueError(error_msg)
 
-            result = np.zeros(
+            # Use np.empty for faster allocation when values will be completely overwritten
+            result = np.empty(
                 (batch_size, 3, event_size, duration_cuts - 1), dtype=np.float32
             )
 
-            # Slice safely
-            hazard_sliced = hazard_pred[:, :, 1:]
-            risk_sliced = risk_pred[:, :, 1:]
-            survival_sliced = survival_pred[:, :, 1:]
-
             # Direct assignment to avoid stack and transpose operations
-            result[:, 0, :, :] = hazard_sliced
-            result[:, 1, :, :] = risk_sliced
-            result[:, 2, :, :] = survival_sliced
+            result[:, 0, :, :] = hazard_pred[:, :, 1:]
+            result[:, 1, :, :] = risk_pred[:, :, 1:]
+            result[:, 2, :, :] = survival_pred[:, :, 1:]
 
             return result
 
@@ -104,7 +100,7 @@ class ComputeBrier(SurvivalEvaluationModule):
         logger.debug(f"references shape: {references.shape}")
 
         # Check if predictions is valid for computing metrics
-        if predictions.size == 0 or predictions.ndim < 3:
+        if predictions.size == 0 or predictions.ndim < 4:
             logger.warning(
                 f"Invalid predictions for compute_event: shape {predictions.shape}"
             )
@@ -121,67 +117,39 @@ class ComputeBrier(SurvivalEvaluationModule):
         events_test = references[:, (1 * self.cfg.num_events + event)].astype(bool)
         durations_test = references[:, (3 * self.cfg.num_events + event)]
 
-        # Safely get predictions
-        try:
-            preds = predictions[:, 2, event]
-
-            # Make sure predictions have at least one time point
-            if preds.ndim < 2 or preds.shape[1] < 2:
-                logger.warning(
-                    f"Predictions have insufficient time points: {preds.shape}"
-                )
-                # Create simple predictions with minimal dimensions
-                batch_size = predictions.shape[0]
-                preds = np.ones((batch_size, 2))  # At least 2 time points for metrics
-                preds[:, 1] = 0.5  # Set to 0.5 for middle probability
-        except Exception as e:
-            logger.error(f"Error extracting predictions: {e}")
-            # Create simple predictions for batch size from references
-            batch_size = len(references)
-            preds = np.ones((batch_size, 2))
-            preds[:, 1] = 0.5  # Default value
+        preds = predictions[:, 2, event]
 
         train_set = np.stack([events_train, durations_train], axis=1)
 
         metric_dict = {}
         quantile_incr = 1.0 / preds.shape[1]
         horizons = np.arange(1, preds.shape[1]) * quantile_incr
-        N = 0
 
         n = events_test.sum()
-        N += n
         et_test = np.stack([events_test, durations_test], axis=1)
 
-        try:
-            # Compute metrics with error handling
-            ibrs, brs = brier_score.compute(
-                references=et_test,
-                predictions=preds[:, :-1] if preds.shape[1] > 1 else preds,
-                train_set=train_set,
-                duration_cuts=self.duration_cuts,
-                per_horizon=self.per_horizon,
-            )
+        # Compute metrics
+        ibrs, brs = brier_score.compute(
+            references=et_test,
+            predictions=preds[:, :-1],
+            train_set=train_set,
+            duration_cuts=self.duration_cuts,
+            per_horizon=self.per_horizon,
+        )
 
-            # Record results
-            for j in range(len(brs)):
-                metric_dict[f"brier_{event}th_event_{horizons[j]}"] = brs[j]
+        # Record results
+        for j in range(len(brs)):
+            metric_dict[f"brier_{event}th_event_{horizons[j]}"] = brs[j]
 
-            metric_dict[f"brier_{event}th_event"] = ibrs
-            metric_dict[f"brier_{event}th_event_n"] = n
-        except Exception as e:
-            logger.error(f"Error computing brier score: {e}")
-            # Provide default values
-            metric_dict[f"brier_{event}th_event"] = 0.5
-            metric_dict[f"brier_{event}th_event_n"] = n
-
-            # Add placeholder values for horizons
-            for j in range(len(horizons)):
-                metric_dict[f"brier_{event}th_event_{horizons[j]}"] = 0.5
+        metric_dict[f"brier_{event}th_event"] = ibrs
+        metric_dict[f"brier_{event}th_event_n"] = n
 
         return metric_dict
 
     def compute(self, predictions, references):
         predictions = self.survival_predictions(predictions)
+        logger.debug(f"survival predictions shape {predictions.shape}")
+
         brier_mean = 0.0
         brier_balanced_mean = 0.0
         brier_n = 0
@@ -221,7 +189,7 @@ class ComputeCIndex(SurvivalEvaluationModule):
         logger.debug(f"references shape: {references.shape}")
 
         # Check if predictions is valid for computing metrics
-        if predictions.size == 0 or predictions.ndim < 3:
+        if predictions.size == 0 or predictions.ndim < 4:
             logger.warning(
                 f"Invalid predictions for compute_event: shape {predictions.shape}"
             )
@@ -240,27 +208,7 @@ class ComputeCIndex(SurvivalEvaluationModule):
         durations_test = references[:, (3 * self.cfg.num_events + event)]
 
         # Safely get predictions
-        try:
-            preds = predictions[:, 1, event]  # Get risk predictions
-
-            # Check if predictions have sufficient shape for metrics
-            if preds.ndim < 2 or preds.shape[1] < 1:
-                logger.warning(
-                    f"Predictions have insufficient time points: {preds.shape}"
-                )
-                # Create default predictions
-                batch_size = predictions.shape[0]
-                preds = np.ones((batch_size, 3))  # At least 3 time points
-                # Default decreasing risk values
-                preds[:, 1] = 0.7
-                preds[:, 2] = 0.5
-        except Exception as e:
-            logger.error(f"Error extracting risk predictions: {e}")
-            # Create default predictions
-            batch_size = len(references)
-            preds = np.ones((batch_size, 3))
-            preds[:, 1] = 0.7
-            preds[:, 2] = 0.5
+        preds = predictions[:, 1, event]  # Get risk predictions
 
         train_set = np.stack([events_train, durations_train], axis=1)
 
@@ -271,32 +219,20 @@ class ComputeCIndex(SurvivalEvaluationModule):
         n = events_test.sum()
         et_test = np.stack([events_test, durations_test], axis=1)
 
-        try:
-            # Compute c-index with error handling
-            cindeces = c_index.compute(
-                references=et_test,
-                predictions=preds,
-                train_set=train_set,
-                duration_cuts=self.duration_cuts,
-            )
+        # Compute c-index with error handling
+        cindeces = c_index.compute(
+            references=et_test,
+            predictions=preds,
+            train_set=train_set,
+            duration_cuts=self.duration_cuts,
+        )
 
-            # Record results
-            for j in range(len(cindeces)):
-                metric_dict[f"ipcw_{event}th_event_{horizons[j]}"] = cindeces[j]
+        # Record results
+        for j in range(len(cindeces)):
+            metric_dict[f"ipcw_{event}th_event_{horizons[j]}"] = cindeces[j]
 
-            metric_dict[f"ipcw_avg_{event}th_event"] = np.mean(cindeces)
-            metric_dict[f"ipcw_{event}th_event"] = cindeces[-1]
-
-        except Exception as e:
-            logger.error(f"Error computing c-index: {e}")
-            # Provide default values (0.5 = random prediction)
-            default_value = 0.5
-            metric_dict[f"ipcw_avg_{event}th_event"] = default_value
-            metric_dict[f"ipcw_{event}th_event"] = default_value
-
-            # Add placeholder values for each horizon
-            for h in horizons:
-                metric_dict[f"ipcw_{event}th_event_{h}"] = default_value
+        metric_dict[f"ipcw_avg_{event}th_event"] = np.mean(cindeces)
+        metric_dict[f"ipcw_{event}th_event"] = cindeces[-1]
 
         # Always record sample size
         metric_dict[f"ipcw_{event}th_event_n"] = n
