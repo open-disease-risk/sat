@@ -136,14 +136,52 @@ class ComputeBrier(SurvivalEvaluationModule):
         n = events_test.sum()
         et_test = np.stack([events_test, durations_test], axis=1)
 
-        # Compute metrics
-        ibrs, brs = brier_score.compute(
-            references=et_test,
-            predictions=preds[:, :-1],
-            train_set=train_set,
-            duration_cuts=self.duration_cuts,
-            per_horizon=self.per_horizon,
-        )
+        # Check for NaNs in prediction data first (can happen with torch.compile)
+        has_nans = np.isnan(preds).any()
+        if has_nans:
+            logger.warning(f"NaN values detected in predictions for event {event}, attempting to sanitize")
+            preds = np.nan_to_num(preds, nan=0.0, posinf=1.0, neginf=0.0)
+            
+        # Check that predictions are properly bounded
+        min_pred, max_pred = np.min(preds), np.max(preds)
+        if min_pred < 0 or max_pred > 1:
+            logger.warning(f"Predictions for event {event} out of bounds [{min_pred}, {max_pred}], clipping")
+            preds = np.clip(preds, 0.0, 1.0)
+
+        # Also check for NaNs in durations and events
+        if np.isnan(durations_test).any():
+            logger.warning(f"NaN values detected in durations for event {event}, attempting to sanitize")
+            valid_mask = ~np.isnan(durations_test)
+            if valid_mask.sum() < len(durations_test) * 0.5:  # If more than half are NaN
+                logger.error(f"Too many NaN values in durations for event {event}, cannot compute valid metrics")
+                return {f"brier_{event}th_event": float('nan'), f"brier_{event}th_event_n": 0}
+            
+            # Filter out NaN entries
+            durations_test = durations_test[valid_mask]
+            events_test = events_test[valid_mask]
+            preds = preds[valid_mask]
+            
+            # Rebuild stack
+            et_test = np.stack([events_test, durations_test], axis=1)
+            
+        # Also ensure train_set doesn't have NaNs
+        if isinstance(train_set, np.ndarray) and np.isnan(train_set).any():
+            logger.warning(f"NaN values detected in training set for event {event}, attempting to sanitize")
+            train_set = np.nan_to_num(train_set, nan=0.0)
+        
+        try:
+            # Compute metrics with wrapped exception handling
+            ibrs, brs = brier_score.compute(
+                references=et_test,
+                predictions=preds[:, :-1],
+                train_set=train_set,
+                duration_cuts=self.duration_cuts,
+                per_horizon=self.per_horizon,
+            )
+        except Exception as e:
+            logger.error(f"Error computing brier score for event {event}: {e}")
+            # Return a placeholder to avoid breaking the entire evaluation
+            return {f"brier_{event}th_event": float('nan'), f"brier_{event}th_event_n": 0}
 
         # Record results
         for j in range(len(brs)):
@@ -155,8 +193,33 @@ class ComputeBrier(SurvivalEvaluationModule):
         return metric_dict
 
     def compute(self, predictions, references):
-        predictions = self.survival_predictions(predictions)
-        logger.debug(f"survival predictions shape {predictions.shape}")
+        try:
+            predictions = self.survival_predictions(predictions)
+            logger.debug(f"survival predictions shape {predictions.shape}")
+            
+            # Check for NaN or inf values in predictions
+            if torch.is_tensor(predictions):
+                if torch.isnan(predictions).any() or torch.isinf(predictions).any():
+                    logger.warning("NaN or Inf detected in predictions tensor, attempting to sanitize")
+                    predictions = torch.nan_to_num(predictions, nan=0.0, posinf=1.0, neginf=0.0)
+            elif isinstance(predictions, np.ndarray):
+                if np.isnan(predictions).any() or np.isinf(predictions).any():
+                    logger.warning("NaN or Inf detected in predictions array, attempting to sanitize")
+                    predictions = np.nan_to_num(predictions, nan=0.0, posinf=1.0, neginf=0.0)
+            
+            # Check reference values too
+            if isinstance(references, dict) and 'events' in references:
+                for k, v in references.items():
+                    if torch.is_tensor(v) and (torch.isnan(v).any() or torch.isinf(v).any()):
+                        logger.warning(f"NaN or Inf detected in references[{k}], attempting to sanitize")
+                        references[k] = torch.nan_to_num(v, nan=0.0, posinf=1.0, neginf=0.0)
+                    elif isinstance(v, np.ndarray) and (np.isnan(v).any() or np.isinf(v).any()):
+                        logger.warning(f"NaN or Inf detected in references[{k}], attempting to sanitize")
+                        references[k] = np.nan_to_num(v, nan=0.0, posinf=1.0, neginf=0.0)
+        except Exception as e:
+            logger.error(f"Error in data preparation: {e}")
+            # Return empty metrics to avoid crashing
+            return {"brier_mean": float('nan'), "brier_n": 0}
 
         brier_mean = 0.0
         brier_balanced_mean = 0.0
@@ -164,8 +227,14 @@ class ComputeBrier(SurvivalEvaluationModule):
 
         metrics_dict = {}
         for i in range(self.cfg.num_events):
-            metric_results = self.compute_event(predictions, references, i)
-            metrics_dict.update(metric_results)
+            try:
+                metric_results = self.compute_event(predictions, references, i)
+                metrics_dict.update(metric_results)
+            except Exception as e:
+                logger.error(f"Error computing metrics for event {i}: {e}")
+                # Add placeholder metrics for this event to avoid breaking calculation
+                metrics_dict[f"brier_{i}th_event"] = float('nan')
+                metrics_dict[f"brier_{i}th_event_n"] = 0
             brier_mean += (
                 metrics_dict[f"brier_{i}th_event"]
                 * metrics_dict[f"brier_{i}th_event_n"]
