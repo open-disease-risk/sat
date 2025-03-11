@@ -212,10 +212,16 @@ class SurvivalAnalysisEvaluator(Evaluator):
 
             # Get the dataset as a list for batch processing
             if hasattr(pipe_inputs, "map"):
+                logger.info("Processing dataset with map attribute")
                 # Convert the dataset to a list for batch processing
-                inputs_list = [item for item in pipe_inputs]
+                inputs_list = list(pipe_inputs)
             else:
                 inputs_list = pipe_inputs
+
+            # Check if pipe_inputs is empty
+            if not inputs_list:
+                logger.warning("Empty input list, returning empty predictions")
+                return [], {"inference_time": 0}
 
             logger.info(
                 f"Processing {len(inputs_list)} examples with batch_size={batch_size}"
