@@ -32,7 +32,7 @@ class SurvivalEvaluationModule(EvaluationModule):
             logger.debug(f"type of predictions: {type(predictions)}")
             # predictions can be a numpy array
             if hasattr(predictions, "shape"):
-                logger.info(
+                logger.debug(
                     f"Predictions already has shape {predictions.shape}, returning as is"
                 )
                 return predictions[:, :, :, 1:]

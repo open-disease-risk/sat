@@ -169,15 +169,6 @@ def _eval(cfg: DictConfig) -> None:
     use_batch_pipeline = cfg.get("use_batch_pipeline", False)
     batch_size = cfg.get("batch_size", 32)
 
-    # Debug the configuration
-    logger.info(
-        f"Batch pipeline config from Hydra: use_batch_pipeline={use_batch_pipeline}, batch_size={batch_size}"
-    )
-    logger.info(f"Full config keys: {list(cfg.keys())}")
-
-    if use_batch_pipeline:
-        logger.info(f"Using optimized batch pipeline with batch_size={batch_size}")
-
     for metric in metrics:
         metric_results = sa_eval.compute(
             model_or_pipeline=sa_pipe,
