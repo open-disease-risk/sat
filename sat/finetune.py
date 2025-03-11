@@ -30,7 +30,7 @@ from sat.utils.output import write_output, log_metrics
 from sat.data import load, collator
 from sat.models.tasks import heads
 from sat.models.tasks.config import TokenEmbedding
-from sat.models.utils import get_device
+from sat.models.utils import get_device, compile_model
 from sat.transformers.feature_extractor import SAFeatureExtractor
 
 logger = logging.get_default_logger()
@@ -64,6 +64,22 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
     mtlConfig = hydra.utils.instantiate(cfg.tasks.config)
     model = heads.MTLForSurvival(mtlConfig)
     model.to(device)
+
+    # Apply torch.compile if enabled in the config
+    compile_config = {
+        "use_compile": cfg.get("use_compile", False),
+        "compile_mode": cfg.get("compile_mode", None),
+        "compile_fullgraph": cfg.get("compile_fullgraph", False),
+        "compile_backend": cfg.get("compile_backend", None),
+        "dynamic_shapes": cfg.get("dynamic_shapes", False),
+        "opt_level": cfg.get("opt_level", 2),
+        "dynamo_cache": cfg.get("dynamo_cache", {}),
+        "debug_options": cfg.get("debug_options", {}),
+        "specialized_opts": cfg.get("specialized_opts", {}),
+        "selective_compile": cfg.get("selective_compile", {}),
+        "m_series_mac_defaults": cfg.get("m_series_mac_defaults", {"enabled": True}),
+    }
+    model = compile_model(model, config=compile_config)
 
     model.train()
     logging.log_gpu_utilization()
@@ -184,6 +200,12 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
     def compute_metrics(eval_pred):
         preds, labels = eval_pred
 
+        # Debug logging to capture prediction structure
+        logger.debug(
+            f"Prediction type: {type(preds)}, structure: {[type(p) for p in preds if p is not None]}"
+        )
+
+        # Ensure we have a properly structured prediction set
         preds_dict = {}
         idx = 1
         if model.is_survival:

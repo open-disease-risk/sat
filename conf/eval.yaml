@@ -8,3 +8,7 @@ defaults:
 bootstrap_samples: 50
 num_threads: -1 # use all cores
 bootstrap_ci_level: 0.95
+
+# Batch processing configuration
+use_batch_pipeline: false  # Set to true to enable optimized batch processing
+batch_size: 32  # Batch size to use when use_batch_pipeline is true

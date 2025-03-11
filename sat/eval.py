@@ -22,7 +22,7 @@ from sat.utils import config, logging, rand
 from sat.data import load
 from sat.evaluate.evaluator import evaluator
 from sat.models.tasks import heads
-from sat.models.utils import get_device, load_model
+from sat.models.utils import get_device, load_model, compile_model
 from sat.transformers.feature_extractor import SAFeatureExtractor
 
 import sat.transformers.pipelines  # keep this import for pipeline registration to happen
@@ -50,6 +50,23 @@ def _eval(cfg: DictConfig) -> None:
 
     model = load_model(model_path, model)
     model.to(device)
+
+    # Apply torch.compile if enabled in the config
+    compile_config = {
+        "use_compile": cfg.get("use_compile", False),
+        "compile_mode": cfg.get("compile_mode", None),
+        "compile_fullgraph": cfg.get("compile_fullgraph", False),
+        "compile_backend": cfg.get("compile_backend", None),
+        "dynamic_shapes": cfg.get("dynamic_shapes", False),
+        "opt_level": cfg.get("opt_level", 2),
+        "dynamo_cache": cfg.get("dynamo_cache", {}),
+        "debug_options": cfg.get("debug_options", {}),
+        "specialized_opts": cfg.get("specialized_opts", {}),
+        "selective_compile": cfg.get("selective_compile", {}),
+        "m_series_mac_defaults": cfg.get("m_series_mac_defaults", {"enabled": True}),
+    }
+    model = compile_model(model, config=compile_config)
+
     model.eval()
 
     sa_features = SAFeatureExtractor.from_pretrained(cfg.data.label_transform.save_dir)
@@ -148,6 +165,10 @@ def _eval(cfg: DictConfig) -> None:
     metrics = hydra.utils.instantiate(cfg.tasks.metrics)
     results = {}
 
+    # Set batch processing configuration
+    use_batch_pipeline = cfg.get("use_batch_pipeline", False)
+    batch_size = cfg.get("batch_size", 32)
+
     for metric in metrics:
         metric_results = sa_eval.compute(
             model_or_pipeline=sa_pipe,
@@ -160,6 +181,9 @@ def _eval(cfg: DictConfig) -> None:
             confidence_level=cfg.bootstrap_ci_level,
             n_resamples=cfg.bootstrap_samples,
             random_state=0,
+            # Add batch processing parameters
+            use_batch_pipeline=use_batch_pipeline,
+            batch_size=batch_size,
         )
         results.update(metric_results)
 
