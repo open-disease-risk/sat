@@ -8,7 +8,7 @@ training_arguments:
   per_device_eval_batch_size: 512
   load_best_model_at_end: True
   greater_is_better: ${tasks.eval_metric_greater_is_better}
-  evaluation_strategy: "steps"
+  eval_strategy: "steps"
   eval_steps: 1
   logging_strategy: "steps"
   logging_steps: 1
@@ -26,3 +26,4 @@ training_arguments:
   save_safetensors: false
   gradient_checkpointing: false
   dataloader_pin_memory: true
+  remove_unused_columns: false
