@@ -22,7 +22,7 @@ from sat.utils import config, logging, rand
 from sat.data import load
 from sat.evaluate.evaluator import evaluator
 from sat.models.tasks import heads
-from sat.models.utils import get_device, load_model
+from sat.models.utils import get_device, load_model, compile_model
 from sat.transformers.feature_extractor import SAFeatureExtractor
 
 import sat.transformers.pipelines  # keep this import for pipeline registration to happen
@@ -50,6 +50,13 @@ def _eval(cfg: DictConfig) -> None:
 
     model = load_model(model_path, model)
     model.to(device)
+    
+    # Apply torch.compile if enabled in the config
+    use_compile = cfg.get("use_compile", False)
+    compile_mode = cfg.get("compile_mode", None)
+    compile_fullgraph = cfg.get("compile_fullgraph", False)
+    model = compile_model(model, use_compile=use_compile, mode=compile_mode, fullgraph=compile_fullgraph)
+    
     model.eval()
 
     sa_features = SAFeatureExtractor.from_pretrained(cfg.data.label_transform.save_dir)

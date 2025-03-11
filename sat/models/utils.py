@@ -11,6 +11,125 @@ from sat.utils import logging
 logger = logging.get_default_logger()
 
 
+def _detect_problematic_modules(model):
+    """Detect modules that are known to cause issues with torch.compile.
+    
+    Args:
+        model: PyTorch model to inspect
+        
+    Returns:
+        bool: True if problematic modules found, False otherwise
+        list: List of problematic module names if any
+    """
+    problematic_modules = []
+    
+    # Check for specific module types or operations known to be problematic
+    for name, module in model.named_modules():
+        # Dropouts are often problematic on MPS
+        if isinstance(module, torch.nn.Dropout):
+            problematic_modules.append(f"{name} (Dropout)")
+            
+        # Check module string representation for known problematic operations
+        module_str = str(type(module)).lower()
+        for issue in ['softplus', 'index_put']:
+            if issue in module_str:
+                problematic_modules.append(f"{name} ({issue})")
+                
+    return len(problematic_modules) > 0, problematic_modules
+
+
+def compile_model(model, use_compile=True, mode=None, fullgraph=False):
+    """Apply torch.compile to a model with platform-specific configurations.
+    
+    Args:
+        model: The PyTorch model to compile
+        use_compile: Whether to compile the model (default: True)
+        mode: Compilation mode, one of 'default', 'reduce-overhead', or 'max-autotune'
+            If None, will use 'default' on CPU/CUDA and 'reduce-overhead' on MPS (Apple Silicon)
+        fullgraph: Whether to use fullgraph mode for compilation
+            Set to False for development (better debugging)
+            Set to True for production (potentially better optimization)
+    
+    Returns:
+        The compiled model if compilation is successful, otherwise the original model
+    """
+    # Ensure torch is imported within function scope to avoid UnboundLocalError
+    import torch
+    
+    # Check if torch.compile is available (requires PyTorch 2.0+)
+    if not use_compile or not hasattr(torch, 'compile'):
+        logger.info("Torch compile not used: feature not available or disabled")
+        return model
+    
+    try:
+        # Set appropriate backend and mode based on device
+        is_mps = torch.backends.mps.is_available()
+        
+        if is_mps:  # Apple Silicon
+            # Apple Silicon requires more careful handling
+            has_issues, issue_modules = _detect_problematic_modules(model)
+            
+            if has_issues:
+                logger.warning(
+                    f"Detected modules that may be incompatible with MPS compilation: {issue_modules}. "
+                    f"Will apply selective compilation strategy."
+                )
+                
+                # Configure compilation for better MPS compatibility
+                # For PyTorch 2.6.0, we use the official torch.compiler.disable API
+                # to exclude problematic modules
+                
+                # Import the problematic module to disable it
+                try:
+                    # Try to import the module to get its object
+                    import importlib.util
+                    import sys
+                    
+                    # Specifically disable the log_softplus function in pycox utils
+                    from sat.pycox.models.utils import log_softplus
+                    torch.compiler.disable(log_softplus)
+                    logger.info("Disabled compilation for log_softplus function")
+                    
+                except Exception as e:
+                    logger.warning(f"Could not disable specific functions: {e}")
+                    
+                # Set general compilation options for better compatibility
+                # These are generally safe across PyTorch versions
+                if hasattr(torch, '_dynamo'):
+                    # These may exist in some versions
+                    if hasattr(torch._dynamo, 'config'):
+                        torch._dynamo.config.suppress_errors = True
+                        if hasattr(torch._dynamo.config, 'cache_size_limit'):
+                            torch._dynamo.config.cache_size_limit = 64
+            
+            # Use most compatible settings for MPS
+            backend = "aot_eager"
+            if mode is None:
+                mode = "reduce-overhead"
+        else:  # CUDA or CPU
+            backend = "inductor"
+            if mode is None:
+                mode = "default"
+        
+        logger.info(f"Compiling model with backend={backend}, mode={mode}, fullgraph={fullgraph}")
+        
+        # Apply compilation with specified settings
+        compiled_model = torch.compile(
+            model, 
+            backend=backend,
+            mode=mode,
+            fullgraph=fullgraph,
+            # Disable graph breaking on error for better reliability
+            disable_on_error=False
+        )
+        
+        logger.info("Model compilation successful")
+        return compiled_model
+    except Exception as e:
+        logger.warning(f"Model compilation failed, using eager execution instead: {e}")
+        return model
+
+
 def get_device():
     device_str = "cpu"
     if torch.cuda.is_available():

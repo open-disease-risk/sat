@@ -30,7 +30,7 @@ from sat.utils.output import write_output, log_metrics
 from sat.data import load, collator
 from sat.models.tasks import heads
 from sat.models.tasks.config import TokenEmbedding
-from sat.models.utils import get_device
+from sat.models.utils import get_device, compile_model
 from sat.transformers.feature_extractor import SAFeatureExtractor
 
 logger = logging.get_default_logger()
@@ -64,6 +64,12 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
     mtlConfig = hydra.utils.instantiate(cfg.tasks.config)
     model = heads.MTLForSurvival(mtlConfig)
     model.to(device)
+    
+    # Apply torch.compile if enabled in the config
+    use_compile = cfg.get("use_compile", False)
+    compile_mode = cfg.get("compile_mode", None)
+    compile_fullgraph = cfg.get("compile_fullgraph", False)
+    model = compile_model(model, use_compile=use_compile, mode=compile_mode, fullgraph=compile_fullgraph)
 
     model.train()
     logging.log_gpu_utilization()
@@ -183,7 +189,11 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
 
     def compute_metrics(eval_pred):
         preds, labels = eval_pred
-
+        
+        # Debug logging to capture prediction structure
+        logger.debug(f"Prediction type: {type(preds)}, structure: {[type(p) for p in preds if p is not None]}")
+        
+        # Ensure we have a properly structured prediction set
         preds_dict = {}
         idx = 1
         if model.is_survival:
@@ -202,9 +212,9 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
         for metric in metrics:
             metric_results = metric.compute(preds_dict, labels)
             metrics_dict.update(metric_results)
-
+            
         return metrics_dict
-
+            
     callbacks = []
     if "callbacks" in cfg:
         callbacks = hydra.utils.instantiate(cfg.callbacks)

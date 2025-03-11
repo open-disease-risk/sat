@@ -20,7 +20,7 @@ from transformers.pipelines import pipeline
 from sat.utils import config, logging, rand
 from sat.utils.output import write_output, write_interpolation
 from sat.models.tasks import heads
-from sat.models.utils import get_device, load_model
+from sat.models.utils import get_device, load_model, compile_model
 
 import sat.transformers.pipelines  # keep this import for pipeline registration to happen
 
@@ -40,6 +40,13 @@ def _infer(cfg: DictConfig) -> None:
 
     model = load_model(model_path, model)
     model.to(device)
+    
+    # Apply torch.compile if enabled in the config
+    use_compile = cfg.get("use_compile", False)
+    compile_mode = cfg.get("compile_mode", None)
+    compile_fullgraph = cfg.get("compile_fullgraph", False)
+    model = compile_model(model, use_compile=use_compile, mode=compile_mode, fullgraph=compile_fullgraph)
+    
     model.eval()
 
     tokenizer = PreTrainedTokenizerFast(

@@ -26,6 +26,10 @@ logger = logging.get_default_logger()
 
 @rand.reset_seed
 def _pipeline(cfg: DictConfig) -> pd.DataFrame:
+    # Check if torch.compile should be used
+    if cfg.get("use_compile", False):
+        logger.info(f"Pipeline will use torch.compile (mode: {cfg.get('compile_mode', 'default')})")
+    
     logger.info("Run data preparation")
     _prepare_data(cfg)
     logger.info("Train label transformer")
