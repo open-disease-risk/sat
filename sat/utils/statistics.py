@@ -378,19 +378,19 @@ def boot_interval(
     # Generate bootstrap samples only once and reuse for all metrics
     if theta_star is None:
         logger.debug("Create bootstrap samples (once for all metrics)")
-        
+
         # Pre-generate all bootstrap indices for efficiency
         bootstrap_indices = []
         n_samples = len(x[0])
         for _ in range(B):
             indices = np.random.choice(range(n_samples), size=n_samples, replace=True)
             bootstrap_indices.append(indices)
-        
+
         # Apply each statistic function to the same bootstrap samples
         theta_star = {}
         for metric, func in stat.items():
             theta_star[metric] = np.empty(B)
-            
+
             # Use the same bootstrap indices for all metrics
             for i, indices in enumerate(bootstrap_indices):
                 bootstrap_data = (x[0][indices], x[1][indices])

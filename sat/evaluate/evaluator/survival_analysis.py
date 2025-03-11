@@ -401,7 +401,7 @@ class SurvivalAnalysisEvaluator(Evaluator):
             # Set random seed if provided
             if random_state is not None:
                 np.random.seed(random_state)
-                
+
             data = (predictions, references)
             dist = statistics.EmpiricalDistribution(data)
 
@@ -412,6 +412,7 @@ class SurvivalAnalysisEvaluator(Evaluator):
                     return metric.compute(
                         predictions=predictions, references=references
                     )[key]
+
                 return args_metric
 
             # Create function dictionary and compute point estimates in a single loop
@@ -440,7 +441,7 @@ class SurvivalAnalysisEvaluator(Evaluator):
                     num_threads=self.num_threads,
                     theta_hat=theta_hat_dict,  # Pass pre-computed point estimates
                 )
-                
+
                 # Format results to match expected output format
                 formatted_bootstrap_dict = {}
                 for key, results in bootstrap_dict.items():
@@ -449,9 +450,9 @@ class SurvivalAnalysisEvaluator(Evaluator):
                         "alpha": (1.0 - confidence_level) / 2.0,
                         "interval": results["confidence_interval"],
                     }
-                
+
                 return formatted_bootstrap_dict
-                
+
             except Exception as e:
                 logger.error(f"Error in bootstrapping: {e}")
                 # Return default confidence intervals
