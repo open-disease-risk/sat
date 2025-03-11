@@ -38,7 +38,55 @@ use_compile: false
 # - 'max-autotune': Maximum performance with autotune (slower compile time, faster execution)
 compile_mode: default
 
-# Whether to use fullgraph compilation mode
-# - false: Better for development (easier debugging, faster compilation)
-# - true: Better for production (potentially better runtime optimization)
+# Compilation settings (better optimization for production)
+# Set to false for development (better debugging)
 compile_fullgraph: false
+
+# Backend selection (automatically selected if null)
+# - 'inductor': Default high-performance backend (best for CUDA/CPU)
+# - 'aot_eager': Good compatibility with Apple Silicon
+# - 'cudagraphs': Specialized CUDA backend for compatible operations
+# - 'onnxrt': ONNX Runtime backend
+compile_backend: null
+
+# Dynamic shapes support (helps with variable sized inputs)
+dynamic_shapes: false
+
+# Optimization level (0-3, higher = more aggressive optimization)
+opt_level: 2
+
+# Caching configuration
+dynamo_cache:
+  enabled: true
+  size_limit: 64  # Cache size limit
+  path: null  # Custom path for persistent cache (null = use default)
+
+# Debug options
+debug_options:
+  decomposition_schemas: false  # Enable custom operator decompositions
+  explain: false  # Generate explanation of compilation decisions
+  dump_graphs: false  # Save intermediate graphs for debugging
+
+# Specialized optimizations
+specialized_opts:
+  allow_cudagraphs: true  # Enable CUDA graphs for compatible operations
+  disable_fuser: false  # Disable the TorchDynamo backend's fuser
+  static_memory_planning: true  # Enable static memory planning when possible
+
+# Selective compilation
+selective_compile:
+  # List of module names to exclude from compilation
+  exclude_modules: []
+  # Regex patterns to match module names for exclusion
+  exclude_patterns: []
+
+# M-series Mac optimized defaults (applied automatically when detected)
+m_series_mac_defaults:
+  enabled: true  # Apply M-series specific optimizations when detected
+  compile_mode: reduce-overhead
+  compile_backend: aot_eager
+  opt_level: 1
+  dynamic_shapes: true
+  specialized_opts:
+    static_memory_planning: true
+    disable_fuser: true

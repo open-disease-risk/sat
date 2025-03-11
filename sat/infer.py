@@ -42,10 +42,20 @@ def _infer(cfg: DictConfig) -> None:
     model.to(device)
     
     # Apply torch.compile if enabled in the config
-    use_compile = cfg.get("use_compile", False)
-    compile_mode = cfg.get("compile_mode", None)
-    compile_fullgraph = cfg.get("compile_fullgraph", False)
-    model = compile_model(model, use_compile=use_compile, mode=compile_mode, fullgraph=compile_fullgraph)
+    compile_config = {
+        'use_compile': cfg.get("use_compile", False),
+        'compile_mode': cfg.get("compile_mode", None),
+        'compile_fullgraph': cfg.get("compile_fullgraph", False),
+        'compile_backend': cfg.get("compile_backend", None),
+        'dynamic_shapes': cfg.get("dynamic_shapes", False),
+        'opt_level': cfg.get("opt_level", 2),
+        'dynamo_cache': cfg.get("dynamo_cache", {}),
+        'debug_options': cfg.get("debug_options", {}),
+        'specialized_opts': cfg.get("specialized_opts", {}),
+        'selective_compile': cfg.get("selective_compile", {}),
+        'm_series_mac_defaults': cfg.get("m_series_mac_defaults", {'enabled': True})
+    }
+    model = compile_model(model, config=compile_config)
     
     model.eval()
 
