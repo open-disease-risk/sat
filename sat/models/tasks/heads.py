@@ -195,17 +195,17 @@ class SurvivalTaskHead(SurvivalTask):
 
     def forward(self, sequence_output, labels=None, **kwargs):
         logits = self.nets(sequence_output)  # num events x batch x duration cuts
-        
+
         # Apply softplus activation - keeps the original tensor unchanged
         hazard = F.softplus(logits)
-        
+
         # Add padding column more efficiently
         hazard = pad_col(hazard, where="start")
-        
+
         # Optimize memory: use inplace operations for cumsum, negate, and exp
         # This creates a single tensor path with fewer intermediate allocations
         surv = hazard.cumsum(dim=2).neg_().exp_()
-        
+
         # Optimize risk calculation with broadcasting instead of ones_like + sub_
         # This is often more cache-friendly and requires less memory
         risk = 1.0 - surv
@@ -269,14 +269,14 @@ class EventClassificationTaskHead(SurvivalPreTrainedModel):
     def forward(self, sequence_output, labels=None, **kwargs):
         # Generate logits efficiently
         logits = self.nets(sequence_output)  # num events x batch x 1
-        
+
         # Use inplace sigmoid to avoid additional memory allocation
         # Only allocate new tensor if original needs to be preserved
         predictions = torch.sigmoid(logits)
 
         # Create output object once
         output = TaskOutput(loss=None, logits=logits, predictions=predictions)
-        
+
         # Calculate loss only if labels provided
         if labels is not None:
             output.loss = self.loss(output, labels)
@@ -323,13 +323,13 @@ class EventDurationTaskHead(SurvivalPreTrainedModel):
         # Apply ReLU activation more efficiently using functional form
         # This avoids creating an unnecessary ReLU module instance each call
         logits = F.relu(self.nets(sequence_output))
-        
+
         # Use inplace squeeze operation where possible
         predictions = torch.squeeze(logits, dim=2)  # num events x batch x predictions
 
         # Create output object directly with final values
         output = TaskOutput(loss=None, logits=logits, predictions=predictions)
-        
+
         # Compute loss only when needed
         if labels is not None:
             output.loss = self.loss(output, labels)
@@ -460,7 +460,9 @@ class MTLForSurvival(SurvivalPreTrainedModel):
         **kwargs,
     ) -> Union[Tuple[torch.Tensor], SAOutput]:
         # Add support for gradient checkpointing to save memory during training
-        use_gradient_checkpointing = getattr(self.config, 'gradient_checkpointing', False) and self.training
+        use_gradient_checkpointing = (
+            getattr(self.config, "gradient_checkpointing", False) and self.training
+        )
         r"""
         labels (`torch.LongTensor` of shape `(batch_size,)`, *optional*):
             Labels for computing the sequence classification/regression loss. Indices should be in `[0, ...,
@@ -472,7 +474,11 @@ class MTLForSurvival(SurvivalPreTrainedModel):
         # This avoids unnecessary dictionary operations and list comprehensions
         forward_dict = {}
         for arg_name in self.forward_args:
-            if arg_name != "self" and arg_name in locals() and locals()[arg_name] is not None:
+            if (
+                arg_name != "self"
+                and arg_name in locals()
+                and locals()[arg_name] is not None
+            ):
                 forward_dict[arg_name] = locals()[arg_name]
 
         logger.debug(
@@ -481,17 +487,23 @@ class MTLForSurvival(SurvivalPreTrainedModel):
 
         # Use gradient checkpointing if enabled (saves memory during training)
         if use_gradient_checkpointing:
+
             def create_custom_forward(module):
                 def custom_forward(*inputs):
                     return module(*inputs)
+
                 return custom_forward
-            
+
             # Extract input tensors in the order expected by the transformer
-            inputs = [forward_dict.get(arg, None) for arg in self.forward_args if arg != "self"]
+            inputs = [
+                forward_dict.get(arg, None)
+                for arg in self.forward_args
+                if arg != "self"
+            ]
             sequence_output = torch.utils.checkpoint.checkpoint(
                 create_custom_forward(self.transformer),
                 *inputs,
-                use_reentrant=False  # More memory efficient
+                use_reentrant=False,  # More memory efficient
             )
         else:
             # Regular forward pass without checkpointing
@@ -504,14 +516,14 @@ class MTLForSurvival(SurvivalPreTrainedModel):
         # Process hidden states efficiently
         # layers x batches x tokens x features
         hidden_states = sequence_output.hidden_states
-        
+
         # Pre-compute device for all tensors to ensure consistency
         device = hidden_states[0].device
         dtype = hidden_states[0].dtype
-        
+
         # Stack hidden states once - avoid repeated indexing operations
         token_embeddings = torch.stack(hidden_states, dim=0)
-        
+
         # Subset the layers - more efficient selection when needed
         if self.config.select_hidden_layers:
             logger.debug(f"Select hidden layers {self.config.select_hidden_layers}")
@@ -526,28 +538,28 @@ class MTLForSurvival(SurvivalPreTrainedModel):
 
         # Process token embeddings based on configuration more efficiently
         token_emb_type = self.config.token_emb
-        
+
         if token_emb_type == TokenEmbedding.AVG.value:
             logger.debug("Average the token embeddings")
             # Use keepdim=False for direct dimensionality reduction
             token_embeddings = torch.mean(token_embeddings, dim=2)
-            
+
         elif token_emb_type == TokenEmbedding.SUM.value:
             logger.debug("Sum the token embeddings")
             # Use keepdim=False for direct dimensionality reduction
             token_embeddings = torch.sum(token_embeddings, dim=2)
-            
+
         elif token_emb_type == TokenEmbedding.CAT.value:
             logger.debug("Concatenate the token embeddings")
             # Avoid tensor_split + cat by reshaping directly
             # This eliminates the need for intermediate tensors
             batch_size, num_tokens, num_layers, hidden_size = token_embeddings.shape
             token_embeddings = token_embeddings.reshape(batch_size, num_tokens, -1)
-            
+
         elif token_emb_type == TokenEmbedding.BERT.value:
             logger.debug("Use Bert-pooler for the token embeddings")
             token_embeddings = sequence_output[1]
-            
+
         else:
             logger.debug("No operation on the token embeddings")
 
@@ -566,43 +578,45 @@ class MTLForSurvival(SurvivalPreTrainedModel):
                 sentence_embeddings = token_embeddings
 
         logger.debug(f"Dimensions of sentence embeddings {sentence_embeddings.shape}")
-        
+
         # Compute net logits efficiently
         batch_size = sentence_embeddings.shape[0]
-        
+
         # Reshape more efficiently - use view instead of reshape when possible
         # view() is more efficient when tensor is already contiguous
         if sentence_embeddings.is_contiguous():
             flattened_embeddings = sentence_embeddings.view(batch_size, -1)
         else:
             flattened_embeddings = sentence_embeddings.reshape(batch_size, -1)
-            
+
         # Forward pass through the network
         logits = self.net(flattened_embeddings)
         logger.debug("Score the task heads")
 
         # Pre-allocate all needed variables
         sa_output = None
-        outputs = {} # Use dict for task outputs - more efficient than dynamic attribute lookup
+        outputs = (
+            {}
+        )  # Use dict for task outputs - more efficient than dynamic attribute lookup
         tte = None
         event = None
         loss = 0.0
-        
+
         # Pre-allocate for logits_tasks to avoid repeated list append operations
         num_heads = len(self.heads)
         logits_tasks = [None] * num_heads
-        
+
         # Process all task heads efficiently
         for i, h in enumerate(self.heads):
             logger.debug(f"Score {i}-th task head")
-            
+
             # Process each head with logits and labels
             curr_output = h(logits, labels)
             outputs[i] = curr_output  # Store output by index
-            
+
             # Store the logits directly in pre-allocated list
             logits_tasks[i] = curr_output.logits
-            
+
             # Accumulate loss if labels provided - avoid repeated condition checks
             if labels is not None:
                 loss += curr_output.loss * h.config.loss_weight
@@ -617,28 +631,32 @@ class MTLForSurvival(SurvivalPreTrainedModel):
 
         # Prepare common output parameters for both conditions
         output_params = {
-            'loss': loss,
-            'logits': logits_tasks,
-            'time_to_event': tte,
-            'event': event,
-            'hidden_states': sequence_output.hidden_states,
-            'attentions': sequence_output.attentions,
+            "loss": loss,
+            "logits": logits_tasks,
+            "time_to_event": tte,
+            "event": event,
+            "hidden_states": sequence_output.hidden_states,
+            "attentions": sequence_output.attentions,
         }
-        
+
         # Add survival-specific parameters only if available (avoids redundant code)
         if sa_output is not None:
-            output_params.update({
-                'hazard': sa_output.hazard,
-                'risk': sa_output.risk, 
-                'survival': sa_output.survival,
-            })
+            output_params.update(
+                {
+                    "hazard": sa_output.hazard,
+                    "risk": sa_output.risk,
+                    "survival": sa_output.survival,
+                }
+            )
         else:
-            output_params.update({
-                'hazard': None,
-                'risk': None,
-                'survival': None,
-            })
-            
+            output_params.update(
+                {
+                    "hazard": None,
+                    "risk": None,
+                    "survival": None,
+                }
+            )
+
         # Create final output object
         sa_output = SAOutput(**output_params)
 

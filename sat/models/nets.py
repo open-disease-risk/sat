@@ -45,7 +45,7 @@ class MLP(nn.Module):
             if batch_norm:
                 logger.debug("Add batch norm")
                 layers.append(nn.BatchNorm1d(intermediate_size))
-            
+
             # Use functional activation for more flexibility and efficiency
             if activation == nn.ReLU:
                 layers.append(nn.ReLU(inplace=True))
@@ -53,7 +53,7 @@ class MLP(nn.Module):
                 layers.append(nn.LeakyReLU(inplace=True))
             else:
                 layers.append(activation())
-                
+
             if dropout:
                 logger.debug("Add dropout")
                 layers.append(nn.Dropout(dropout))
@@ -123,25 +123,28 @@ class CauseSpecificNet(nn.Module):
         super().__init__()
         self.out_features = out_features
         self.num_events = num_events
-        
+
         # Create networks all at once instead of in a loop for better initialization efficiency
-        self.event_nets = nn.ModuleList([
-            tt.practical.MLPVanilla(
-                in_features=in_features,
-                num_nodes=[intermediate_size] * num_hidden_layers,
-                out_features=out_features,
-                batch_norm=batch_norm,
-                dropout=dropout,
-                activation=activation,
-                output_bias=bias,
-            ) for _ in range(num_events)
-        ])
+        self.event_nets = nn.ModuleList(
+            [
+                tt.practical.MLPVanilla(
+                    in_features=in_features,
+                    num_nodes=[intermediate_size] * num_hidden_layers,
+                    out_features=out_features,
+                    batch_norm=batch_norm,
+                    dropout=dropout,
+                    activation=activation,
+                    output_bias=bias,
+                )
+                for _ in range(num_events)
+            ]
+        )
 
     def forward(self, input):
         # Ensure input is contiguous for more efficient processing
         if not input.is_contiguous():
             input = input.contiguous()
-            
+
         # Fast path for the common single event case
         if self.num_events == 1:
             return self.event_nets[0](input).unsqueeze(1)
@@ -183,7 +186,7 @@ class CauseSpecificNetCompRisk(nn.Module):
         self.shared_intermediate_size = shared_intermediate_size
         self.out_features = out_features
         self.num_events = num_events
-        
+
         # Initialize shared MLP for feature extraction
         self.shared_mlp = tt.practical.MLPVanilla(
             in_features=in_features,
@@ -194,25 +197,28 @@ class CauseSpecificNetCompRisk(nn.Module):
             activation=activation,
             output_bias=bias,
         )
-        
+
         # Create event networks efficiently as a list comprehension
-        self.event_nets = nn.ModuleList([
-            tt.practical.MLPVanilla(
-                in_features=in_features + shared_intermediate_size,
-                num_nodes=[indiv_intermediate_size] * indiv_num_hidden_layers,
-                out_features=out_features,
-                batch_norm=batch_norm,
-                dropout=dropout,
-                activation=activation,
-                output_bias=bias,
-            ) for _ in range(num_events)
-        ])
+        self.event_nets = nn.ModuleList(
+            [
+                tt.practical.MLPVanilla(
+                    in_features=in_features + shared_intermediate_size,
+                    num_nodes=[indiv_intermediate_size] * indiv_num_hidden_layers,
+                    out_features=out_features,
+                    batch_norm=batch_norm,
+                    dropout=dropout,
+                    activation=activation,
+                    output_bias=bias,
+                )
+                for _ in range(num_events)
+            ]
+        )
 
     def forward(self, input):
         # Ensure input is contiguous for better performance with subsequent operations
         if not input.is_contiguous():
             input = input.contiguous()
-            
+
         # Compute shared features once for all event networks
         shared_features = self.shared_mlp(input)
 
@@ -232,7 +238,7 @@ class CauseSpecificNetCompRisk(nn.Module):
             device=input.device,
             dtype=input.dtype,
         )
-        
+
         # Process each event network efficiently
         for i, net in enumerate(self.event_nets):
             out[:, i, :] = net(combined)

@@ -148,24 +148,24 @@ class BrierScore(evaluate.Metric):
         # Pre-allocate numpy arrays for better performance
         et_test = np.empty(len(references), dtype=[("e", bool), ("t", np.float32)])
         et_train = np.empty(len(train_set), dtype=[("e", bool), ("t", np.float32)])
-        
+
         # Use direct assignment instead of list comprehension for better performance
         for i, x in enumerate(references):
             et_test[i] = (bool(x[0]), float(x[1]))
-        
+
         for i, x in enumerate(train_set):
             et_train[i] = (bool(x[0]), float(x[1]))
-        
+
         # Convert duration_cuts to numpy array if it's not already
         if not isinstance(duration_cuts, np.ndarray):
             duration_cuts = np.asarray(duration_cuts, dtype=np.float32)
-        
+
         # Compute scores
         if per_horizon:
             brs = brier_score(et_train, et_test, predictions, duration_cuts)[1]
         else:
             brs = []
-        
+
         ibrs = integrated_brier_score(et_train, et_test, predictions, duration_cuts)
-        
+
         return ibrs, brs
