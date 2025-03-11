@@ -11,7 +11,7 @@ from logging import DEBUG, ERROR
 
 import evaluate
 
-from sat.sksurv.metrics import brier_score, integrated_brier_score
+from sksurv.metrics import brier_score, integrated_brier_score
 from sat.utils import logging
 
 logger = logging.get_default_logger()
