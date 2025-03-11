@@ -27,3 +27,18 @@ task_name: sat-${task}-${modelname}-${dataset}-${job}
 
 cv:
   kfold: ${oc.select:cv_kfold,0}
+
+# PyTorch compile feature configuration
+# Enable/disable torch.compile (requires PyTorch 2.0+)
+use_compile: false
+
+# Compilation mode: one of 'default', 'reduce-overhead', or 'max-autotune'
+# - 'default': Standard compilation mode (good for most use cases)
+# - 'reduce-overhead': Reduced compilation overhead (good for smaller models or Apple Silicon) 
+# - 'max-autotune': Maximum performance with autotune (slower compile time, faster execution)
+compile_mode: default
+
+# Whether to use fullgraph compilation mode
+# - false: Better for development (easier debugging, faster compilation)
+# - true: Better for production (potentially better runtime optimization)
+compile_fullgraph: false
