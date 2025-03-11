@@ -334,8 +334,8 @@ def boot_interval(
     ----------
      dist : EmpiricalDistribution
         The empirical distribution.
-     stat : function
-        The statistic.
+     stat : dict or function
+        A dictionary of statistics functions or a single function.
      x : array_like or pandas DataFrame or tuple
         The data, used to evaluate the observed statistic and compute
         jackknife values.
@@ -355,9 +355,9 @@ def boot_interval(
         Bootstrapped statistic values. Can be passed if they have
         already been calculated, which will speed this up
         considerably.
-     theta_hat : float, optional
-        Observed statistic. Can be passed if it has already been
-        calculated, which will speed this up slightly.
+     theta_hat : dict, optional
+        Dictionary of observed statistics. Can be passed if they have
+        already been calculated, which will speed this up slightly.
      num_threads : int, optional
         Number of threads to use for multicore processing. Defaults to
         1, meaning all calculations will be done in a single
@@ -365,20 +365,36 @@ def boot_interval(
 
     Returns
     -------
-     ci_low, ci_high : float
-        Lower and upper bounds on a 100(1-2*`alpha`)% confidence
-        interval on theta.
+     bootstrap_dict : dict
+        Dictionary containing confidence intervals for all metrics.
     """
     # The observed value of the statistic.
     if theta_hat is None:
-        logger.debug("Compute statistic over the data")
-        theta_hat = stat(x)
+        logger.debug("Compute statistics over the data")
+        theta_hat = {}
+        for metric, func in stat.items():
+            theta_hat[metric] = func(x)
 
+    # Generate bootstrap samples only once and reuse for all metrics
     if theta_star is None:
-        logger.debug("Create the bootstrap samples")
-        theta_star = bp.bootstrap_samples(
-            dist, stat, B, size=size, num_threads=num_threads
-        )
+        logger.debug("Create bootstrap samples (once for all metrics)")
+        
+        # Pre-generate all bootstrap indices for efficiency
+        bootstrap_indices = []
+        n_samples = len(x[0])
+        for _ in range(B):
+            indices = np.random.choice(range(n_samples), size=n_samples, replace=True)
+            bootstrap_indices.append(indices)
+        
+        # Apply each statistic function to the same bootstrap samples
+        theta_star = {}
+        for metric, func in stat.items():
+            theta_star[metric] = np.empty(B)
+            
+            # Use the same bootstrap indices for all metrics
+            for i, indices in enumerate(bootstrap_indices):
+                bootstrap_data = (x[0][indices], x[1][indices])
+                theta_star[metric][i] = func(bootstrap_data)
 
     bootstrap_dict = {}
     for metric, bootstraps in theta_star.items():

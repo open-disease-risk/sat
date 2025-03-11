@@ -392,29 +392,30 @@ class SurvivalAnalysisEvaluator(Evaluator):
                 return self._create_default_confidence_intervals(metric_keys)
 
         try:
+            # Set random seed if provided
+            if random_state is not None:
+                np.random.seed(random_state)
+                
             data = (predictions, references)
             dist = statistics.EmpiricalDistribution(data)
 
+            # Build the metric function dictionary
             def build_args_metric(metric=None, key=None):
                 def args_metric(data):
                     predictions, references = data
-                    logger.debug(
-                        f"args_metric: predictions in build args: {predictions} and {references} for metric key {key}"
-                    )
                     return metric.compute(
                         predictions=predictions, references=references
                     )[key]
-
                 return args_metric
 
+            # Create function dictionary and compute point estimates in a single loop
             stat_func_dict = {}
             theta_hat_dict = {}
 
-            logger.debug("Build the statistical functions dictionary")
+            logger.debug("Building statistical functions and computing point estimates")
             for key in metric_keys:
-                logger.debug(f"Add statistical metric {key} to the function dictionary")
+                logger.debug(f"Processing metric: {key}")
                 stat_func_dict[key] = build_args_metric(metric, key)
-                logger.debug(f"Compute statistical metric {key} for the data")
                 try:
                     theta_hat_dict[key] = stat_func_dict[key](data)
                 except Exception as e:
@@ -422,17 +423,29 @@ class SurvivalAnalysisEvaluator(Evaluator):
                     theta_hat_dict[key] = 0.5  # Default value
 
             try:
+                # Call boot_interval with pre-computed point estimates
                 bootstrap_dict = statistics.boot_interval(
                     dist,
-                    stat_func_dict,
+                    stat_func_dict,  # Dictionary of metric functions
                     data,
                     alpha=(1.0 - confidence_level) / 2.0,
                     B=n_resamples,
                     size=self.size,
                     num_threads=self.num_threads,
-                    theta_hat=theta_hat_dict,
+                    theta_hat=theta_hat_dict,  # Pass pre-computed point estimates
                 )
-                return bootstrap_dict
+                
+                # Format results to match expected output format
+                formatted_bootstrap_dict = {}
+                for key, results in bootstrap_dict.items():
+                    formatted_bootstrap_dict[key] = {
+                        "theta_hat": results["score"],
+                        "alpha": (1.0 - confidence_level) / 2.0,
+                        "interval": results["confidence_interval"],
+                    }
+                
+                return formatted_bootstrap_dict
+                
             except Exception as e:
                 logger.error(f"Error in bootstrapping: {e}")
                 # Return default confidence intervals
