@@ -7,6 +7,9 @@ import torch
 from torch import Tensor
 import torch.nn.functional as F
 from sat.pycox.models import utils
+from sat.utils import logging
+
+logger = logging.get_default_logger()
 
 
 def _reduction(loss: Tensor, reduction: str = "mean") -> Tensor:
@@ -87,7 +90,7 @@ def nll_pc_hazard_loss(
     invalid_mask = torch.isnan(loss) | torch.isinf(loss)
     if invalid_mask.any():
         # Log warning for debugging
-        print(
+        logger.warning(
             f"Warning: Found {invalid_mask.sum().item()} invalid loss values. Replacing with zeros."
         )
         loss[invalid_mask] = 0.0

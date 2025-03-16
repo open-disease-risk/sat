@@ -1,0 +1,31 @@
+# @package _global_
+# Metabric experiment configuration with SurvRNC loss function
+dataset: metabric
+modelname: survival_survrnc
+
+defaults:
+  - metabric/defaults
+  - override /data/load: metabric
+  - override /data/parse: ${data/load}
+  - override /tokenizers: ${data/load}
+  - override /transformers: bert
+  - override /tasks: survival
+  - override /tasks/losses: survrnc
+  - override /trainer: ${data/load}/default
+
+# Model architecture parameters
+survival_intermediate_size: 8
+survival_batch_norm: false
+survival_hidden_dropout_prob: false
+survival_bias: true
+survival_num_hidden_layers: 1
+survival_loss_weight: 1.0
+
+# Loss balancing parameters
+balance_strategy: "scale_normalization"  # Options: none, scale_normalization, grad_normalization, homoscedastic, adaptive
+ema_momentum: 0.9  # Momentum for exponential moving average when using scale normalization
+
+# SurvRNC parameters
+survrnc_temperature: 0.1  # Temperature parameter for scaling similarities
+survrnc_margin: 0.1  # Margin for ranking loss between positive and negative pairs
+survrnc_batch_samples: 16  # Number of anchor samples to use from batch

@@ -20,6 +20,7 @@ class TokenEmbedding(Enum):
     AVG = 3
     CAT = 4
     BERT = 5
+    ATTENTION = 6
 
 
 class SentenceEmbedding(Enum):
@@ -28,6 +29,8 @@ class SentenceEmbedding(Enum):
     NONE = 1
     MAX = 2
     AVG = 3
+    ATTENTION = 4
+    HIERARCHICAL = 5
 
 
 class BaseConfig(abc.ABC, PretrainedConfig):
@@ -163,6 +166,30 @@ class EventDurationTaskConfig(BaseConfig):
         self.num_hidden_layers = num_hidden_layers
         self.indiv_intermediate_size = indiv_intermediate_size
         self.indiv_num_hidden_layers = indiv_num_hidden_layers
+        self.batch_norm = batch_norm
+        self.hidden_dropout_prob = hidden_dropout_prob
+        self.bias = bias
+
+
+class DistributionTaskConfig(BaseConfig):
+    model_type = "sat-transformer-distribution"
+
+    def __init__(
+        self,
+        num_inputs: int = 32,
+        intermediate_size: int = 128,
+        num_hidden_layers: int = 0,
+        distribution_type: str = "Weibull",
+        batch_norm: bool = True,
+        hidden_dropout_prob: float = 0.1,
+        bias: bool = True,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.num_inputs = num_inputs
+        self.intermediate_size = intermediate_size
+        self.num_hidden_layers = num_hidden_layers
+        self.distribution_type = distribution_type
         self.batch_norm = batch_norm
         self.hidden_dropout_prob = hidden_dropout_prob
         self.bias = bias

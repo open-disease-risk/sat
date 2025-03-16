@@ -20,7 +20,7 @@ from transformers import (
 
 from sat.utils import config, logging, rand
 from sat.data import load
-from sat.models.tasks.config import TokenEmbedding
+from sat.models.tasks.heads.config import TokenEmbedding
 from sat.transformers.feature_extractor import SAFeatureExtractor
 
 logger = logging.get_default_logger()

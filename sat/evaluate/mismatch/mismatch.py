@@ -9,7 +9,7 @@ import torch
 import evaluate
 
 from sat.utils import logging
-from sat.models.tasks.loss import MismatchLoss
+from sat.loss import MismatchLoss
 from sat.models.tasks.heads import SAOutput
 from sat.models.utils import get_device
 

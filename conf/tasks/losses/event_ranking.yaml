@@ -1,5 +1,5 @@
 sat-transformer:
-  _target_: sat.models.tasks.loss.MultiEventRankingLoss
+  _target_: sat.loss.MultiEventRankingLoss
   duration_cuts: ${data.label_transform.save_dir}/duration_cuts.csv
   importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
   sigma: ${ranking_loss_sigma}

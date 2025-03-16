@@ -11,7 +11,7 @@ from logging import DEBUG, ERROR
 import evaluate
 
 from sat.utils import logging
-from sat.models.tasks.loss import CrossEntropyLoss
+from sat.loss import CrossEntropyLoss
 from sat.models.tasks.heads import TaskOutput
 from sat.models.utils import get_device
 

@@ -70,7 +70,7 @@ def _infer(cfg: DictConfig) -> None:
     if cfg.infer_data:
         dataset = load_dataset(path="json", data_files={"infer": cfg.infer_data})
     else:
-        logger.warn(
+        logger.warning(
             "For inference a datafile has to be specified using the 'infer_data' config key"
         )
         return

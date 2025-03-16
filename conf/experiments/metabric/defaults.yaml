@@ -21,7 +21,27 @@ transformer_hidden_probs_dropout: ${dropout}
 
 shared_intermediate_size: 16
 shared_batch_norm: true
-shared_hidden_dropout_prob: 0.05
+shared_hidden_dropout_prob: ${dropout}
 shared_bias: true
 shared_num_hidden_layers: 0
 shared_num_labels: 8
+
+survival_shared_intermediate_size: 16
+survival_shared_batch_norm: true
+survival_shared_hidden_dropout_prob: ${dropout}
+survival_shared_bias: true
+survival_shared_num_hidden_layers: 0
+survival_shared_num_labels: 8
+
+survival_intermediate_size: 8
+survival_batch_norm: false
+survival_hidden_dropout_prob: ${dropout}
+survival_bias: true
+survival_num_hidden_layers: 1
+survival_loss_weight: 1.0
+
+survival_indiv_intermediate_size: 8
+survival_indiv_num_hidden_layers: 1
+survival_indiv_batch_norm: false
+survival_indiv_hidden_dropout_prob: ${dropout}
+survival_indiv_bias: true

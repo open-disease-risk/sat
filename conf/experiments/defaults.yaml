@@ -12,7 +12,45 @@ event_ranking_loss_coeff: 0.1
 ranking_loss_sigma: 0.25
 event_ranking_loss_sigma: 0.25
 
+# Loss balancing parameters
+balance_strategy: "adaptive"  # Options: none, scale_normalization, grad_normalization, homoscedastic, adaptive
+ema_momentum: 0.9  # Momentum for exponential moving average when using scale normalization
+
+# DeepHit-specific parameters
+deehit_alpha: 0  # Weight for ranking component (0=only likelihood, 1=only ranking)
+deehit_sigma: 0.1  # Temperature parameter for ranking component
+
+# ListMLE loss parameters
+listmle_temperature: 0.5  # Very high temperature for extremely smooth gradients
+listmle_lambda_inter: 0.1  # Minimal lambda for more stable training
+listmle_lambda_intra: 0.1  # Minimal lambda for more stable training
+listmle_eps: 1e-5  # Much larger epsilon for better numerical stability
+
+# Loss-specific parameters
+survrnc_temperature: 0.1  # Temperature parameter for scaling similarities
+survrnc_margin: 0.1  # Margin for ranking loss between positive and negative pairs
+survrnc_batch_samples: 16  # Number of anchor samples to use from batch
+survrnc_loss_coeff: 1.0  # Weight for ranking component (1=ranking loss only)
+
+neuralsort_temperature: 0.1  # Temperature parameter for scaling similarities
+neuralsort_margin: 0.1  # Margin for ranking loss between positive and negative pairs
+neuralsort_batch_samples: 16  # Number of anchor samples to use from batch
+
+soap_temperature: 0.1  # Temperature parameter for scaling similarities
+soap_margin: 0.1  # Margin for ranking loss between positive and negative pairs
+soap_batch_samples: 16  # Number of anchor samples to use from batch
+
+ranknet_temperature: 0.1  # Temperature parameter for scaling similarities
+ranknet_margin: 0.1  # Margin for ranking loss between positive and negative pairs
+ranknet_batch_samples: 16  # Number of anchor samples to use from batch
 detect_anomalies: true
+
+# Focal Loss parameters
+focal_l_type: margin  # Loss type, either 'margin' or 'uncensored'
+focal_alpha: 0.25  # Weighting factor for the rare/positive class (null if all classes have equal weight)
+focal_gamma: 2.0  # Focusing parameter - higher values give more weight to hard examples
+focal_balance_strategy: none  # Strategy for balancing loss components
+focal_ema_momentum: 0.9  # Momentum for exponential moving average
 
 brier_per_horizon: false
 nllpch_per_event: false

@@ -3,22 +3,26 @@ dataset: hsa_synthetic
 modelname: survival
 
 defaults:
-  - seer/defaults
+  - hsa_synthetic/defaults
   - override /data/load: hsa_synthetic
   - override /data/parse: ${data/load}
   - override /data/transform: default
-  - override /tokenizers: hsa_synthetic
+  - override /tokenizers: ${data/load}
   - override /transformers: numeric_bert
   - override /tasks: survival
-  - override /tasks/losses: nllpch_sample_event_ranking
-  - override /trainer: hsa_synthetic/default
+  - override /trainer: ${data/load}/default
 
-survival_intermediate_size: 16
+# Override learning rate and weight decay for better numerical stability
+learning_rate: 0.000001  # Extremely low learning rate (1e-6) for stability
+weight_decay: 0.00001   # Very low weight decay to prevent numerical issues
+
+# Explicitly set initializer for more stable weight initialization
+initializer: "orthogonal"  # Orthogonal initialization tends to be very stable
+initializer_range: 0.01    # Use a very small range for initialization
+
+survival_intermediate_size: 8
 survival_batch_norm: false
 survival_hidden_dropout_prob: false
 survival_bias: true
 survival_num_hidden_layers: 0
 survival_loss_weight: 1.0
-
-survival_shared_intermediate_size: 64
-survival_shared_num_hidden_layers: 0

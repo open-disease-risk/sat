@@ -11,7 +11,7 @@ from logging import DEBUG, ERROR
 import evaluate
 
 from sat.utils import logging
-from sat.models.tasks.loss import SATNLLPCHazardLoss
+from sat.loss import SATNLLPCHazardLoss
 from sat.models.tasks.heads import SAOutput
 from sat.models.utils import get_device
 

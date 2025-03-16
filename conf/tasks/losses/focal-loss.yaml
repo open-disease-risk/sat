@@ -1,0 +1,11 @@
+sat-transformer-event-classification:
+  _target_: sat.loss.FocalLoss
+  event_time_thr: ${classification_event_time_thr}
+  training_set: ${data.label_transform.save_dir}/transformed_train_labels.csv
+  l_type: ${focal_l_type}
+  importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
+  num_events: ${data.num_events}
+  alpha: ${focal_alpha}
+  gamma: ${focal_gamma}
+  balance_strategy: ${focal_balance_strategy}
+  ema_momentum: ${focal_ema_momentum}

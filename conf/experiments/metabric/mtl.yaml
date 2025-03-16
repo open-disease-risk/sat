@@ -13,6 +13,7 @@ defaults:
   - override /trainer: ${data/load}/default
 
 classification_event_time_thr: 0.5 # not tuned yet
+ce_l_type: margin
 
 survival_intermediate_size: 64
 survival_batch_norm: false

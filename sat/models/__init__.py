@@ -5,7 +5,6 @@ __status__ = "Development"
 
 from transformers import AutoConfig, AutoModel
 
-import sat.models.tasks.config as config
 import sat.models.tasks.heads as heads
 
 import sat.models.bert.configuration_bert as sat_bert_config
@@ -18,26 +17,31 @@ AutoConfig.register(
 )
 AutoModel.register(sat_bert_config.NumericBertConfig, sat_bert_model.NumericBertModel)
 
-AutoConfig.register(config.SatBertConfig.model_type, config.SatBertConfig)
+AutoConfig.register(heads.SatBertConfig.model_type, heads.SatBertConfig)
 
-AutoConfig.register(config.SurvivalConfig.model_type, config.SurvivalConfig)
-AutoModel.register(config.SurvivalConfig, heads.SurvivalTaskHead)
+AutoConfig.register(heads.SurvivalConfig.model_type, heads.SurvivalConfig)
+AutoModel.register(heads.SurvivalConfig, heads.SurvivalTaskHead)
 
 AutoConfig.register(
-    config.EventClassificationTaskConfig.model_type,
-    config.EventClassificationTaskConfig,
+    heads.EventClassificationTaskConfig.model_type,
+    heads.EventClassificationTaskConfig,
 )
 AutoModel.register(
-    config.EventClassificationTaskConfig, heads.EventClassificationTaskHead
+    heads.EventClassificationTaskConfig, heads.EventClassificationTaskHead
 )
 
 AutoConfig.register(
-    config.EventDurationTaskConfig.model_type, config.EventDurationTaskConfig
+    heads.EventDurationTaskConfig.model_type, heads.EventDurationTaskConfig
 )
-AutoModel.register(config.EventDurationTaskConfig, heads.EventDurationTaskHead)
+AutoModel.register(heads.EventDurationTaskConfig, heads.EventDurationTaskHead)
 
-AutoConfig.register(config.MTLConfig.model_type, config.MTLConfig)
-AutoModel.register(config.MTLConfig, heads.MTLForSurvival)
+AutoConfig.register(
+    heads.DistributionTaskConfig.model_type, heads.DistributionTaskConfig
+)
+AutoModel.register(heads.DistributionTaskConfig, heads.DistributionHead)
+
+AutoConfig.register(heads.MTLConfig.model_type, heads.MTLConfig)
+AutoModel.register(heads.MTLConfig, heads.MTLForSurvival)
 
 AutoConfig.register(
     sat_gpt2_config.NumericGPT2Config.model_type, sat_gpt2_config.NumericGPT2Config

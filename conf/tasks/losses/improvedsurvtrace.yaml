@@ -1,3 +1,3 @@
 sat-transformer:
-  _target_: sat.models.tasks.loss.ImprovedSurvtraceLoss
+  _target_: sat.loss.survival.improvedsurvtrace.ImprovedSurvtraceLoss
   importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv

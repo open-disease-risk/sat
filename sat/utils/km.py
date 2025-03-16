@@ -110,15 +110,40 @@ class KaplanMeierArea(KaplanMeier):
         self.area = np.append(area, 0)
 
     def best_guess(self, censor_times: np.array):
-        surv_prob = self.predict(censor_times)
-        censor_indexes = np.digitize(censor_times, self.area_times)
-        censor_indexes = np.where(
-            censor_indexes == self.area_times.size + 1,
-            censor_indexes - 1,
-            censor_indexes,
-        )
-        censor_area = (
-            self.area_times[censor_indexes] - censor_times
-        ) * self.area_probabilities[censor_indexes - 1]
-        censor_area += self.area[censor_indexes]
-        return censor_times + censor_area / surv_prob
+        try:
+            surv_prob = self.predict(censor_times)
+
+            # Ensure all values are valid to avoid division by zero
+            safe_surv_prob = np.maximum(surv_prob, 1e-10)
+
+            # Get indices while ensuring they're valid for all array accesses
+            censor_indexes = np.digitize(censor_times, self.area_times)
+
+            # Clamp indices for each array access to prevent out-of-bounds errors
+            # For area_times
+            max_index_times = self.area_times.size - 1
+            safe_indexes_times = np.clip(censor_indexes, 0, max_index_times)
+
+            # For area array
+            max_index_area = self.area.size - 1
+            safe_indexes_area = np.clip(censor_indexes, 0, max_index_area)
+
+            # For area_probabilities with -1 offset
+            max_index_prob = self.area_probabilities.size - 1
+            safe_indexes_prob = np.clip(censor_indexes, 1, max_index_prob + 1) - 1
+
+            # Calculate with safe indices
+            time_diff = self.area_times[safe_indexes_times] - censor_times
+            prob_factor = self.area_probabilities[safe_indexes_prob]
+            censor_area = time_diff * prob_factor
+            censor_area += self.area[safe_indexes_area]
+
+            return censor_times + censor_area / safe_surv_prob
+
+        except Exception as e:
+            # Handle any unexpected errors and provide a meaningful fallback
+            # If best_guess fails, return the censor_times as is
+            print(
+                f"Warning: Error in KaplanMeier.best_guess: {e}. Using censoring times directly."
+            )
+            return censor_times

@@ -1,0 +1,7 @@
+sat-transformer:
+  _target_: sat.loss.SurvContrastiveLoss
+  temperature: 0.1  # Temperature for softmax scaling
+  margin: 0.1  # Margin for contrastive loss
+  time_threshold: 30  # Time threshold (in days) for considering two survival times similar
+  use_embeddings: true  # Whether to use embeddings or predictions
+  num_events: ${data.num_events}
