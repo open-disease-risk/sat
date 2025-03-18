@@ -6,7 +6,7 @@ __status__ = "Development"
 from transformers import AutoConfig, AutoModel
 
 import sat.models.tasks.config as config
-import sat.models.tasks.heads as heads
+import sat.models.heads as heads
 
 import sat.models.bert.configuration_bert as sat_bert_config
 import sat.models.bert.modeling_bert as sat_bert_model

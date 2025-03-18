@@ -14,7 +14,7 @@ from typing import List
 
 from sat.pycox.models.loss import NLLPCHazardLoss
 from sat.utils import logging
-from sat.models.tasks.heads import SAOutput, TaskOutput
+from sat.models.heads import SAOutput, TaskOutput
 from sat.utils.km import KaplanMeierArea
 
 logger = logging.get_default_logger()
