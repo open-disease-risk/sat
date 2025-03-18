@@ -9,9 +9,9 @@ import torch
 from torch import nn
 
 from sat.models.nets import CauseSpecificNet, CauseSpecificNetCompRisk, SimpleMLP
-from sat.models.tasks.config import EventDurationTaskConfig
 from sat.utils import logging
 
+from .config import EventDurationTaskConfig
 from .base import SurvivalPreTrainedModel
 from .output import TaskOutput
 

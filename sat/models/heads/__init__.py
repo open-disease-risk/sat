@@ -12,7 +12,7 @@ from .base import SurvivalPreTrainedModel, SurvivalTask
 from .output import SAOutput, TaskOutput
 
 # Configuration classes
-from sat.models.tasks.config import (
+from .config import (
     BaseConfig,
     SurvivalConfig,
     EventClassificationTaskConfig,

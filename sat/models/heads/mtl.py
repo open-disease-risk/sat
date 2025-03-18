@@ -11,8 +11,9 @@ from transformers import AutoModel
 from typing import Optional, Tuple, Union
 
 from sat.models.nets import CauseSpecificNet, CauseSpecificNetCompRisk, SimpleMLP
-from sat.models.tasks.config import (
-    BaseConfig,
+from sat.utils import logging
+
+from .config import (
     SentenceEmbedding,
     SurvivalConfig,
     TokenEmbedding,
@@ -20,8 +21,6 @@ from sat.models.tasks.config import (
     EventDurationTaskConfig,
     MTLConfig,
 )
-from sat.utils import logging
-
 from .base import SurvivalPreTrainedModel
 from .output import SAOutput
 from .survival import SurvivalTaskHead

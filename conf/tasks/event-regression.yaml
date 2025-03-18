@@ -6,7 +6,7 @@ eval_metric: "eval_loss"
 eval_metric_greater_is_better: False
 
 config:
-  _target_: sat.models.tasks.config.MTLConfig
+  _target_: sat.models.heads.MTLConfig
   _convert_: "partial"
   freeze_transformer: false
   initializer_range: ${initializer_range}
@@ -25,7 +25,7 @@ config:
   select_hidden_layers: ${select_hidden_layers}
   return_dict: true
   task_heads:
-    - _target_: sat.models.tasks.config.EventDurationTaskConfig
+    - _target_: sat.models.heads.EventDurationTaskConfig
       _recursive_: false
       num_features: ${shared_num_labels}
       intermediate_size: ${regression_intermediate_size}

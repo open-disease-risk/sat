@@ -29,7 +29,7 @@ from sat.utils import config, logging, rand, tokenizing
 from sat.utils.output import write_output, log_metrics
 from sat.data import load, collator
 from sat.models import heads
-from sat.models.tasks.config import TokenEmbedding
+from sat.models.heads.config import TokenEmbedding
 from sat.models.utils import get_device
 from sat.transformers.feature_extractor import SAFeatureExtractor
 

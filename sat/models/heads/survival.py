@@ -9,9 +9,9 @@ import torch
 import torch.nn.functional as F
 
 from sat.models.nets import CauseSpecificNet, CauseSpecificNetCompRisk, SimpleMLP
-from sat.models.tasks.config import SurvivalConfig
 from sat.utils import logging
 
+from .config import SurvivalConfig
 from .base import SurvivalTask
 from .output import SAOutput
 from .utils import pad_col

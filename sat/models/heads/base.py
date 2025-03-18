@@ -9,8 +9,9 @@ import torch
 from torch import nn
 from transformers.modeling_utils import PreTrainedModel
 
-from sat.models.tasks.config import BaseConfig
 from sat.utils import logging
+
+from .config import BaseConfig
 
 logger = logging.get_default_logger()
 

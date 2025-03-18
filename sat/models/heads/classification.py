@@ -7,9 +7,9 @@ import hydra
 import torch
 
 from sat.models.nets import CauseSpecificNet, CauseSpecificNetCompRisk, SimpleMLP
-from sat.models.tasks.config import EventClassificationTaskConfig
 from sat.utils import logging
 
+from .config import EventClassificationTaskConfig
 from .base import SurvivalPreTrainedModel
 from .output import TaskOutput
 
