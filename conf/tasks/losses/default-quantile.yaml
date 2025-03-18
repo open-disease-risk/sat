@@ -1,10 +1,10 @@
 sat-transformer:
-  _target_: sat.models.tasks.loss.MetaLoss
+  _target_: sat.loss.MetaLoss
   losses:
-    - _target_: sat.models.tasks.loss.SATNLLPCHazardLoss
+    - _target_: sat.loss.SATNLLPCHazardLoss
       importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
       num_events: ${data.num_events}
-    - _target_: sat.models.tasks.loss.RankingLoss
+    - _target_: sat.loss.RankingLoss
       duration_cuts: ${data.label_transform.save_dir}/duration_cuts.csv
       importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
       sigma: ${ranking_loss_sigma}
@@ -13,14 +13,14 @@ sat-transformer:
     - 1.0
     - ${ranking_loss_coeff}
 sat-transformer-event-duration:
-  _target_: sat.models.tasks.loss.QuantileLoss
+  _target_: sat.loss.QuantileLoss
   quantiles: ${regression_quantiles}
   importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
   training_set: ${data.label_transform.save_dir}/transformed_train_labels.csv
   l_type: margin
   num_events: ${data.num_events}
 sat-transformer-event-classification:
-  _target_: sat.models.tasks.loss.CrossEntropyLoss
+  _target_: sat.loss.CrossEntropyLoss
   event_time_thr: ${classification_event_time_thr}
   training_set: ${data.label_transform.save_dir}/transformed_train_labels.csv
   l_type: margin

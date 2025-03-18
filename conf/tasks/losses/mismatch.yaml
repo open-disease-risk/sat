@@ -1,4 +1,4 @@
 sat-transformer:
-  _target_: sat.models.tasks.loss.MismatchLoss
+  _target_: sat.loss.MismatchLoss
   duration_cuts: ${data.label_transform.save_dir}/duration_cuts.csv
   max_time: ${survival_max_time}

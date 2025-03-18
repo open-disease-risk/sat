@@ -1,0 +1,182 @@
+"""Loss base class for survival analysis"""
+
+__authors__ = ["Dominik Dahlem", "Mahed Abroshan"]
+__status__ = "Development"
+
+import pandas as pd
+
+import torch
+import torch.nn.functional as F
+
+from torch import nn
+
+from sat.utils import logging
+
+logger = logging.get_default_logger()
+
+
+class Loss(nn.Module):
+    """Base class for losses."""
+
+    def __init__(self, num_events: int = 1):
+        super(Loss, self).__init__()
+        self.num_events = num_events
+
+    def durations(self, references: torch.Tensor):
+        return references[
+            :, (3 * self.num_events) : (3 * self.num_events + self.num_events)
+        ].float()
+
+    def duration_percentiles(self, references: torch.Tensor):
+        return references[:, 0 : self.num_events].long()
+
+    def events(self, references: torch.Tensor):
+        return references[
+            :, (1 * self.num_events) : (1 * self.num_events + self.num_events)
+        ].long()
+
+    def fraction_with_quantile(self, references: torch.Tensor):
+        return references[
+            :, (2 * self.num_events) : (2 * self.num_events + self.num_events)
+        ].float()
+
+    def survivals(self, predictions):
+        surv = []
+        for logits in predictions:
+            hazard = F.softplus(logits)
+            surv.append(hazard.cumsum(1).mul(-1).exp()[:, :-1])
+        return surv
+
+
+class RankingLoss(Loss):
+    def __init__(
+        self,
+        duration_cuts: str,
+        importance_sample_weights: str = None,
+        sigma: float = 1.0,
+        num_events: int = 1,
+    ):
+        super(RankingLoss, self).__init__(num_events)
+
+        self.sigma = sigma
+
+        # load the importance sampling weights if not None
+        if importance_sample_weights is not None:
+            df = pd.read_csv(importance_sample_weights, header=None, names=["weights"])
+            weights = torch.tensor(df.weights.values).to(torch.float32)
+        else:
+            weights = torch.ones(self.num_events + 1)
+
+        self.register_buffer("weights", weights)
+
+        df = pd.read_csv(duration_cuts, header=None, names=["cuts"])
+        self.register_buffer(
+            "duration_cuts", torch.Tensor(df.cuts.values)
+        )  # tn duration cut points
+
+    def ranking_loss(
+        self, events, durations, survival, hazard, weights
+    ) -> torch.Tensor:
+        device = events.device
+        n = events.shape[0]
+        e = events.shape[1]
+
+        I = events.to(bool)
+        I_censored = ~I  # censored indicator (n x e)
+
+        T = self.duration_cuts.expand(n, e, -1)  # duration cut points (n x e x tn)
+        indexSmaller = self.duration_cuts.view(1, 1, -1) <= durations.unsqueeze(2)
+        t0Index = (
+            torch.sum(indexSmaller, dim=2) - 1
+        )  # left boundary of time interval (n x e)
+        t0Index = t0Index.unsqueeze(1).repeat(1, e, 1)
+        t1Index = t0Index + 1  # right boundary of time interval (n x e)
+
+        # if we run out of bounds, we match t0Index this means that dT will be
+        # zero and causes NaNs in hstar, which we need to fix
+        fixOOB = t1Index == len(self.duration_cuts)
+        t1Index[fixOOB] = len(self.duration_cuts) - 1
+
+        T0 = torch.gather(
+            T, 2, t0Index
+        )  # left boundary of time interval for all events i and time constraints j (n x e x e)
+        T1 = torch.gather(
+            T, 2, t1Index
+        )  # right boundary of time interval for all events i and time constraints j (n x e)
+
+        SatT0 = torch.gather(survival, 2, t0Index)  # survival at T0 (n x e x e)
+        SatT1 = torch.gather(survival, 2, t1Index)  # survival at T1 (n x e x e)
+        hstar = torch.gather(hazard, 2, t0Index)  # hazard at T0 (n x e x e)
+
+        dT = T1 - T0
+
+        # when dT is zero or negative we know that the time duration for an
+        # observation is greater or equal to the maximum duration cut. So, we
+        # need to use the corresponding hazard rather than interpolating. Since
+        # we initialized hstar with the hazard at T0, we only need to take care
+        # of the valid interpolations below:
+        positive_mask = torch.gt(dT, 0.0)
+        hstar[positive_mask] = torch.div(
+            torch.log(0.000001 + SatT0[positive_mask])
+            - torch.log(0.000001 + SatT1[positive_mask]),
+            (dT[positive_mask]),
+        )  # solve for hazard given the survival at T0 and T1 (n x e x e)
+
+        SatT = SatT0 * torch.exp(
+            -(durations.unsqueeze(1).repeat(1, e, 1) - T0) * hstar
+        )  # solve for survival at time t (n x e x e)
+
+        # compute an epsilon time to be subtracted from t in order to compute
+        # the survival at t-epsilon for when the event occurred for sample i and
+        # j
+        t_epsilon = (
+            self.duration_cuts[-1] - self.duration_cuts[0]
+        ) / self.duration_cuts[-1]
+        TMinus = torch.nn.functional.relu(
+            durations.unsqueeze(1).repeat(1, e, 1) - t_epsilon
+        )
+        SatTMinus = SatT0 * torch.exp(
+            -(TMinus - T0) * hstar
+        )  # solve for survival at time t-epsilon (n x e x e)
+
+        # get the n inner diagonals of e x e and repeat column-wise
+        diag_S = torch.diagonal(SatT, dim1=-2, dim2=-1).unsqueeze(2).repeat(1, 1, e)
+        diag_S2 = (
+            torch.diagonal(SatTMinus, dim1=-2, dim2=-1).unsqueeze(2).repeat(1, 1, e)
+        )
+
+        dS1 = diag_S - torch.transpose(
+            SatT, 1, 2
+        )  # dS_{ij} = S_{i}(T_{i}) - S_{j}(T_{i}) (n x e x e)
+        dS2 = SatTMinus - torch.transpose(
+            diag_S2, 1, 2
+        )  # dS_{ij} = S_{i}(T_{j}-1) - S_{j}(T_{j}-1) (n x e x e)
+        dS3 = SatT - torch.transpose(
+            diag_S, 1, 2
+        )  # dS_{ij} = S_{i}(T_{j}) - S_{j}(T_{j}) (n x e x e)
+
+        # A_{nij}=1 if t_i < t_j and A_{ij}=0 if t_i >= t_j
+        #              and A_{ij}=1 when event occured for subject i (n x e x e)
+        A1 = I.unsqueeze(2).repeat(1, 1, e).float() * torch.nn.functional.relu(
+            torch.sign(
+                durations.unsqueeze(1).repeat(1, e, 1)
+                - durations.unsqueeze(2).repeat(1, 1, e)
+            )
+        )
+        A2 = (
+            A1 * I.unsqueeze(1).repeat(1, e, 1).float()
+        )  # and A_{ij}=1 when event occured for subject j (n x e x e)
+        A3 = (
+            A1 * I_censored.unsqueeze(1).repeat(1, e, 1).float()
+        )  # and A_{ij}=1 when subject j is censored (n x e x e)
+
+        eta = torch.mean(
+            weights
+            * (
+                A1 * torch.exp(dS1 / self.sigma)
+                + A2 * torch.exp(dS2 / self.sigma)
+                + A3 * torch.exp(dS3 / self.sigma)
+            ),
+        )
+
+        return eta  # (1 x 1)
