@@ -2,7 +2,6 @@
 
 
 transformer_layer_norm: false
-initializer_range: 0.001
 label_transform_scheme: equidistant
 label_transform_cuts: 4
 
@@ -19,6 +18,16 @@ nllpch_per_event: false
 l1_per_event: false
 mse_per_event: false
 ce_per_event: false
+
+transformer_initializer_range: 0.01
+mtl_initializer_range: 0.02
+mtl_initializer: kaiming_normal
+survival_initializer_range: 0.02
+survival_initializer: kaiming_normal
+regression_initializer_range: 0.02
+regression_initializer: kaiming_normal
+classification_initializer_range: 0.02
+classification_initializer: xavier_normal
 
 survival_shared_intermediate_size: 4
 survival_shared_num_hidden_layers: 0

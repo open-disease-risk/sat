@@ -12,7 +12,6 @@ defaults:
   - override /tasks/losses: nllpch
 
 transformer_layer_norm: false
-initializer_range: 0.001
 label_transform_scheme: equidistant
 label_transform_cuts: 4
 

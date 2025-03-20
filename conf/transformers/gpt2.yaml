@@ -9,7 +9,7 @@ config:
   resid_pdrop: ${transformer_hidden_probs_dropout}
   embd_pdrop: ${transformer_hidden_probs_dropout}
   attn_pdrop: ${transformer_attention_probs_dropout_prob}
-  initializer_range: ${initializer_range}
+  initializer_range: ${transformer_initializer_range}
   output_attentions: False
   output_hidden_states: True
   return_dict: true

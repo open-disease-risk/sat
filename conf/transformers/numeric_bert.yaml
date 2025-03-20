@@ -9,7 +9,7 @@ config:
   hidden_dropout_prob: ${transformer_hidden_probs_dropout}
   output_attentions: False
   output_hidden_states: True
-  initializer_range: ${initializer_range}
+  initializer_range: ${transformer_initializer_range}
   layer_norm: ${transformer_layer_norm}
   return_dict: true
   vocab_size: 1000

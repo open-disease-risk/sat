@@ -10,8 +10,8 @@ config:
   _target_: sat.models.heads.MTLConfig
   _convert_: "partial"
   freeze_transformer: false
-  initializer_range: ${initializer_range}
-  initializer: "kaiming_uniform"
+  initializer_range: ${mtl_initializer_range}
+  initializer: ${mtl_initializer}
   pretrained_params: ${transformers}
   sentence_emb: ${sentence_emb}
   token_emb: ${token_emb}
@@ -28,6 +28,8 @@ config:
   task_heads:
     - _target_: sat.models.heads.SurvivalConfig
       _recursive_: false
+      initializer_range: ${survival_initializer_range}
+      initializer: ${survival_initializer}
       num_features: ${shared_num_labels}
       intermediate_size: ${survival_shared_intermediate_size}
       num_hidden_layers: ${survival_shared_num_hidden_layers}

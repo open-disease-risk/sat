@@ -9,5 +9,5 @@ config:
   hidden_dropout_prob: ${transformer_hidden_probs_dropout}
   output_attentions: False
   output_hidden_states: True
-  initializer_range: ${initializer_range}
+  initializer_range: ${transformer_initializer_range}
   return_dict: true
