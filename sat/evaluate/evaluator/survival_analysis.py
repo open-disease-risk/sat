@@ -73,61 +73,65 @@ class SurvivalAnalysisEvaluator(Evaluator):
         """
         Process a list of ModelOutput predictions efficiently.
         Each prediction should contain hazard, risk, and survival probabilities.
-        
+
         Args:
             predictions: List of ModelOutput objects from the model
             label_mapping: Optional mapping for labels (unused in survival analysis)
-            
+
         Returns:
             Dict containing processed numpy arrays of predictions
         """
         logger.debug(f"Processing {len(predictions)} predictions")
-        
+
         if not predictions:
             logger.debug("No predictions to process")
             return {"predictions": np.array([])}
-            
+
         # Helper function for tensor conversion - avoids code duplication
         def tensor_to_numpy(tensor):
-            return tensor.detach().cpu().numpy() if hasattr(tensor, "detach") else tensor
-            
+            return (
+                tensor.detach().cpu().numpy() if hasattr(tensor, "detach") else tensor
+            )
+
         # Move validation logic outside the try block for better performance
         sample = predictions[0]
         if not isinstance(sample, ModelOutput):
             logger.error(f"Expected ModelOutput object, got {type(sample)}")
             return {"predictions": np.array([])}
-            
+
         # Check required fields as attributes
         required_fields = ["hazard", "risk", "survival"]
         if not all(hasattr(sample, field) for field in required_fields):
-            logger.error(f"Missing required fields. Found: {[f for f in required_fields if hasattr(sample, f)]}")
+            logger.error(
+                f"Missing required fields. Found: {[f for f in required_fields if hasattr(sample, f)]}"
+            )
             return {"predictions": np.array([])}
-            
+
         # Get shapes from first sample tensors
         hazard_shape = sample.hazard.shape if hasattr(sample.hazard, "shape") else None
         if hazard_shape is None:
             logger.error("Hazard tensor has no shape attribute")
             return {"predictions": np.array([])}
-            
+
         # Pre-allocate arrays for efficiency
         batch_size = len(predictions)
-        
+
         # Pre-allocate final result array directly instead of creating intermediates
         # Shape: (batch_size, 3, num_events, time_points)
         result_shape = (batch_size, 3) + hazard_shape[1:]
         stacked_predictions = np.empty(result_shape, dtype=np.float32)
-        
+
         try:
             # Fill the pre-allocated array directly - more efficient
             for i, pred in enumerate(predictions):
                 # Use the helper function for conversion
                 stacked_predictions[i, 0] = tensor_to_numpy(pred.hazard)  # hazard
-                stacked_predictions[i, 1] = tensor_to_numpy(pred.risk)    # risk
+                stacked_predictions[i, 1] = tensor_to_numpy(pred.risk)  # risk
                 stacked_predictions[i, 2] = tensor_to_numpy(pred.survival)  # survival
-            
+
             logger.debug(f"Final predictions shape: {stacked_predictions.shape}")
             return {"predictions": stacked_predictions}
-            
+
         except Exception as e:
             logger.error(f"Error processing predictions: {e}")
             return {"predictions": np.array([])}
