@@ -50,9 +50,16 @@ class SurvivalTaskHead(SurvivalTask):
                 num_events=self.config.num_events,
             )
 
-        # Initialize weights and apply final processing
-        logger.debug("Post initialize in SurvivalTaskHead")
-        self.post_init()
+        # Initialize weights when created as a standalone model (not as part of MTL)
+        # If we're part of an MTL model, the MTL model will handle calling post_init
+        # We can detect if we're standalone by checking our parent class
+        if self.__class__.__name__ == "SurvivalTaskHead":
+            logger.debug("Standalone SurvivalTaskHead - initializing weights")
+            self.post_init()
+        else:
+            logger.debug(
+                "SurvivalTaskHead created as part of MTL - will be initialized by MTL"
+            )
 
         loss = config.loss[config.model_type]
         logger.debug(f"Instantiate the loss {loss}")

@@ -131,21 +131,27 @@ class MTLForSurvival(MTLTask):
 
             self.heads.append(model)
 
-        # First initialize the shared network
-        logger.debug("Initializing MTL shared network")
-        # Only apply initialization to the shared layers directly owned by this class
-        # and not to the sub-tasks
-        for name, module in self.named_children():
-            if name != "heads":  # Skip the heads module list
-                logger.debug(f"Initializing MTL module: {name}")
-                module.apply(self._init_weights)
-        
-        # Now initialize each task head with its own specific initialization
-        logger.debug("Post initialize in MTLForSurvival - letting sub-tasks handle their own initialization")
-        for i, head in enumerate(self.heads):
-            logger.debug(f"Initializing task head {i}")
-            # Each task head will use its own _init_weights method
-            head.post_init()
+        # Initialize weights when created as a standalone model
+        # We need to be careful to only initialize each task once
+        if self.__class__.__name__ == "MTLForSurvival":
+            logger.debug("Standalone MTLForSurvival - initializing weights")
+            # Skip the automatic initialization that might be done by post_init
+            # and use our custom initialization approach
+
+            # First initialize only shared network weights
+            logger.debug("MTLTask: initializing shared network weights")
+            for name, module in self.named_children():
+                if name != "heads":  # Skip the heads module list
+                    logger.debug(f"Initializing MTL module: {name}")
+                    self.initialize_module(module)
+
+            # Then initialize each task head with its specialized initialization
+            logger.debug("MTLTask: initializing task head weights")
+            for i, head in enumerate(self.heads):
+                logger.debug(f"Initializing task head {i}")
+                head.post_init()
+        else:
+            logger.debug("MTLForSurvival created as part of another model")
 
     def forward(
         self,
