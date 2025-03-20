@@ -10,14 +10,14 @@ from sat.models.nets import CauseSpecificNet, CauseSpecificNetCompRisk, SimpleML
 from sat.utils import logging
 
 from .config import EventClassificationTaskConfig
-from .base import SurvivalPreTrainedModel
+from .base import ClassificationTask
 from .output import TaskOutput
 
 
 logger = logging.get_default_logger()
 
 
-class EventClassificationTaskHead(SurvivalPreTrainedModel):
+class EventClassificationTaskHead(ClassificationTask):
     config_class = EventClassificationTaskConfig
 
     def __init__(self, config: EventClassificationTaskConfig):

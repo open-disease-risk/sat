@@ -12,13 +12,13 @@ from sat.models.nets import CauseSpecificNet, CauseSpecificNetCompRisk, SimpleML
 from sat.utils import logging
 
 from .config import EventDurationTaskConfig
-from .base import SurvivalPreTrainedModel
+from .base import RegressionTask
 from .output import TaskOutput
 
 logger = logging.get_default_logger()
 
 
-class EventDurationTaskHead(SurvivalPreTrainedModel):
+class EventDurationTaskHead(RegressionTask):
     config_class = EventDurationTaskConfig
 
     def __init__(self, config: EventDurationTaskConfig):

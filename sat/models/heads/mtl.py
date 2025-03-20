@@ -21,7 +21,7 @@ from .config import (
     EventDurationTaskConfig,
     MTLConfig,
 )
-from .base import SurvivalPreTrainedModel
+from .base import MTLTask
 from .output import SAOutput
 from .survival import SurvivalTaskHead
 from .classification import EventClassificationTaskHead
@@ -30,7 +30,7 @@ from .regression import EventDurationTaskHead
 logger = logging.get_default_logger()
 
 
-class MTLForSurvival(SurvivalPreTrainedModel):
+class MTLForSurvival(MTLTask):
     config_class = MTLConfig
     base_model_prefix = "any"
     supports_gradient_checkpointing = False
@@ -131,9 +131,21 @@ class MTLForSurvival(SurvivalPreTrainedModel):
 
             self.heads.append(model)
 
-        # Initialize weights and apply final processing
-        logger.debug("Post initialize in MTLForSurvival")
-        self.post_init()
+        # First initialize the shared network
+        logger.debug("Initializing MTL shared network")
+        # Only apply initialization to the shared layers directly owned by this class
+        # and not to the sub-tasks
+        for name, module in self.named_children():
+            if name != "heads":  # Skip the heads module list
+                logger.debug(f"Initializing MTL module: {name}")
+                module.apply(self._init_weights)
+        
+        # Now initialize each task head with its own specific initialization
+        logger.debug("Post initialize in MTLForSurvival - letting sub-tasks handle their own initialization")
+        for i, head in enumerate(self.heads):
+            logger.debug(f"Initializing task head {i}")
+            # Each task head will use its own _init_weights method
+            head.post_init()
 
     def forward(
         self,

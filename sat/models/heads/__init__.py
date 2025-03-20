@@ -8,7 +8,6 @@ __authors__ = ["Dominik Dahlem", "Mahed Abroshan"]
 __status__ = "Development"
 
 # Base classes and utilities
-from .base import SurvivalPreTrainedModel, SurvivalTask
 from .output import SAOutput, TaskOutput
 
 # Configuration classes
@@ -31,9 +30,6 @@ __all__ = [
     # Output classes
     "SAOutput",
     "TaskOutput",
-    # Base classes
-    "SurvivalPreTrainedModel",
-    "SurvivalTask",
     # Configuration classes
     "BaseConfig",
     "TokenEmbedding",
