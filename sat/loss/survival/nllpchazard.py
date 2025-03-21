@@ -6,6 +6,9 @@ __status__ = "Development"
 import pandas as pd
 
 import torch
+from typing import Dict, Optional, Union
+
+from ..balancing import BalancingStrategy
 
 from sat.pycox.models.loss import NLLPCHazardLoss
 from sat.models.heads import SAOutput
@@ -21,8 +24,14 @@ class SATNLLPCHazardLoss(Loss):
         self,
         importance_sample_weights: str = None,
         num_events: int = 1,
+        balance_strategy: Optional[Union[str, BalancingStrategy]] = "fixed",
+        balance_params: Optional[Dict] = None,
     ):
-        super(SATNLLPCHazardLoss, self).__init__(num_events)
+        super(SATNLLPCHazardLoss, self).__init__(
+            num_events=num_events,
+            balance_strategy=balance_strategy,
+            balance_params=balance_params
+        )
 
         self.loss_fct = NLLPCHazardLoss(reduction="none")
 

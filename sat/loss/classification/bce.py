@@ -8,7 +8,9 @@ import pandas as pd
 import torch
 
 from torch import nn
-from typing import List
+from typing import List, Dict, Optional, Union
+
+from ..balancing import BalancingStrategy
 
 from sat.utils import logging
 from sat.models.heads import TaskOutput
@@ -29,8 +31,14 @@ class CrossEntropyLoss(Loss):
         num_events: int,
         l_type: str = "margin",
         importance_sample_weights: str = None,
+        balance_strategy: Optional[Union[str, BalancingStrategy]] = "fixed",
+        balance_params: Optional[Dict] = None,
     ):
-        super(CrossEntropyLoss, self).__init__(num_events)
+        super(CrossEntropyLoss, self).__init__(
+            num_events=num_events,
+            balance_strategy=balance_strategy,
+            balance_params=balance_params
+        )
 
         self.loss_func = nn.BCELoss(reduction="none")
         self.num_events = num_events

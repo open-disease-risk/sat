@@ -1,0 +1,66 @@
+# Example of a multi-component loss with adaptive balancing strategy
+
+defaults:
+  - /tasks/losses/balancing
+
+# Multi-component loss with adaptive balancing
+multi_component:
+  _target_: sat.loss.MetaLoss
+  losses:
+    # Negative log likelihood of the piecewise constant hazard
+    - _target_: sat.loss.SATNLLPCHazardLoss
+      importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
+      num_events: ${data.num_events}
+    # Ranking loss for better C-index
+    - _target_: sat.loss.SampleEventRankingLoss
+      duration_cuts: ${data.label_transform.save_dir}/duration_cuts.csv
+      importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
+      sigma: 0.1
+      num_events: ${data.num_events}
+  # Initial coefficients (will be adapted during training)
+  coeffs:
+    - 1.0  # NLL weight
+    - 0.5  # Ranking weight
+  # Use adaptive balancing strategy
+  balance_strategy: ${losses.balancing.adaptive.balance_strategy}
+  balance_params: ${losses.balancing.adaptive.balance_params}
+
+# Multi-component loss with uncertainty weighting
+uncertainty_weighted:
+  _target_: sat.loss.MetaLoss
+  losses:
+    - _target_: sat.loss.SATNLLPCHazardLoss
+      importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
+      num_events: ${data.num_events}
+    - _target_: sat.loss.SampleEventRankingLoss
+      duration_cuts: ${data.label_transform.save_dir}/duration_cuts.csv
+      importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
+      sigma: 0.1
+      num_events: ${data.num_events}
+  # Initial coefficients (will be replaced by learned uncertainty weights)
+  coeffs:
+    - 1.0
+    - 1.0
+  # Use uncertainty weighting
+  balance_strategy: ${losses.balancing.uncertainty.balance_strategy}
+  balance_params: ${losses.balancing.uncertainty.balance_params}
+
+# Multi-component loss with scale normalization
+scale_normalized:
+  _target_: sat.loss.MetaLoss
+  losses:
+    - _target_: sat.loss.SATNLLPCHazardLoss
+      importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
+      num_events: ${data.num_events}
+    - _target_: sat.loss.SampleEventRankingLoss
+      duration_cuts: ${data.label_transform.save_dir}/duration_cuts.csv
+      importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
+      sigma: 0.1
+      num_events: ${data.num_events}
+  # Initial coefficients (will be normalized by loss scale)
+  coeffs:
+    - 1.0
+    - 1.0
+  # Use scale normalization
+  balance_strategy: ${losses.balancing.scale.balance_strategy}
+  balance_params: ${losses.balancing.scale.balance_params}

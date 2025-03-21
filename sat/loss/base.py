@@ -4,6 +4,7 @@ __authors__ = ["Dominik Dahlem", "Mahed Abroshan"]
 __status__ = "Development"
 
 import pandas as pd
+from typing import Optional, Dict, Union, List
 
 import torch
 import torch.nn.functional as F
@@ -11,6 +12,7 @@ import torch.nn.functional as F
 from torch import nn
 
 from sat.utils import logging
+from .balancing import LossBalancer, BalancingStrategy
 
 logger = logging.get_default_logger()
 
@@ -18,9 +20,48 @@ logger = logging.get_default_logger()
 class Loss(nn.Module):
     """Base class for losses."""
 
-    def __init__(self, num_events: int = 1):
+    def __init__(
+        self, 
+        num_events: int = 1, 
+        balance_strategy: Optional[Union[str, BalancingStrategy]] = "fixed", 
+        balance_params: Optional[Dict] = None
+    ):
         super(Loss, self).__init__()
         self.num_events = num_events
+        self.balance_strategy = balance_strategy
+        self.balance_params = balance_params or {}
+        self._balancer = None  # Will be initialized when needed
+        
+    def get_balancer(self, num_losses: int = 1, coeffs: Optional[List[float]] = None) -> LossBalancer:
+        """
+        Get or initialize a loss balancer.
+        
+        Args:
+            num_losses: Number of losses to balance
+            coeffs: Initial coefficients for fixed weighting strategy
+            
+        Returns:
+            Configured loss balancer
+        """
+        if self._balancer is None:
+            self._balancer = LossBalancer.create(
+                strategy=self.balance_strategy,
+                num_losses=num_losses,
+                coeffs=coeffs,
+                **self.balance_params
+            )
+        return self._balancer
+        
+    def get_loss_weights(self) -> List[float]:
+        """
+        Get current loss weights if a balancer is active.
+        
+        Returns:
+            List of current loss weights or [1.0] if no balancer is active
+        """
+        if self._balancer is not None:
+            return self._balancer.get_weights()
+        return [1.0]
 
     def durations(self, references: torch.Tensor):
         return references[

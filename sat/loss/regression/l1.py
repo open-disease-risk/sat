@@ -7,7 +7,9 @@ import pandas as pd
 
 import torch
 
-from typing import List
+from typing import List, Dict, Optional, Union
+
+from ..balancing import BalancingStrategy
 
 from sat.utils import logging
 from sat.models.heads import TaskOutput
@@ -26,8 +28,14 @@ class L1Loss(Loss):
         importance_sample_weights: str = None,
         l1_type: str = "hinge",
         num_events: int = 1,
+        balance_strategy: Optional[Union[str, BalancingStrategy]] = "fixed",
+        balance_params: Optional[Dict] = None,
     ):
-        super(L1Loss, self).__init__(num_events)
+        super(L1Loss, self).__init__(
+            num_events=num_events, 
+            balance_strategy=balance_strategy,
+            balance_params=balance_params
+        )
 
         self.l1_type = l1_type
         self.kms: List[KaplanMeierArea] = []

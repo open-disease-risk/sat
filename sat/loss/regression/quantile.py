@@ -6,7 +6,9 @@ __status__ = "Development"
 import pandas as pd
 
 import torch
-from typing import List
+from typing import List, Dict, Optional, Union
+
+from ..balancing import BalancingStrategy
 
 from sat.utils import logging
 from sat.models.heads import TaskOutput
@@ -26,8 +28,14 @@ class QuantileLoss(Loss):
         num_events: int,
         importance_sample_weights: str = None,
         l_type: str = "uncensored",
+        balance_strategy: Optional[Union[str, BalancingStrategy]] = "fixed",
+        balance_params: Optional[Dict] = None,
     ):
-        super(QuantileLoss, self).__init__(num_events)
+        super(QuantileLoss, self).__init__(
+            num_events=num_events,
+            balance_strategy=balance_strategy,
+            balance_params=balance_params
+        )
 
         self.l_type = l_type
         self.quantiles = quantiles

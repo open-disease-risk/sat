@@ -6,7 +6,9 @@ __status__ = "Development"
 import pandas as pd
 
 import torch
-from typing import List
+from typing import List, Dict, Optional, Union
+
+from ..balancing import BalancingStrategy
 
 from sat.utils import logging
 from sat.models.heads import TaskOutput
@@ -25,8 +27,14 @@ class MSELoss(Loss):
         importance_sample_weights: str = None,
         l2_type: str = "uncensored",
         num_events: int = 1,
+        balance_strategy: Optional[Union[str, BalancingStrategy]] = "fixed",
+        balance_params: Optional[Dict] = None,
     ):
-        super(MSELoss, self).__init__(num_events)
+        super(MSELoss, self).__init__(
+            num_events=num_events,
+            balance_strategy=balance_strategy,
+            balance_params=balance_params
+        )
 
         self.l2_type = l2_type
         self.kms: List[KaplanMeierArea] = []
