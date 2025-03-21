@@ -134,9 +134,9 @@ def _estimate_concordance_index(
     comparable, tied_time = _get_comparable(event_indicator, event_time, order)
 
     if len(comparable) == 0:
-        raise NoComparablePairException(
-            "Data has no comparable pairs, cannot estimate concordance index."
-        )
+        # Return 0.5 (random prediction) instead of raising an exception
+        # This allows training to continue even when c-index can't be computed
+        return 0.5, 0, 0, 0, 0
 
     concordant = 0
     discordant = 0
