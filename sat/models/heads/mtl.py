@@ -12,6 +12,7 @@ from typing import Optional, Tuple, Union
 
 from sat.models.nets import CauseSpecificNet, CauseSpecificNetCompRisk, SimpleMLP
 from sat.utils import logging
+from .embeddings import TokenEmbedder, SentenceEmbedder
 
 from .config import (
     SentenceEmbedding,
@@ -46,6 +47,7 @@ class MTLForSurvival(MTLTask):
 
         logger.debug(f"Using configuration {config}")
 
+        # Initialize transformer model
         self.transformer = None
         logger.debug(f"Using configuration {self.config}")
         if "pretrained_model_name_or_path" in self.config.pretrained_params:
@@ -57,6 +59,7 @@ class MTLForSurvival(MTLTask):
             logger.debug(f"Load model from config {self.config.pretrained_params}")
             self.transformer = AutoModel.from_config(**self.config.pretrained_params)
 
+        # Validate hidden layer selection if provided
         if self.config.select_hidden_layers:
             assert (
                 min(self.config.select_hidden_layers) >= 0
@@ -66,24 +69,29 @@ class MTLForSurvival(MTLTask):
                 <= self.transformer.config.num_hidden_layers
             ), f"Layer indices in 'select_hidden_layers'= {self.config.select_hidden_layers} should be less than or equal to the number of hidden layers {self.transformer.config.num_hidden_layers}"
 
+        # Store transformer forward arguments
         self.forward_args = list(inspect.signature(self.transformer.forward).parameters)
         logger.debug(
             f"Loaded transformer {self.transformer} supporting forward({self.forward_args})"
         )
 
+        # Freeze transformer if specified
         if self.config.freeze_transformer:
             logger.debug("Freeze the transformer")
             for name, param in self.transformer.base_model.named_parameters():
                 param.requires_grad = False
 
-        # features for shared network before feeding into the task heads
-        # is based on the pooling strategy for tokens and sentences
-        if self.config.token_emb == TokenEmbedding.BERT.value:
-            logger.debug(
-                f"If BERT token embedding is chosen, sentence embeddings to NONE."
-            )
-            self.config.sentence_emb = SentenceEmbedding.NONE.value
+        # Initialize embedding processors
+        self.token_embedder = TokenEmbedder(
+            hidden_size=self.config.hidden_size,
+            token_emb_strategy=self.config.token_emb,
+        )
 
+        self.sentence_embedder = SentenceEmbedder(
+            sentence_emb_strategy=self.config.sentence_emb,
+        )
+
+        # Calculate input features for shared network
         if self.config.token_emb == TokenEmbedding.CAT.value:
             if self.config.select_hidden_layers:
                 self.in_features = self.config.hidden_size * (
@@ -96,12 +104,15 @@ class MTLForSurvival(MTLTask):
         else:
             self.in_features = self.config.hidden_size
 
+        # Special case for token embeddings without sentence pooling
         if (self.config.token_emb != TokenEmbedding.BERT.value) and (
             self.config.sentence_emb == SentenceEmbedding.NONE.value
         ):
             self.in_features = self.in_features * self.config.num_features
 
         logger.debug(f"Number of input features to the shared MLP: {self.in_features}")
+
+        # Initialize shared network
         self.net = SimpleMLP(
             in_features=self.in_features,
             intermediate_size=self.config.intermediate_size,
@@ -112,8 +123,8 @@ class MTLForSurvival(MTLTask):
             out_features=self.config.num_labels,
         )
 
+        # Initialize task heads
         self.heads = nn.ModuleList()
-        # initialize the list of task heads
         for i, task_head_config in enumerate(self.config.task_heads):
             logger.debug(f"{i}-th task configuration: {task_head_config}")
             model = AutoModel.from_config(task_head_config)
@@ -132,12 +143,8 @@ class MTLForSurvival(MTLTask):
             self.heads.append(model)
 
         # Initialize weights when created as a standalone model
-        # We need to be careful to only initialize each task once
         if self.__class__.__name__ == "MTLForSurvival":
             logger.debug("Standalone MTLForSurvival - initializing weights")
-            # Skip the automatic initialization that might be done by post_init
-            # and use our custom initialization approach
-
             # First initialize only shared network weights
             logger.debug("MTLTask: initializing shared network weights")
             for name, module in self.named_children():
@@ -176,6 +183,7 @@ class MTLForSurvival(MTLTask):
             config.num_labels - 1]`. If `config.num_labels == 1` a regression loss is computed (Mean-Square loss), If
             `config.num_labels > 1` a classification loss is computed (Cross-Entropy).
         """
+        # Filter arguments for transformer
         forward_dict = locals()
         del_args = [arg for arg in forward_dict if arg not in self.forward_args]
         logger.debug(
@@ -192,76 +200,44 @@ class MTLForSurvival(MTLTask):
 
         logger.debug(f"Forward dictionary for the backend transformer {forward_dict}")
 
-        sequence_output = self.transformer(
-            **forward_dict, return_dict=self.return_dict
-        )  # batch x sentences x words x embedding size
+        # Always set output_hidden_states to True since we need them
+        forward_dict["output_hidden_states"] = True
+
+        # Get transformer outputs
+        sequence_output = self.transformer(**forward_dict, return_dict=self.return_dict)
 
         logger.debug(f"Got {sequence_output} from transformer")
 
-        # layers x batches x tokens x features
-        hidden_states = sequence_output.hidden_states
-        token_embeddings = torch.stack(hidden_states, dim=0)
-        # subset the layers
-        if self.config.select_hidden_layers:
-            logger.debug(f"Select hidden layers {self.config.select_hidden_layers}")
-            token_embeddings = token_embeddings[
-                self.config.select_hidden_layers, :, :, :
-            ]
-        # batch x tokens x layers x features
-        token_embeddings = token_embeddings.permute(1, 2, 0, 3)
-        logger.debug(
-            f"Dimensions of token embeddings after layer selection {token_embeddings.shape}"
+        # Process hidden states through token embedder
+        token_embeddings = self.token_embedder(
+            sequence_output.hidden_states,
+            sequence_output,
+            self.config.select_hidden_layers,
+            attention_mask,
         )
 
-        if self.config.token_emb == TokenEmbedding.AVG.value:
-            logger.debug("Average the token embeddings")
-            token_embeddings = torch.mean(token_embeddings, 2)
-        elif self.config.token_emb == TokenEmbedding.SUM.value:
-            logger.debug("Sum the token embeddings")
-            token_embeddings = torch.sum(token_embeddings, 2)
-        elif self.config.token_emb == TokenEmbedding.CAT.value:
-            logger.debug("Concatenate the token embeddings")
-            # split along the layer dimension
-            layers = torch.tensor_split(
-                token_embeddings, token_embeddings.shape[2], dim=2
-            )
-            token_embeddings = torch.cat(layers, dim=3).squeeze()
-        elif self.config.token_emb == TokenEmbedding.BERT.value:
-            logger.debug("Use Bert-pooler for the token embeddings")
-            token_embeddings = sequence_output[1]
-        else:
-            logger.debug("No operation on the token embeddings")
+        # Create sentence embeddings from token embeddings
+        sentence_embeddings = self.sentence_embedder(token_embeddings, attention_mask)
 
-        logger.debug(f"Dimensions of token embeddings {token_embeddings.shape}")
-        sentence_embeddings = token_embeddings
-        # we do not need sentence embedding if we do bert pooling
-        if self.config.token_emb != TokenEmbedding.BERT.value:
-            if self.config.sentence_emb == SentenceEmbedding.AVG.value:
-                logger.debug("Average across tokens to produce sentence embeddings")
-                sentence_embeddings = torch.mean(token_embeddings, 1)
-            elif self.config.sentence_emb == SentenceEmbedding.MAX.value:
-                logger.debug("Max across tokens to produce sentence embeddings")
-                sentence_embeddings = torch.max(token_embeddings, 1).values
-            else:
-                logger.debug("No reductions to produce sentence embeddings")
-                sentence_embeddings = token_embeddings
-
-        logger.debug(f"Dimensions of sentence embeddings {sentence_embeddings.shape}")
-        logger.debug(f"Number of input features to the shared MLP: {self.in_features}")
-        logger.debug(f"Number of hidden layers: {self.config.num_hidden_layers}")
-
+        # Get batch size and reshape for the shared network if needed
         batch_size = sentence_embeddings.shape[0]
-        logits = self.net(sentence_embeddings.reshape((batch_size, -1)))
+        if len(sentence_embeddings.shape) > 2:
+            # Flatten for input to shared network
+            logits = self.net(sentence_embeddings.reshape((batch_size, -1)))
+        else:
+            logits = self.net(sentence_embeddings)
+
         logger.debug("Score the task heads")
 
+        # Process through task heads
         sa_output: SAOutput = None
         outputs = {}
         tte = None
         event = None
         loss = 0.0
         logits_tasks = []
-        # consider the loss components as regularization terms except for the
-        # survival analysis task head
+
+        # Process all task heads
         for i, h in enumerate(self.heads):
             logger.debug(f"Score {i}-th task head")
             logger.debug(f"head: {h}")
@@ -274,6 +250,7 @@ class MTLForSurvival(MTLTask):
             if labels is not None:
                 loss += outputs[i].loss * h.config.loss_weight
 
+            # Save outputs based on task head type
             if isinstance(h, SurvivalTaskHead):
                 sa_output = outputs[i]
             elif isinstance(h, EventDurationTaskHead):
@@ -281,6 +258,7 @@ class MTLForSurvival(MTLTask):
             elif isinstance(h, EventClassificationTaskHead):
                 event = outputs[i].predictions
 
+        # Create combined output
         if sa_output:
             sa_output = SAOutput(
                 loss=loss,
