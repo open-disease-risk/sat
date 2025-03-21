@@ -108,6 +108,36 @@ relevant scripts to perform finetuning.
 above example, you could execute any other finetuning task without needing to
 execute steps 1.-3.. 
 
+Survival Analysis Loss Functions
+============================
+
+SAT supports several loss functions for survival analysis:
+
+### Standard Survival Loss Functions
+- **Negative Log-Likelihood PCHazard**: The standard negative log-likelihood for piece-wise constant hazard models
+- **DeepHit Loss**: A comprehensive loss function combining likelihood, ranking, and calibration components for competing risks
+
+### DeepHit Loss Function
+The DeepHit loss is based on the paper "DeepHit: A Deep Learning Approach to Survival Analysis with Competing Risks" by Lee et al. (2018). It consists of three components:
+
+1. **Likelihood Loss**: Maximizes the probability of observing the actual event times
+2. **Ranking Loss**: Ensures proper ordering of survival probabilities
+3. **Calibration Loss** (optional): Enforces agreement between predicted and empirical probabilities
+
+Configuration example:
+```yaml
+task:
+  transformer:
+    sat-transformer:
+      _target_: sat.loss.DeepHitLoss
+      duration_cuts: ${data.label_transform.save_dir}/duration_cuts.csv
+      num_events: ${data.num_events}
+      alpha: 0.5  # Weight for likelihood component
+      beta: 0.5   # Weight for ranking component
+      gamma: 0.0  # Weight for calibration component (optional)
+      sigma: 0.1  # Scaling factor for ranking loss
+```
+
 Loss Balancing Framework
 ============================
 

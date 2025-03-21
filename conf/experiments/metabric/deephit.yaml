@@ -1,0 +1,22 @@
+# @package _global_
+dataset: metabric
+modelname: deephit
+
+defaults:
+  - metabric/defaults
+  - override /data/load: metabric
+  - override /data/parse: ${data/load}
+  - override /tokenizers: ${data/load}
+  - override /transformers: bert
+  - override /tasks: survival
+  - override /tasks/losses: deephit
+  - override /trainer: ${data/load}/default
+  - override /callbacks: [default, loss_weight_logger]
+
+
+survival_intermediate_size: 8
+survival_batch_norm: false
+survival_hidden_dropout_prob: false
+survival_bias: true
+survival_num_hidden_layers: 1
+survival_loss_weight: 1.0

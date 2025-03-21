@@ -16,6 +16,7 @@ from .regression.mse import MSELoss
 from .regression.quantile import QuantileLoss
 
 from .survival.nllpchazard import SATNLLPCHazardLoss
+from .survival.deephit import DeepHitLoss
 
 __all__ = [
     "Loss",
@@ -28,4 +29,5 @@ __all__ = [
     "MSELoss",
     "QuantileLoss",
     "SATNLLPCHazardLoss",
+    "DeepHitLoss",
 ]
