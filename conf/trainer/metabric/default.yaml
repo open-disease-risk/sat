@@ -19,7 +19,7 @@ training_arguments:
   metric_for_best_model: ${tasks.eval_metric}
   learning_rate: ${learning_rate}
   lr_scheduler_type: cosine
-  gradient_accumulation_steps: 1
+  gradient_accumulation_steps: 2
   warmup_steps: ${warmup_steps}
   save_total_limit: 2
   output_dir: ${modelhub}/${dataset}/${modelname}
