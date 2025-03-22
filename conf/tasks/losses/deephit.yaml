@@ -1,17 +1,25 @@
-# DeepHit loss configuration
+# DeepHit loss components for configuring MetaLoss
 sat-transformer:
-  _target_: sat.loss.DeepHitLoss
-  # Required parameters
-  duration_cuts: ${data.label_transform.save_dir}/duration_cuts.csv
-  num_events: ${data.num_events}
-
-  # Loss component weights (must sum to 1.0)
-  alpha: 0.5  # Weight for likelihood component
-  beta: 0.5   # Weight for ranking component
-  gamma: 0.0  # Weight for calibration component (optional)
-
-  # Hyperparameters
-  sigma: 0.1  # Scaling factor for ranking loss (smaller values = sharper differences)
-
-  # Optional: Importance weights for different event types
-  importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
+  _target_: sat.loss.MetaLoss
+  losses:
+    - _target_: sat.loss.DeepHitLikelihoodLoss
+      num_events: ${data.num_events}
+      importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
+    - _target_: sat.loss.DeepHitRankingLoss
+      duration_cuts: ${data.label_transform.save_dir}/duration_cuts.csv
+      num_events: ${data.num_events}
+      sigma: ${ranking_loss_sigma}  # Scaling factor for ranking loss
+      importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
+    - _target_: sat.loss.DeepHitCalibrationLoss
+      duration_cuts: ${data.label_transform.save_dir}/duration_cuts.csv
+      num_events: ${data.num_events}
+      eval_times: null  # Set to specific times or null to use all duration cuts
+      importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
+  coeffs:
+    - ${likelihood_loss_coeff}  # Weight for likelihood loss
+    - ${ranking_loss_coeff}  # Weight for ranking loss
+    - ${calibration_loss_coeff}  # Weight for calibration loss (optional, set to 0 to disable)
+  # Optionally use one of the balancing strategies
+  # balance_strategy: "scale"  # Options: fixed, scale, grad, uncertainty, adaptive
+  # balance_params:
+  #   alpha: 0.9  # EMA decay for tracking loss scales

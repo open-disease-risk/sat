@@ -5,11 +5,13 @@ transformer_layer_norm: false
 label_transform_scheme: equidistant
 label_transform_cuts: 4
 
+likelihood_loss_coeff: 0.5
 one_calibration_bins: 10
-ranking_loss_coeff: 0.1
+ranking_loss_coeff: 0.3
 event_ranking_loss_coeff: 0.1
-ranking_loss_sigma: 0.25
-event_ranking_loss_sigma: 0.25
+ranking_loss_sigma: 0.1
+event_ranking_loss_sigma: 0.1
+calibration_loss_coeff: 0.2
 
 detect_anomalies: true
 

@@ -11,7 +11,6 @@ defaults:
   - override /tasks: survival
   - override /tasks/losses: deephit
   - override /trainer: ${data/load}/default
-  - override /callbacks: [default, loss_weight_logger]
 
 
 survival_intermediate_size: 8

@@ -1,4 +1,4 @@
-"""DeepHit loss for survival analysis with competing risks"""
+"""DeepHit loss components for survival analysis with competing risks."""
 
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
@@ -18,58 +18,35 @@ from ..base import Loss
 logger = logging.get_default_logger()
 
 
-class DeepHitLoss(Loss):
+class DeepHitLikelihoodLoss(Loss):
     """
-    Implementation of DeepHit loss function for survival analysis with competing risks.
+    Likelihood loss component of DeepHit.
     
-    Based on the paper "DeepHit: A Deep Learning Approach to Survival Analysis with Competing Risks"
-    by Lee et al. (2018) and original implementation at https://github.com/chl8856/DeepHit.
-    
-    This implementation directly translates the TensorFlow loss calculation to PyTorch.
+    Computes the negative log-likelihood for competing risks survival data,
+    considering both event and censored observations.
     """
     
     def __init__(
         self,
-        duration_cuts: str,
-        alpha: float = 0.5,  # Weight for likelihood component
-        beta: float = 0.5,   # Weight for ranking component
-        gamma: float = 0.0,  # Weight for calibration component (optional)
-        sigma: float = 0.1,  # Scaling factor for ranking loss
         num_events: int = 1,
         importance_sample_weights: Optional[str] = None,
         balance_strategy: Optional[Union[str, BalancingStrategy]] = "fixed",
         balance_params: Optional[Dict] = None,
     ):
         """
-        Initialize DeepHitLoss.
+        Initialize DeepHitLikelihoodLoss.
         
         Args:
-            duration_cuts: Path to CSV file containing duration cut points for discretization
-            alpha: Weight for likelihood loss component (default: 0.5)
-            beta: Weight for ranking loss component (default: 0.5)
-            gamma: Weight for calibration loss component (default: 0.0)
-            sigma: Scaling factor for ranking loss (default: 0.1)
             num_events: Number of competing events
             importance_sample_weights: Optional path to CSV file with importance weights
             balance_strategy: Strategy for balancing loss components
             balance_params: Additional parameters for the balancing strategy
         """
-        super(DeepHitLoss, self).__init__(
+        super(DeepHitLikelihoodLoss, self).__init__(
             num_events=num_events,
             balance_strategy=balance_strategy,
             balance_params=balance_params
         )
-        
-        # Component weights
-        self.alpha = alpha
-        self.beta = beta
-        self.gamma = gamma
-        self.sigma = sigma
-        
-        # Load duration cut points
-        df = pd.read_csv(duration_cuts, header=None, names=["cuts"])
-        self.register_buffer("duration_cuts", torch.tensor(df.cuts.values, dtype=torch.float32))
-        self.num_time_bins = len(df.cuts)
         
         # Load importance sampling weights if provided
         if importance_sample_weights is not None:
@@ -79,56 +56,19 @@ class DeepHitLoss(Loss):
             weights = torch.ones(self.num_events + 1)
             
         self.register_buffer("weights", weights)
-        
-        # Initialize loss balancer if using multiple components
-        if balance_strategy != "fixed":
-            num_components = sum(1 for w in [alpha, beta, gamma] if w > 0)
-            coeffs = [w for w in [alpha, beta, gamma] if w > 0]
-            self._balancer = self.get_balancer(num_losses=num_components, coeffs=coeffs)
-
-    def _get_survival_curves(self, logits: torch.Tensor) -> torch.Tensor:
+    
+    def forward(self, predictions: SAOutput, references: torch.Tensor) -> torch.Tensor:
         """
-        Convert logits to survival probabilities.
+        Compute the negative log-likelihood loss component.
         
         Args:
-            logits: Model logits with shape [batch_size, num_events, num_time_bins]
-            
-        Returns:
-            Cumulative survival curves with shape [batch_size, num_events, num_time_bins+1]
-        """
-        # Convert logits to hazards using softplus for numerical stability
-        hazards = F.softplus(logits)
-        
-        # Compute cumulative hazard
-        cum_hazards = torch.cumsum(hazards, dim=2)
-        
-        # Compute survival function: S(t) = exp(-H(t))
-        survival = torch.exp(-cum_hazards)
-        
-        # Add S(0) = 1 for all subjects and events
-        ones = torch.ones_like(survival[:, :, :1])
-        survival = torch.cat([ones, survival], dim=2)
-        
-        return survival
-
-    def likelihood_loss(
-        self, 
-        survival: torch.Tensor, 
-        hazards: torch.Tensor, 
-        references: torch.Tensor
-    ) -> torch.Tensor:
-        """
-        Compute the negative log-likelihood component of the loss.
-        
-        Args:
-            survival: Survival curves from model prediction [batch_size, num_events, num_time_bins+1]
-            hazards: Hazard values from model prediction [batch_size, num_events, num_time_bins]
+            predictions: Model predictions (SAOutput with survival probabilities)
             references: Ground truth references
             
         Returns:
             Negative log-likelihood loss
         """
-        batch_size = survival.shape[0]
+        batch_size = predictions.logits.shape[0]
         
         # Extract event information
         events = self.events(references)        # [batch_size, num_events]
@@ -140,6 +80,10 @@ class DeepHitLoss(Loss):
             # Check if event i occurred
             event_occurred = events[:, i] == 1
             event_masks.append(event_occurred)
+        
+        # Get hazard and survival values from predictions
+        hazard = predictions.hazard  # [batch_size, num_events, num_time_bins]
+        survival = predictions.survival  # [batch_size, num_events, num_time_bins+1]
         
         # Compute negative log-likelihood for uncensored subjects
         uncensored_loss = 0.0
@@ -154,7 +98,7 @@ class DeepHitLoss(Loss):
                 time_idx = duration_idx[mask, i]
                 
                 # Get hazard at event time for event type i
-                event_hazards = hazards[mask, i, :]
+                event_hazards = hazard[mask, i, :]
                 event_hazard_at_t = torch.gather(event_hazards, 1, time_idx.unsqueeze(1)).squeeze(1)
                 
                 # Get survival up to event time for all event types (including i)
@@ -233,22 +177,71 @@ class DeepHitLoss(Loss):
         
         return total_loss
 
-    def ranking_loss(
-        self, 
-        survival: torch.Tensor, 
-        references: torch.Tensor
-    ) -> torch.Tensor:
+
+class DeepHitRankingLoss(Loss):
+    """
+    Ranking loss component of DeepHit.
+    
+    Computes the ranking loss to ensure proper ordering of survival probabilities,
+    penalizing when subjects with earlier events have higher survival probabilities
+    than those with later events.
+    """
+    
+    def __init__(
+        self,
+        duration_cuts: str,
+        sigma: float = 0.1,
+        num_events: int = 1,
+        importance_sample_weights: Optional[str] = None,
+        balance_strategy: Optional[Union[str, BalancingStrategy]] = "fixed",
+        balance_params: Optional[Dict] = None,
+    ):
         """
-        Compute the ranking component of the loss.
+        Initialize DeepHitRankingLoss.
         
         Args:
-            survival: Survival curves from model prediction [batch_size, num_events, num_time_bins+1]
+            duration_cuts: Path to CSV file containing duration cut points for discretization
+            sigma: Scaling factor for ranking loss (smaller values = sharper differences)
+            num_events: Number of competing events
+            importance_sample_weights: Optional path to CSV file with importance weights
+            balance_strategy: Strategy for balancing loss components
+            balance_params: Additional parameters for the balancing strategy
+        """
+        super(DeepHitRankingLoss, self).__init__(
+            num_events=num_events,
+            balance_strategy=balance_strategy,
+            balance_params=balance_params
+        )
+        
+        self.sigma = sigma
+        
+        # Load duration cut points
+        df = pd.read_csv(duration_cuts, header=None, names=["cuts"])
+        self.register_buffer("duration_cuts", torch.tensor(df.cuts.values, dtype=torch.float32))
+        self.num_time_bins = len(df.cuts)
+        
+        # Load importance sampling weights if provided
+        if importance_sample_weights is not None:
+            df = pd.read_csv(importance_sample_weights, header=None, names=["weights"])
+            weights = torch.tensor(df.weights.values).to(torch.float32)
+        else:
+            weights = torch.ones(self.num_events + 1)
+            
+        self.register_buffer("weights", weights)
+    
+    def forward(self, predictions: SAOutput, references: torch.Tensor) -> torch.Tensor:
+        """
+        Compute the ranking loss component.
+        
+        Args:
+            predictions: Model predictions (SAOutput with survival probabilities)
             references: Ground truth references
             
         Returns:
             Ranking loss component
         """
-        batch_size = survival.shape[0]
+        batch_size = predictions.logits.shape[0]
+        survival = predictions.survival  # [batch_size, num_events, num_time_bins+1]
         
         # Extract event information
         events = self.events(references)        # [batch_size, num_events]
@@ -308,37 +301,88 @@ class DeepHitLoss(Loss):
         
         return rank_loss
 
-    def calibration_loss(
-        self, 
-        survival: torch.Tensor, 
-        references: torch.Tensor,
-        eval_times: Optional[List[float]] = None
-    ) -> torch.Tensor:
+
+class DeepHitCalibrationLoss(Loss):
+    """
+    Calibration loss component of DeepHit.
+    
+    Computes the mean squared error between predicted event probabilities
+    and actual event indicators at specific time points.
+    """
+    
+    def __init__(
+        self,
+        duration_cuts: str,
+        eval_times: Optional[List[float]] = None,
+        num_events: int = 1,
+        importance_sample_weights: Optional[str] = None,
+        balance_strategy: Optional[Union[str, BalancingStrategy]] = "fixed",
+        balance_params: Optional[Dict] = None,
+    ):
         """
-        Compute the calibration component of the loss.
+        Initialize DeepHitCalibrationLoss.
         
         Args:
-            survival: Survival curves from model prediction [batch_size, num_events, num_time_bins+1]
+            duration_cuts: Path to CSV file containing duration cut points for discretization
+            eval_times: Optional list of specific times to evaluate calibration
+            num_events: Number of competing events
+            importance_sample_weights: Optional path to CSV file with importance weights
+            balance_strategy: Strategy for balancing loss components
+            balance_params: Additional parameters for the balancing strategy
+        """
+        super(DeepHitCalibrationLoss, self).__init__(
+            num_events=num_events,
+            balance_strategy=balance_strategy,
+            balance_params=balance_params
+        )
+        
+        # Load duration cut points
+        df = pd.read_csv(duration_cuts, header=None, names=["cuts"])
+        self.register_buffer("duration_cuts", torch.tensor(df.cuts.values, dtype=torch.float32))
+        self.num_time_bins = len(df.cuts)
+        
+        # Store evaluation times if provided
+        if eval_times is not None:
+            self.register_buffer("eval_times", torch.tensor(eval_times, dtype=torch.float32))
+            self.eval_time_indices = []
+            for t in eval_times:
+                idx = torch.searchsorted(self.duration_cuts, t).item()
+                if idx >= self.num_time_bins:
+                    idx = self.num_time_bins - 1
+                self.eval_time_indices.append(idx)
+            self.eval_time_indices = torch.tensor(self.eval_time_indices)
+        else:
+            self.eval_times = None
+            self.eval_time_indices = None
+        
+        # Load importance sampling weights if provided
+        if importance_sample_weights is not None:
+            df = pd.read_csv(importance_sample_weights, header=None, names=["weights"])
+            weights = torch.tensor(df.weights.values).to(torch.float32)
+        else:
+            weights = torch.ones(self.num_events + 1)
+            
+        self.register_buffer("weights", weights)
+    
+    def forward(self, predictions: SAOutput, references: torch.Tensor) -> torch.Tensor:
+        """
+        Compute the calibration loss component.
+        
+        Args:
+            predictions: Model predictions (SAOutput with survival probabilities)
             references: Ground truth references
-            eval_times: Optional list of evaluation times for calibration
             
         Returns:
             Calibration loss component
         """
-        batch_size = survival.shape[0]
+        batch_size = predictions.logits.shape[0]
+        survival = predictions.survival  # [batch_size, num_events, num_time_bins+1]
         
         # If no evaluation times provided, use all duration cut points
-        if eval_times is None:
+        if self.eval_time_indices is None:
             eval_time_indices = torch.arange(self.num_time_bins, device=survival.device)
         else:
-            # Find closest indices for the evaluation times
-            eval_time_indices = []
-            for t in eval_times:
-                idx = torch.searchsorted(self.duration_cuts, t)
-                if idx >= self.num_time_bins:
-                    idx = self.num_time_bins - 1
-                eval_time_indices.append(idx)
-            eval_time_indices = torch.tensor(eval_time_indices, device=survival.device)
+            eval_time_indices = self.eval_time_indices.to(survival.device)
         
         # Extract event information
         events = self.events(references)        # [batch_size, num_events]
@@ -376,52 +420,3 @@ class DeepHitLoss(Loss):
         calibration_loss = calibration_loss / num_comparisons if num_comparisons > 0 else 0.0
         
         return calibration_loss
-
-    def forward(self, predictions: SAOutput, references: torch.Tensor) -> torch.Tensor:
-        """
-        Compute DeepHit loss combining likelihood, ranking, and calibration components.
-        
-        Args:
-            predictions: Model predictions (SAOutput object)
-            references: Ground truth references
-            
-        Returns:
-            Combined loss value
-        """
-        # Extract logits from predictions
-        logits = predictions.logits
-        
-        # Convert logits to hazards and survival probabilities
-        hazards = F.softplus(logits)
-        survival = self._get_survival_curves(logits)
-        
-        # Compute individual loss components
-        loss_components = []
-        loss_weights = []
-        
-        # Likelihood loss
-        if self.alpha > 0:
-            ll_loss = self.likelihood_loss(survival, hazards, references)
-            loss_components.append(ll_loss)
-            loss_weights.append(self.alpha)
-            
-        # Ranking loss
-        if self.beta > 0:
-            rank_loss = self.ranking_loss(survival, references)
-            loss_components.append(rank_loss)
-            loss_weights.append(self.beta)
-            
-        # Calibration loss
-        if self.gamma > 0:
-            calib_loss = self.calibration_loss(survival, references)
-            loss_components.append(calib_loss)
-            loss_weights.append(self.gamma)
-        
-        # Apply balancing strategy if using a custom one
-        if hasattr(self, '_balancer') and self._balancer is not None:
-            total_loss = self._balancer(loss_components)
-        else:
-            # Otherwise use weighted sum
-            total_loss = sum(w * l for w, l in zip(loss_weights, loss_components))
-            
-        return total_loss
