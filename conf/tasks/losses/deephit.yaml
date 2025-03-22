@@ -1,4 +1,7 @@
 # DeepHit loss components for configuring MetaLoss
+defaults:
+  - balancing: default
+
 sat-transformer:
   _target_: sat.loss.MetaLoss
   losses:
@@ -19,7 +22,5 @@ sat-transformer:
     - ${likelihood_loss_coeff}  # Weight for likelihood loss
     - ${ranking_loss_coeff}  # Weight for ranking loss
     - ${calibration_loss_coeff}  # Weight for calibration loss (optional, set to 0 to disable)
-  # Optionally use one of the balancing strategies
-  # balance_strategy: "scale"  # Options: fixed, scale, grad, uncertainty, adaptive
-  # balance_params:
-  #   alpha: 0.9  # EMA decay for tracking loss scales
+  balance_strategy: ${tasks.losses.balancing.balance_strategy}
+  balance_params: ${tasks.losses.balancing.balance_params}

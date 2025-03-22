@@ -1,0 +1,6 @@
+balance_strategy: adaptive
+balance_params:
+  alpha: ${loss_balancing_adaptive_alpha}  # EMA factor for loss tracking
+  eps: ${loss_balancing_adaptive_eps}  # Small constant for numerical stability
+  window_size: ${loss_balancing_adaptive_window_size}  # Window size for trend detection
+  adaptation_rate: ${loss_balancing_adaptive_adaptation_rate}  # Rate at which to adjust weights

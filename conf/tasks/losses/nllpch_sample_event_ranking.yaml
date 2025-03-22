@@ -1,3 +1,6 @@
+defaults:
+  - balancing: default
+
 sat-transformer:
   _target_: sat.loss.MetaLoss
   losses:
@@ -15,6 +18,8 @@ sat-transformer:
       sigma: ${event_ranking_loss_sigma}
       num_events: ${data.num_events}
   coeffs:
-    - 1.0
+    - ${likelihood_loss_coeff}
     - ${ranking_loss_coeff}
     - ${event_ranking_loss_coeff}
+  balance_strategy: ${tasks.losses.balancing.balance_strategy}
+  balance_params: ${tasks.losses.balancing.balance_params}

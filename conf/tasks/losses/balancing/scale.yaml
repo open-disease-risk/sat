@@ -1,0 +1,4 @@
+balance_strategy: scale
+balance_params:
+  alpha: ${loss_balancing_scale_alpha}  # EMA factor (0.9 = 90% previous, 10% current)
+  eps: ${loss_balancing_scale_eps}  # Small constant for numerical stability

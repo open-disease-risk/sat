@@ -1,0 +1,4 @@
+balance_strategy: grad
+balance_params:
+  alpha: ${loss_balancing_grad_alpha}  # EMA factor
+  eps: ${loss_balancing_grad_eps}  # Small constant for numerical stability
