@@ -233,13 +233,17 @@ class GradientNormalizationBalancer(LossBalancer):
 
                 # Update gradient norm with EMA
                 if iteration is None or iteration > 0:  # Skip first iteration
-                    self.grad_norms[i] = (
+                    # Create a new tensor instead of modifying in-place
+                    new_grad_norm = (
                         self.alpha * self.grad_norms[i]
                         + (1 - self.alpha) * curr_grad_norm
                     )
+                    # Clone to avoid in-place modification
+                    self.grad_norms[i] = new_grad_norm.clone()
                     self.coeffs[i] = 1.0 / (self.grad_norms[i] + self.eps)
 
-                weighted_losses.append(self.coeffs[i] * loss)
+                # Detach coefficient from computation graph to avoid in-place issues
+                weighted_losses.append(self.coeffs[i].detach() * loss)
             else:
                 weighted_losses.append(loss)
 
@@ -276,12 +280,33 @@ class UncertaintyWeightBalancer(LossBalancer):
             len(losses) == self.num_losses
         ), f"Expected {self.num_losses} losses, got {len(losses)}"
 
-        total_loss = 0.0
+        # Apply weights to losses separately and collect into a list
+        weighted_losses = []
+        reg_terms = []
+
         for i, loss in enumerate(losses):
-            # Weight = 1/2σ² * L + log(σ)
-            # This is derived from maximizing the log likelihood of a Gaussian with uncertainty σ
+            # Get the precision (1/σ²) by detaching parameter to break potential circular gradient paths
             precision = torch.exp(-self.log_sigma_sq[i])
-            total_loss += precision * loss + 0.5 * self.log_sigma_sq[i]
+
+            # Main loss term: precision * loss
+            weighted_losses.append(precision * loss)
+
+            # Regularization term: log(σ)
+            reg_terms.append(0.5 * self.log_sigma_sq[i])
+
+        # Single regularization term to avoid adding directly to the computation graph multiple times
+        reg_loss = torch.stack(reg_terms).sum()
+
+        # Add regularization term separately
+        if weighted_losses:
+            # Sum weighted losses
+            main_loss = torch.stack(weighted_losses).sum()
+            # Add regularization term separately
+            total_loss = main_loss + reg_loss
+        else:
+            # Fallback for empty list (shouldn't happen, but just in case)
+            device = self.log_sigma_sq.device
+            total_loss = torch.tensor(0.0, device=device, requires_grad=True) + reg_loss
 
         return total_loss
 
@@ -333,18 +358,58 @@ class AdaptiveWeightBalancer(LossBalancer):
             len(losses) == self.num_losses
         ), f"Expected {self.num_losses} losses, got {len(losses)}"
 
-        # Update loss tracking
+        # Calculate weights without modifying the computation graph
+        weights = self._calculate_weights(losses, iteration)
+
+        # Apply weights to losses using a non-inplace accumulation approach
+        weighted_losses = []
+        for i, loss in enumerate(losses):
+            # Use detached weight to avoid connecting to computation graph
+            weighted_losses.append(weights[i] * loss)
+
+        # Sum losses using a clean operation
+        if weighted_losses:
+            # Use torch.stack for a clean non-inplace operation
+            total_loss = torch.stack(weighted_losses).sum(dim=0)
+        else:
+            # Fallback for empty list
+            device = (
+                next(iter(self.parameters())).device
+                if self.parameters()
+                else torch.device("cpu")
+            )
+            total_loss = torch.tensor(0.0, device=device, requires_grad=True)
+
+        return total_loss
+
+    def _calculate_weights(
+        self, losses: List[torch.Tensor], iteration: Optional[int] = None
+    ) -> List[float]:
+        """
+        Calculate weights based on loss history without modifying the computation graph.
+        Returns Python list of weights to avoid gradient issues.
+        """
+        # Create a detached copy of the coeffs for returning
+        current_coeffs = self.coeffs.detach().clone().cpu().tolist()
+
+        # Only update tracking during evaluation (not during backward pass)
         with torch.no_grad():
+            # Create new tensors for updates to avoid in-place operations
+            new_current_losses = self.current_losses.clone()
+            new_loss_history = self.loss_history.clone()
+            new_coeffs = self.coeffs.clone()
+            new_counter = self.iteration_counter.clone()
+
             # Update current losses with EMA
             for i, loss in enumerate(losses):
                 curr_loss = loss.detach()
                 if self.iteration_counter > 0:
-                    self.current_losses[i] = (
+                    new_current_losses[i] = (
                         self.alpha * self.current_losses[i]
                         + (1 - self.alpha) * curr_loss
                     )
                 else:
-                    self.current_losses[i] = curr_loss
+                    new_current_losses[i] = curr_loss
 
             # Update history buffer (circular buffer)
             if iteration is not None:
@@ -352,13 +417,13 @@ class AdaptiveWeightBalancer(LossBalancer):
             else:
                 idx = int(self.iteration_counter) % self.window_size
 
-            self.loss_history[:, idx] = self.current_losses
+            new_loss_history[:, idx] = new_current_losses
 
             # Compute loss trends if we have enough history
             if self.iteration_counter >= self.window_size:
                 # Compute average rate of change over window
-                start_losses = self.loss_history[:, (idx + 1) % self.window_size]
-                end_losses = self.current_losses
+                start_losses = new_loss_history[:, (idx + 1) % self.window_size]
+                end_losses = new_current_losses
 
                 # Compute relative improvement for each loss
                 improvements = (start_losses - end_losses) / (start_losses + self.eps)
@@ -370,24 +435,25 @@ class AdaptiveWeightBalancer(LossBalancer):
 
                 # Reduce weight for losses that are improving faster
                 weight_adjustments = -self.adaptation_rate * improvement_gaps
-                self.coeffs = torch.clamp(
-                    self.coeffs + weight_adjustments, min=0.1, max=10.0
+                new_coeffs = torch.clamp(
+                    new_coeffs + weight_adjustments, min=0.1, max=10.0
                 )
 
                 # Normalize weights to sum to num_losses
-                self.coeffs = self.coeffs * (
-                    self.num_losses / (self.coeffs.sum() + self.eps)
-                )
+                total_weight = new_coeffs.sum() + self.eps
+                new_coeffs = new_coeffs * (self.num_losses / total_weight)
 
             # Increment counter
-            self.iteration_counter += 1
+            new_counter += 1
 
-        # Apply weights to losses
-        total_loss = 0.0
-        for i, loss in enumerate(losses):
-            total_loss += self.coeffs[i] * loss
+            # Update buffers with new values
+            self.current_losses.copy_(new_current_losses)
+            self.loss_history.copy_(new_loss_history)
+            self.coeffs.copy_(new_coeffs)
+            self.iteration_counter.copy_(new_counter)
 
-        return total_loss
+        # Return weights as Python list (completely detached from computation graph)
+        return current_coeffs
 
     def get_weights(self) -> List[float]:
         """Return current weights."""

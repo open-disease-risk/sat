@@ -1,0 +1,7 @@
+- _target_: transformers.EarlyStoppingCallback
+  early_stopping_patience: 10
+- _target_: sat.transformers.callbacks.LossWeightLoggerCallback
+  log_freq: 1  # Log every evaluation step
+  prefix: "loss_weights"  # Prefix for the logged metrics
+  log_eval: true  # Log during evaluation
+  log_train: true  # Log during training

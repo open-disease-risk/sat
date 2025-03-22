@@ -99,16 +99,41 @@ class LossWeightLoggerCallback(TrainerCallback):
                 metric_name = f"{self.prefix}/{phase}/weight_{i}"
                 log_metrics[metric_name] = weight
 
-            # Log batch of metrics
-            if hasattr(model, "log") and callable(model.log):
-                model.log(log_metrics)
+            # Log metrics using all available methods
 
-            # Additionally try to use accelerator logging if available
+            # Try direct accelerator logging (primary method)
             if hasattr(args, "accelerator") and hasattr(args.accelerator, "log"):
-                args.accelerator.log(log_metrics)
+                args.accelerator.log(log_metrics, step=state.global_step)
+                logger.info(
+                    f"Logged loss weights via accelerator at step {state.global_step}"
+                )
 
-            # Log to console as fallback if requested
-            logger.debug(f"Loss weights ({phase}): {loss_weights}")
+            # Try using the log() method of the model (alternative method)
+            elif hasattr(model, "log") and callable(model.log):
+                model.log(log_metrics)
+                logger.info(
+                    f"Logged loss weights via model at step {state.global_step}"
+                )
+
+            # Try using SummaryWriter directly if available
+            elif hasattr(args, "logging_dir") and args.logging_dir:
+                try:
+                    from torch.utils.tensorboard import SummaryWriter
+
+                    writer = SummaryWriter(log_dir=args.logging_dir)
+                    for name, value in log_metrics.items():
+                        writer.add_scalar(name, value, state.global_step)
+                    writer.flush()
+                    logger.info(
+                        f"Logged loss weights directly to TensorBoard at step {state.global_step}"
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to log to TensorBoard directly: {e}")
+
+            # Always log to console for debugging
+            logger.info(
+                f"Loss weights ({phase}) at step {state.global_step}: {loss_weights}"
+            )
 
     def on_evaluate(
         self,

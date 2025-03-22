@@ -1,0 +1,31 @@
+# DeepHit loss components for configuring MetaLoss
+defaults:
+  - balancing: default
+
+sat-transformer:
+  _target_: sat.loss.MetaLoss
+  losses:
+    - _target_: sat.loss.DeepHitLikelihoodLoss
+      num_events: ${data.num_events}
+      importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
+    - _target_: sat.loss.DeepHitRankingLoss
+      duration_cuts: ${data.label_transform.save_dir}/duration_cuts.csv
+      num_events: ${data.num_events}
+      sigma: ${ranking_loss_sigma}  # Scaling factor for ranking loss
+      importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
+    - _target_: sat.loss.DeepHitCalibrationLoss
+      duration_cuts: ${data.label_transform.save_dir}/duration_cuts.csv
+      num_events: ${data.num_events}
+      eval_times: null  # Set to specific times or null to use all duration cuts
+      importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
+    - _target_: sat.loss.SurvivalFocalLoss
+      gamma: ${focal_loss_gamma}  # Focusing parameter
+      importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
+      reduction: mean
+  coeffs:
+    - ${likelihood_loss_coeff}  # Weight for likelihood loss
+    - ${ranking_loss_coeff}  # Weight for ranking loss
+    - ${calibration_loss_coeff}  # Weight for calibration loss (optional, set to 0 to disable)
+    - ${focal_loss_coeff} # Weight for focal loss
+  balance_strategy: ${tasks.losses.balancing.balance_strategy}
+  balance_params: ${tasks.losses.balancing.balance_params}

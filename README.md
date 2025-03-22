@@ -116,6 +116,9 @@ SAT supports several loss functions for survival analysis:
 ### Standard Survival Loss Functions
 - **Negative Log-Likelihood PCHazard**: The standard negative log-likelihood for piece-wise constant hazard models
 - **DeepHit Loss**: A comprehensive loss function combining likelihood, ranking, and calibration components for competing risks
+- **Survival Focal Loss**: Loss function that down-weights easily predicted survival outcomes to focus on harder cases, with support for multi-focal parameters
+
+For detailed information about all available loss functions and their usage, see [docs/loss.md](docs/loss.md).
 
 ### DeepHit Loss Function
 The DeepHit loss is based on the paper "DeepHit: A Deep Learning Approach to Survival Analysis with Competing Risks" by Lee et al. (2018). It consists of three components:
@@ -246,7 +249,7 @@ tensorboard --logdir logs/your-experiment-dir
 
 This allows you to observe how different balancing strategies behave and identify potential issues like weight oscillation or domination by a single loss component.
 
-See `docs/loss_weight_logging.md` for detailed information on interpreting the weight logs.
+See [docs/loss_weight_logging.md](docs/loss_weight_logging.md) for detailed information on interpreting the weight logs and [docs/loss_optimization.md](docs/loss_optimization.md) for an overview of our multi-level approach to loss optimization.
 
 To-Dos
 ============================
