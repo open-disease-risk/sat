@@ -282,6 +282,61 @@ def test_with_balancing(mock_predictions, mock_references):
     assert len(weights) == 1  # Default is 1 for single loss
 
 
+def test_with_uncertainty_balancing(mock_predictions, mock_references):
+    """Test SurvivalFocalLoss with uncertainty balancing strategy."""
+    # Create loss with uncertainty balancing
+    loss_fn = SurvivalFocalLoss(gamma=2.0, num_events=2, balance_strategy="uncertainty")
+
+    # Initialize the balancer (it's lazy-loaded the first time it's needed)
+    balancer = loss_fn.get_balancer(1)
+
+    # Should have correct parameters
+    assert loss_fn.num_events == 2
+    assert loss_fn._balancer is not None
+
+    # Verify that we're using uncertainty balancing
+    from sat.loss.balancing import UncertaintyWeightBalancer
+
+    assert isinstance(balancer, UncertaintyWeightBalancer)
+
+    # Run a basic forward pass and check that the balancer is working correctly
+    loss = loss_fn(mock_predictions, mock_references)
+
+    # Check that the loss is a tensor and has reasonable values
+    assert isinstance(loss, torch.Tensor)
+    assert torch.isfinite(loss)
+    assert loss >= 0.0
+
+    # Check that weights are accessible
+    weights = loss_fn.get_loss_weights()
+    assert len(weights) == 1  # Only one loss component
+    assert isinstance(weights[0], float)  # Should be a float
+
+    # Now let's test with a simple tensor that requires gradients to verify gradient flow
+    # Create a simple dummy tensor with requires_grad=True
+    dummy_input = torch.ones(1, requires_grad=True)
+    dummy_loss = balancer([dummy_input * 10.0])
+
+    # Verify that the resulting tensor requires grad
+    assert dummy_loss.requires_grad
+
+    # Create optimizer for balancer
+    optimizer = torch.optim.SGD(balancer.parameters(), lr=0.1)
+
+    # Save initial log variances
+    initial_log_var = balancer.log_var.detach().clone()
+
+    # Run a few optimization steps with controlled input
+    for _ in range(5):
+        optimizer.zero_grad()
+        dummy_loss = balancer([dummy_input * 10.0])
+        dummy_loss.backward()
+        optimizer.step()
+
+    # Verify that log_var parameters have been updated
+    assert not torch.allclose(balancer.log_var, initial_log_var)
+
+
 def test_multi_focal_with_importance_weights(
     mock_predictions, mock_references, temp_weights_file
 ):

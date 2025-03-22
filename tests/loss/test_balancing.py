@@ -68,11 +68,15 @@ def test_uncertainty_weight_balancer():
     # Initialize with some learnable parameters
     with torch.no_grad():
         # Set one uncertainty high and one low
-        balancer.log_sigma_sq[0] = torch.log(torch.tensor(4.0))
-        balancer.log_sigma_sq[1] = torch.log(torch.tensor(0.25))
+        # log_var is 2*log(sigma), so we set different initial sigmas
+        balancer.log_var[0] = 2.0 * torch.log(torch.tensor(2.0))  # high uncertainty
+        balancer.log_var[1] = 2.0 * torch.log(torch.tensor(0.5))  # low uncertainty
 
     # Create test losses
-    losses = [torch.tensor(2.0), torch.tensor(2.0)]
+    losses = [
+        torch.tensor(2.0, requires_grad=True),
+        torch.tensor(2.0, requires_grad=True),
+    ]
 
     # Compute balanced loss - precision is inversely proportional to variance
     total_loss = balancer(losses)
@@ -82,9 +86,16 @@ def test_uncertainty_weight_balancer():
     # Weight for first loss should be lower (higher uncertainty)
     assert weights[0] < weights[1]
 
-    # Ratio should be roughly 0.25 / 4.0 = 0.0625
+    # Ratio should be roughly 0.5^2 / 2.0^2 = 0.25/4 = 0.0625
     ratio = weights[0] / weights[1]
     assert 0.05 < ratio < 0.08
+
+    # Test gradient flow - the loss should be able to backpropagate
+    total_loss.backward()
+
+    # Verify that log_var parameters received gradients
+    assert balancer.log_var.grad is not None
+    assert balancer.log_var.grad.shape == torch.Size([2])
 
 
 def test_adaptive_weight_balancer():
@@ -154,3 +165,102 @@ def test_with_gradient_computation():
     # Both parameters should have gradients
     assert a.grad is not None
     assert b.grad is not None
+
+
+def test_safe_uncertainty_function_optimization():
+    """Test that SafeUncertaintyFunction allows proper gradient updates."""
+    from sat.loss.balancing import SafeUncertaintyFunction
+
+    # Create a simple optimization scenario
+    # We'll create two dummy losses with different scales
+    loss1 = torch.tensor(10.0, requires_grad=True)  # Large loss
+    loss2 = torch.tensor(1.0, requires_grad=True)  # Small loss
+
+    # Initialize log variances as learnable parameters
+    log_var1 = torch.tensor(0.0, requires_grad=True)  # Start with equal weights
+    log_var2 = torch.tensor(0.0, requires_grad=True)  # Start with equal weights
+
+    # Create optimizer for log variances
+    optimizer = torch.optim.SGD([log_var1, log_var2], lr=0.1)
+
+    # Run several optimization steps
+    initial_log_var1 = log_var1.item()
+    initial_log_var2 = log_var2.item()
+
+    for _ in range(5):
+        # Clear gradients
+        optimizer.zero_grad()
+
+        # Apply uncertainty weighting to each loss
+        weighted_loss1 = SafeUncertaintyFunction.apply(loss1, log_var1)
+        weighted_loss2 = SafeUncertaintyFunction.apply(loss2, log_var2)
+
+        # Total loss
+        total_loss = weighted_loss1 + weighted_loss2
+
+        # Backward pass
+        total_loss.backward()
+
+        # Update log variances
+        optimizer.step()
+
+    # Check that log variances have been updated
+    assert log_var1.item() != initial_log_var1
+    assert log_var2.item() != initial_log_var2
+
+    # The larger loss should get a larger log variance (more uncertainty, less weight)
+    # because otherwise it would dominate the total loss
+    assert log_var1.item() > log_var2.item()
+
+    # Convert to precisions (weights)
+    precision1 = torch.exp(-log_var1).item()
+    precision2 = torch.exp(-log_var2).item()
+
+    # The smaller loss should get higher weight
+    assert precision1 < precision2
+
+
+def test_uncertainty_balancer_optimization():
+    """Test that UncertaintyWeightBalancer learns appropriate weights through optimization."""
+    # Create model parameters
+    a = torch.tensor([1.0], requires_grad=True)
+    b = torch.tensor([2.0], requires_grad=True)
+
+    # Create balancer
+    balancer = UncertaintyWeightBalancer(2)
+
+    # Create optimizers
+    model_optimizer = torch.optim.SGD([a, b], lr=0.1)
+    balancer_optimizer = torch.optim.SGD(balancer.parameters(), lr=0.1)
+
+    # Save initial log variances
+    initial_log_var = balancer.log_var.detach().clone()
+
+    # Run several optimization steps
+    for _ in range(10):
+        # Clear gradients
+        model_optimizer.zero_grad()
+        balancer_optimizer.zero_grad()
+
+        # Create losses with different scales
+        loss1 = 10.0 * (a**2)  # Larger scale loss
+        loss2 = 1.0 * (b**2)  # Smaller scale loss
+
+        # Apply balancer
+        total_loss = balancer([loss1, loss2])
+
+        # Backward pass
+        total_loss.backward()
+
+        # Update parameters
+        model_optimizer.step()
+        balancer_optimizer.step()
+
+    # Check that log variances have been updated
+    assert not torch.allclose(balancer.log_var, initial_log_var)
+
+    # Get final weights
+    weights = balancer.get_weights()
+
+    # The larger loss (loss1) should get a smaller weight to balance optimization
+    assert weights[0] < weights[1]

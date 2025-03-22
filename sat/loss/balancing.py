@@ -115,7 +115,12 @@ class LossBalancer(nn.Module):
 
 
 class FixedWeightBalancer(LossBalancer):
-    """Fixed coefficient weighting strategy."""
+    """
+    Fixed coefficient weighting strategy with extra safeguards.
+
+    This implementation ensures no in-place operations that could interfere with the
+    computation graph, particularly on MPS devices.
+    """
 
     def __init__(self, coeffs: List[float]):
         """
@@ -125,25 +130,41 @@ class FixedWeightBalancer(LossBalancer):
             coeffs: Loss coefficients
         """
         super().__init__(len(coeffs))
+        # Store coefficient values as a Python list to avoid computational graph issues
+        self._coeff_values = [float(c) for c in coeffs]
+        # Register buffer for state saving/loading
         self.register_buffer("coeffs", torch.tensor(coeffs, dtype=torch.float32))
 
     def forward(
         self, losses: List[torch.Tensor], iteration: Optional[int] = None
     ) -> torch.Tensor:
-        """Apply fixed weights to losses."""
+        """Apply fixed weights to losses safely without in-place operations."""
         assert (
             len(losses) == self.num_losses
         ), f"Expected {self.num_losses} losses, got {len(losses)}"
 
-        total_loss = 0.0
+        # Collect weighted losses
+        weighted_losses = []
         for i, loss in enumerate(losses):
-            total_loss += self.coeffs[i] * loss
+            # Use the Python float value to avoid computation graph issues
+            weighted_losses.append(self._coeff_values[i] * loss)
 
-        return total_loss
+        # Stack and sum for a clean non-in-place operation
+        if weighted_losses:
+            # Handle different tensor shapes by using sum instead of stack
+            result = weighted_losses[0]
+            for wl in weighted_losses[1:]:
+                result = result + wl
+            return result
+        else:
+            # Return empty loss (should never happen in practice)
+            return torch.tensor(0.0, device=losses[0].device if losses else None)
 
     def get_weights(self) -> List[float]:
         """Return fixed weights."""
-        return self.coeffs.cpu().tolist()
+        return (
+            self._coeff_values.copy()
+        )  # Return a copy to avoid potential modifications
 
 
 class ScaleNormalizationBalancer(LossBalancer):
@@ -196,11 +217,11 @@ class ScaleNormalizationBalancer(LossBalancer):
 
 
 class GradientNormalizationBalancer(LossBalancer):
-    """Gradient-based normalization balancing strategy."""
+    """Gradient-based normalization balancing strategy with Apple Silicon compatibility."""
 
     def __init__(self, num_losses: int, alpha: float = 0.9, eps: float = 1e-8):
         """
-        Initialize gradient normalization balancer.
+        Initialize gradient normalization balancer with MPS-friendly operations.
 
         Args:
             num_losses: Number of losses
@@ -210,54 +231,115 @@ class GradientNormalizationBalancer(LossBalancer):
         super().__init__(num_losses)
         self.alpha = alpha
         self.eps = eps
+
+        # Store values as Python lists to avoid computational graph issues
+        self._grad_norms = [1.0] * num_losses
+        self._coeff_values = [1.0] * num_losses
+
+        # Register buffers for state dict saving/loading
         self.register_buffer("grad_norms", torch.ones(num_losses, dtype=torch.float32))
         self.register_buffer("coeffs", torch.ones(num_losses, dtype=torch.float32))
+        self.register_buffer("iter_counter", torch.tensor(0))
 
     def forward(
         self, losses: List[torch.Tensor], iteration: Optional[int] = None
     ) -> torch.Tensor:
-        """Balance losses using gradient normalization."""
+        """Balance losses using gradient normalization with clean operations."""
         assert (
             len(losses) == self.num_losses
         ), f"Expected {self.num_losses} losses, got {len(losses)}"
 
-        # Compute individual loss gradients
+        # Update coefficients without affecting the computation graph
+        with torch.no_grad():
+            self.iter_counter += 1
+
+            # Update gradient norms and coefficients
+            for i, loss in enumerate(losses):
+                if hasattr(loss, "grad_fn") and loss.grad_fn is not None:
+                    # Use detached loss value as proxy for gradient magnitude
+                    curr_grad_norm = float(loss.detach().abs().item())
+
+                    # Update with EMA (using Python floats)
+                    if self.iter_counter > 1:  # Skip first iteration
+                        self._grad_norms[i] = (
+                            self.alpha * self._grad_norms[i]
+                            + (1.0 - self.alpha) * curr_grad_norm
+                        )
+                        self._coeff_values[i] = 1.0 / (self._grad_norms[i] + self.eps)
+
+                        # Update buffers for visualization and state saving
+                        self.grad_norms[i] = self._grad_norms[i]
+                        self.coeffs[i] = self._coeff_values[i]
+
+        # Apply weights to losses with clean operations
         weighted_losses = []
         for i, loss in enumerate(losses):
-            # Allow gradient computation for this loss
-            if hasattr(loss, "grad_fn") and loss.grad_fn is not None:
-                # We don't actually compute the full gradient here, as that would be inefficient
-                # Instead, we use the current loss value as a proxy for gradient magnitude
-                # This is a simplification, but works well in practice
-                curr_grad_norm = loss.detach().abs()
+            # Use Python float value to avoid computation graph issues
+            weighted_losses.append(self._coeff_values[i] * loss)
 
-                # Update gradient norm with EMA
-                if iteration is None or iteration > 0:  # Skip first iteration
-                    # Create a new tensor instead of modifying in-place
-                    new_grad_norm = (
-                        self.alpha * self.grad_norms[i]
-                        + (1 - self.alpha) * curr_grad_norm
-                    )
-                    # Clone to avoid in-place modification
-                    self.grad_norms[i] = new_grad_norm.clone()
-                    self.coeffs[i] = 1.0 / (self.grad_norms[i] + self.eps)
-
-                # Detach coefficient from computation graph to avoid in-place issues
-                weighted_losses.append(self.coeffs[i].detach() * loss)
-            else:
-                weighted_losses.append(loss)
-
-        # Sum losses
-        total_loss = sum(weighted_losses)
-        return total_loss
+        # Combine losses safely
+        if weighted_losses:
+            result = weighted_losses[0]
+            for wl in weighted_losses[1:]:
+                result = result + wl  # Clean non-inplace addition
+            return result
+        else:
+            # Fallback case
+            device = losses[0].device if losses else None
+            return torch.tensor(0.0, device=device, requires_grad=True)
 
     def get_weights(self) -> List[float]:
         """Return current weights."""
-        return self.coeffs.cpu().tolist()
+        return self._coeff_values.copy()  # Return a copy to avoid modification
+
+
+class SafeUncertaintyFunction(torch.autograd.Function):
+    """
+    Custom autograd function for uncertainty-based loss balancing.
+
+    This ensures proper gradient flow by explicitly defining forward and backward passes.
+    """
+
+    @staticmethod
+    def forward(ctx, loss, log_var):
+        """Forward pass: weight loss by precision (1/variance) and add log variance term."""
+        # Save values for backward pass
+        ctx.save_for_backward(loss, log_var)
+
+        # Compute precision (detached to avoid circular gradient paths)
+        precision = torch.exp(-log_var)
+
+        # Return weighted loss + log_var regularization term
+        return precision * loss + 0.5 * log_var
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        """Backward pass: compute gradients for loss and log variance."""
+        loss, log_var = ctx.saved_tensors
+
+        # Precision (1/variance)
+        precision = torch.exp(-log_var)
+
+        # Gradient for loss: precision * grad_output
+        grad_loss = precision * grad_output
+
+        # Gradient for log variance:
+        # d(precision * loss + 0.5 * log_var)/d(log_var) =
+        # -precision * loss * grad_output + 0.5 * grad_output
+        grad_log_var = (-precision * loss + 0.5) * grad_output
+
+        return grad_loss, grad_log_var
 
 
 class UncertaintyWeightBalancer(LossBalancer):
-    """Homoscedastic uncertainty weighting balancer."""
+    """
+    Homoscedastic uncertainty weighting balancer that uses SafeUncertaintyFunction
+    to learn optimal weights through gradient descent.
+
+    This implementation is compatible with Apple Silicon (MPS) by using
+    a custom autograd function that explicitly defines forward and backward
+    passes with proper gradient flow.
+    """
 
     def __init__(self, num_losses: int, init_sigma: float = 1.0):
         """
@@ -265,56 +347,84 @@ class UncertaintyWeightBalancer(LossBalancer):
 
         Args:
             num_losses: Number of losses
-            init_sigma: Initial uncertainty value
+            init_sigma: Initial uncertainty value (higher means lower initial weight)
         """
         super().__init__(num_losses)
-        # We parameterize log(sigma^2) for numerical stability
-        log_sigma_sq = torch.ones(num_losses) * torch.log(torch.tensor(init_sigma**2))
-        self.log_sigma_sq = nn.Parameter(log_sigma_sq)
+
+        # Initialize log variance parameters
+        # Using Parameter ensures they get updated through gradient descent
+        init_log_var = torch.ones(num_losses) * (
+            2.0 * torch.log(torch.tensor(init_sigma))
+        )
+        self.log_var = nn.Parameter(init_log_var, requires_grad=True)
+
+        # For state tracking and visualization
+        self.register_buffer("iteration", torch.tensor(0))
+
+        # Log to console
+        logger.info(f"Using SafeUncertaintyFunction Balancer with {num_losses} losses")
 
     def forward(
         self, losses: List[torch.Tensor], iteration: Optional[int] = None
     ) -> torch.Tensor:
-        """Balance losses using learned uncertainty weighting."""
+        """
+        Balance losses using uncertainty weighting with SafeUncertaintyFunction.
+
+        Args:
+            losses: List of loss tensors to balance
+            iteration: Optional iteration number for tracking
+
+        Returns:
+            Balanced total loss with uncertainty regularization terms
+        """
         assert (
             len(losses) == self.num_losses
         ), f"Expected {self.num_losses} losses, got {len(losses)}"
 
-        # Apply weights to losses separately and collect into a list
-        weighted_losses = []
-        reg_terms = []
+        # Processing each loss with the uncertainty function
+        total_loss = None
+        device = losses[0].device
+
+        # Move the log variances to the same device as the losses
+        log_var_device = self.log_var.to(device)
 
         for i, loss in enumerate(losses):
-            # Get the precision (1/σ²) by detaching parameter to break potential circular gradient paths
-            precision = torch.exp(-self.log_sigma_sq[i])
+            # Get individual log variance for this loss
+            log_var_i = log_var_device[i].reshape(1)
 
-            # Main loss term: precision * loss
-            weighted_losses.append(precision * loss)
+            # Apply uncertainty weighting using our custom autograd function
+            weighted_loss = SafeUncertaintyFunction.apply(loss, log_var_i)
 
-            # Regularization term: log(σ)
-            reg_terms.append(0.5 * self.log_sigma_sq[i])
+            # Accumulate the losses
+            if total_loss is None:
+                total_loss = weighted_loss
+            else:
+                total_loss = total_loss + weighted_loss
 
-        # Single regularization term to avoid adding directly to the computation graph multiple times
-        reg_loss = torch.stack(reg_terms).sum()
+        # Increment iteration counter for tracking
+        with torch.no_grad():
+            self.iteration += 1
 
-        # Add regularization term separately
-        if weighted_losses:
-            # Sum weighted losses
-            main_loss = torch.stack(weighted_losses).sum()
-            # Add regularization term separately
-            total_loss = main_loss + reg_loss
-        else:
-            # Fallback for empty list (shouldn't happen, but just in case)
-            device = self.log_sigma_sq.device
-            total_loss = torch.tensor(0.0, device=device, requires_grad=True) + reg_loss
+            # Log current weights periodically
+            if self.iteration.item() % 10 == 0:
+                weights = self.get_weights()
+                logger.info(
+                    f"Iter {self.iteration.item()}: Uncertainty weights: {weights}"
+                )
 
         return total_loss
 
     def get_weights(self) -> List[float]:
-        """Return current weights (precisions)."""
+        """
+        Get current precision weights (1/variance) for logging.
+
+        The weight is e^(-log_var), which corresponds to precision (1/variance).
+        Higher precision means higher weight in the loss function.
+        """
         with torch.no_grad():
-            precisions = torch.exp(-self.log_sigma_sq).cpu().tolist()
-        return precisions
+            # Convert log variances to precisions: precision = 1/variance = e^(-log_var)
+            precisions = torch.exp(-self.log_var).detach().cpu().tolist()
+            return precisions
 
 
 class AdaptiveWeightBalancer(LossBalancer):
