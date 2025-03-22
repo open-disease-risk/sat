@@ -29,7 +29,9 @@ def importance_weights_file(tmp_path):
     return str(weights_path)
 
 
-def test_observation_event_ranking_loss_initialization(duration_cuts_file, importance_weights_file):
+def test_observation_event_ranking_loss_initialization(
+    duration_cuts_file, importance_weights_file
+):
     """Test that ObservationEventRankingLoss initializes correctly."""
     loss_fn = ObservationEventRankingLoss(
         duration_cuts=duration_cuts_file,
@@ -37,10 +39,12 @@ def test_observation_event_ranking_loss_initialization(duration_cuts_file, impor
         sigma=0.1,
         num_events=2,
     )
-    
+
     assert loss_fn.num_events == 2
     assert loss_fn.sigma == 0.1
-    assert torch.allclose(loss_fn.weights, torch.tensor([0.5, 1.0, 1.0], dtype=torch.float32))
+    assert torch.allclose(
+        loss_fn.weights, torch.tensor([0.5, 1.0, 1.0], dtype=torch.float32)
+    )
     assert len(loss_fn.duration_cuts) == 11
 
 
@@ -49,14 +53,14 @@ def test_observation_event_ranking_loss_forward(duration_cuts_file):
     batch_size = 4
     num_events = 2
     num_time_bins = 10
-    
+
     # Create loss function
     loss_fn = ObservationEventRankingLoss(
         duration_cuts=duration_cuts_file,
         sigma=0.1,
         num_events=num_events,
     )
-    
+
     # Create fake predictions
     logits = torch.randn(batch_size, num_events, num_time_bins)
     hazard = torch.nn.functional.softplus(logits)
@@ -65,30 +69,30 @@ def test_observation_event_ranking_loss_forward(duration_cuts_file):
     )  # Padding for time 0
     survival = torch.exp(-torch.cumsum(hazard, dim=2))
     risk = 1.0 - survival
-    
+
     predictions = SAOutput(
         logits=logits,
         hazard=hazard,
         survival=survival,
         risk=risk,
     )
-    
+
     # Create fake references - format matches SurvivalTaskHead.forward's expected format
     # Reference tensor structure: [percentiles, events, fractions, durations]
     # For 2 events: [2 percentile cols, 2 event cols, 2 fraction cols, 2 duration cols]
     references = torch.zeros(batch_size, 4 * num_events)
-    
+
     # Set event status - first 2 samples have event 0, second 2 samples have event 1
     references[0:2, num_events] = 1  # Event 0 occurred
     references[2:4, num_events + 1] = 1  # Event 1 occurred
-    
+
     # Set durations
     references[0:2, 3 * num_events] = 5.0  # Time for event 0
     references[2:4, 3 * num_events + 1] = 8.0  # Time for event 1
-    
+
     # Call forward
     loss = loss_fn(predictions, references)
-    
+
     # Basic checks
     assert loss.dim() == 0  # Scalar
     assert not torch.isnan(loss)
@@ -110,14 +114,14 @@ def test_observation_event_ranking_loss_censored_only(duration_cuts_file):
     batch_size = 4
     num_events = 2
     num_time_bins = 10
-    
+
     # Create loss function
     loss_fn = ObservationEventRankingLoss(
         duration_cuts=duration_cuts_file,
         sigma=0.1,
         num_events=num_events,
     )
-    
+
     # Create fake predictions
     logits = torch.randn(batch_size, num_events, num_time_bins)
     hazard = torch.nn.functional.softplus(logits)
@@ -126,22 +130,22 @@ def test_observation_event_ranking_loss_censored_only(duration_cuts_file):
     )  # Padding for time 0
     survival = torch.exp(-torch.cumsum(hazard, dim=2))
     risk = 1.0 - survival
-    
+
     predictions = SAOutput(
         logits=logits,
         hazard=hazard,
         survival=survival,
         risk=risk,
     )
-    
+
     # Create references with all censored observations
     references = torch.zeros(batch_size, 4 * num_events)
-    
+
     # Set durations (even though censored)
     references[:, 3 * num_events] = 5.0
     references[:, 3 * num_events + 1] = 8.0
-    
+
     # Call forward - should return zero loss since no events to rank
     loss = loss_fn(predictions, references)
-    
+
     assert loss.item() == 0.0
