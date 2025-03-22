@@ -33,7 +33,7 @@ class MSELoss(Loss):
         super(MSELoss, self).__init__(
             num_events=num_events,
             balance_strategy=balance_strategy,
-            balance_params=balance_params
+            balance_params=balance_params,
         )
 
         self.l2_type = l2_type

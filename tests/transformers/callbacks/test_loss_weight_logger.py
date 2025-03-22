@@ -15,10 +15,10 @@ class MockLossFn(Loss):
     def __init__(self):
         super().__init__(num_events=1)
         self.balancer = FixedWeightBalancer([0.7, 0.3])
-        
+
     def forward(self, predictions, references):
         return torch.tensor(1.0)
-        
+
     def get_loss_weights(self):
         return self.balancer.get_weights()
 
@@ -28,7 +28,7 @@ class MockModel(nn.Module):
         super().__init__()
         self.loss_fn = MockLossFn()
         self.logged_metrics = {}
-        
+
     def log(self, metrics):
         self.logged_metrics.update(metrics)
 
@@ -67,10 +67,10 @@ def test_loss_weight_logger_evaluate():
     args = MockTrainingArgs()
     state = MockTrainerState()
     control = MockTrainerControl()
-    
+
     # Call on_evaluate
     callback.on_evaluate(args, state, control, model)
-    
+
     # Check that weights were logged
     assert "test/eval/weight_0" in model.logged_metrics
     assert "test/eval/weight_1" in model.logged_metrics
@@ -87,10 +87,10 @@ def test_loss_weight_logger_step():
     args = MockTrainingArgs()
     state = MockTrainerState()
     control = MockTrainerControl()
-    
+
     # Call on_step_end
     callback.on_step_end(args, state, control, model)
-    
+
     # Check that weights were logged
     assert "test/train/weight_0" in model.logged_metrics
     assert "test/train/weight_1" in model.logged_metrics
@@ -107,10 +107,10 @@ def test_loss_weight_logger_disabled():
     args = MockTrainingArgs()
     state = MockTrainerState()
     control = MockTrainerControl()
-    
+
     # Call both hooks
     callback.on_evaluate(args, state, control, model)
     callback.on_step_end(args, state, control, model)
-    
+
     # Check that no weights were logged
     assert not model.logged_metrics

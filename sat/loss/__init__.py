@@ -16,7 +16,11 @@ from .regression.mse import MSELoss
 from .regression.quantile import QuantileLoss
 
 from .survival.nllpchazard import SATNLLPCHazardLoss
-from .survival.deephit import DeepHitLikelihoodLoss, DeepHitRankingLoss, DeepHitCalibrationLoss
+from .survival.deephit import (
+    DeepHitLikelihoodLoss,
+    DeepHitRankingLoss,
+    DeepHitCalibrationLoss,
+)
 
 __all__ = [
     "Loss",

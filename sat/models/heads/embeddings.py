@@ -38,13 +38,13 @@ class TokenEmbedder(nn.Module):
     ) -> torch.Tensor:
         """
         Process transformer hidden states to get token embeddings.
-        
+
         Args:
             hidden_states: Tuple of tensors from transformer layers
             sequence_output: Output from transformer model
             select_hidden_layers: Optional list of specific layers to use
             attention_mask: Optional attention mask for padding
-            
+
         Returns:
             Token embeddings with shape (batch_size, seq_length, embedding_dim)
         """
@@ -53,29 +53,31 @@ class TokenEmbedder(nn.Module):
             logger.debug("Using Bert-pooler for the token embeddings")
             # HuggingFace's BERT pooler applies a linear layer to the CLS token from the last layer
             return sequence_output[1]
-            
+
         # Convert tuple of hidden states to tensor
         # layers x batches x tokens x features
         token_embeddings = torch.stack(hidden_states, dim=0)
-        
+
         # Subset the layers if specified
         if select_hidden_layers:
             logger.debug(f"Select hidden layers {select_hidden_layers}")
             token_embeddings = token_embeddings[select_hidden_layers, :, :, :]
-        
+
         # batch x tokens x layers x features
         token_embeddings = token_embeddings.permute(1, 2, 0, 3)
-        logger.debug(f"Dimensions of token embeddings after layer selection {token_embeddings.shape}")
-        
+        logger.debug(
+            f"Dimensions of token embeddings after layer selection {token_embeddings.shape}"
+        )
+
         # Process token embeddings based on configuration
         if self.token_emb_strategy == TokenEmbedding.AVG.value:
             logger.debug("Average the token embeddings across layers")
             token_embeddings = torch.mean(token_embeddings, dim=2)
-            
+
         elif self.token_emb_strategy == TokenEmbedding.SUM.value:
             logger.debug("Sum the token embeddings across layers")
             token_embeddings = torch.sum(token_embeddings, dim=2)
-            
+
         elif self.token_emb_strategy == TokenEmbedding.CAT.value:
             logger.debug("Concatenate the token embeddings across layers")
             # Split along the layer dimension
@@ -83,9 +85,9 @@ class TokenEmbedder(nn.Module):
                 token_embeddings, token_embeddings.shape[2], dim=2
             )
             token_embeddings = torch.cat(layers, dim=3).squeeze()
-            
+
         # ATTENTION option removed to avoid stability issues
-            
+
         logger.debug(f"Final token embeddings shape: {token_embeddings.shape}")
         return token_embeddings
 
@@ -113,11 +115,11 @@ class SentenceEmbedder(nn.Module):
     ) -> torch.Tensor:
         """
         Create sentence embeddings from token embeddings.
-        
+
         Args:
             token_embeddings: Token-level embeddings
             attention_mask: Optional mask for padding tokens
-            
+
         Returns:
             Sentence embeddings with shape based on pooling strategy
         """
@@ -125,7 +127,7 @@ class SentenceEmbedder(nn.Module):
         if len(token_embeddings.shape) == 2:
             logger.debug("Using pre-pooled embeddings (likely from BERT pooler)")
             return token_embeddings
-        
+
         # Apply pooling based on strategy
         if self.sentence_emb_strategy == SentenceEmbedding.AVG.value:
             logger.debug("Average across tokens to produce sentence embeddings")
@@ -143,7 +145,7 @@ class SentenceEmbedder(nn.Module):
                 sentence_embeddings = token_sum / safe_mask_sum
             else:
                 sentence_embeddings = torch.mean(token_embeddings, dim=1)
-                
+
         elif self.sentence_emb_strategy == SentenceEmbedding.MAX.value:
             logger.debug("Max across tokens to produce sentence embeddings")
             if attention_mask is not None:
@@ -155,10 +157,10 @@ class SentenceEmbedder(nn.Module):
                 sentence_embeddings = torch.max(masked_embeddings, dim=1)[0]
             else:
                 sentence_embeddings = torch.max(token_embeddings, dim=1)[0]
-                
+
         else:  # SentenceEmbedding.NONE.value
             logger.debug("No pooling applied to token embeddings")
             sentence_embeddings = token_embeddings
-        
+
         logger.debug(f"Sentence embeddings shape: {sentence_embeddings.shape}")
         return sentence_embeddings

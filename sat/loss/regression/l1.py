@@ -32,9 +32,9 @@ class L1Loss(Loss):
         balance_params: Optional[Dict] = None,
     ):
         super(L1Loss, self).__init__(
-            num_events=num_events, 
+            num_events=num_events,
             balance_strategy=balance_strategy,
-            balance_params=balance_params
+            balance_params=balance_params,
         )
 
         self.l1_type = l1_type

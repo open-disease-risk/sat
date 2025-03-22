@@ -34,7 +34,7 @@ class QuantileLoss(Loss):
         super(QuantileLoss, self).__init__(
             num_events=num_events,
             balance_strategy=balance_strategy,
-            balance_params=balance_params
+            balance_params=balance_params,
         )
 
         self.l_type = l_type
