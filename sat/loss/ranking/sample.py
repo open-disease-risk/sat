@@ -33,10 +33,12 @@ class SampleRankingLoss(RankingLoss):
             references (torch.Tensor): Reference values. (dims: batch size x 4)
 
         Returns:
-            float: The loss value.
+            torch.Tensor: The loss value.
         """
         events = self.events(references).permute(1, 0)
         e = events.shape[1]
+
+        # This calculation already returns a tensor
         eta = self.ranking_loss(
             events,
             self.durations(references).permute(1, 0),
@@ -45,4 +47,5 @@ class SampleRankingLoss(RankingLoss):
             self.weights[1:].unsqueeze(1).unsqueeze(2).repeat(1, e, e),
         )
 
-        return eta
+        # The ensure_tensor is still kept as a fallback
+        return self.ensure_tensor(eta, device=references.device)

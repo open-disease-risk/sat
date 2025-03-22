@@ -115,11 +115,14 @@ class MismatchLoss(Loss):
             references (torch.Tensor): Reference values. (dims: batch size x 4)
 
         Returns:
-            float: The loss value.
+            torch.Tensor: The loss value.
         """
         logits = predictions.logits
         mean_lifetimes = self.mean_lifetime(logits, references)
         logger.debug(f"Mean lifetimes {mean_lifetimes}")
+
+        # Compute loss (already a tensor from mismatch_loss)
         loss = self.mismatch_loss(references, mean_lifetimes)
 
-        return loss
+        # The ensure_tensor is still kept as a fallback
+        return self.ensure_tensor(loss, device=references.device)

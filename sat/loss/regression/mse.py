@@ -107,9 +107,12 @@ class MSELoss(Loss):
         self, predictions: TaskOutput, references: torch.Tensor
     ) -> torch.Tensor:
         predictions = predictions.predictions
+        device = references.device
 
-        loss = 0.0
+        # Initialize loss as tensor
+        loss = torch.zeros(1, device=device)
         for i in range(self.num_events):
             loss += self.mse(predictions, references, i)
 
-        return loss
+        # The ensure_tensor is still kept as a fallback
+        return self.ensure_tensor(loss, device=device)

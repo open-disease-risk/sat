@@ -31,11 +31,13 @@ class MultiEventRankingLoss(RankingLoss):
             references (torch.Tensor): Reference values. (dims: batch size x 4)
 
         Returns:
-            float: The loss value.
+            torch.Tensor: The loss value.
         """
         events = self.events(references)
         n = events.shape[0]
         e = events.shape[1]
+
+        # This calculation already returns a tensor
         eta = self.ranking_loss(
             events,
             self.durations(references),
@@ -47,4 +49,6 @@ class MultiEventRankingLoss(RankingLoss):
             .repeat(1, 1, e)
             .expand(n, -1, -1),
         )
-        return eta
+
+        # The ensure_tensor is still kept as a fallback
+        return self.ensure_tensor(eta, device=references.device)

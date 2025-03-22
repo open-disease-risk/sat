@@ -90,6 +90,41 @@ class Loss(nn.Module):
             surv.append(hazard.cumsum(1).mul(-1).exp()[:, :-1])
         return surv
 
+    def ensure_tensor(
+        self, value: Union[float, int, torch.Tensor], device=None
+    ) -> torch.Tensor:
+        """
+        Ensures that a loss value is a proper PyTorch tensor.
+
+        Args:
+            value: Loss value that might be a Python scalar or tensor
+            device: Optional device to place the tensor on
+
+        Returns:
+            PyTorch tensor representation of the value
+        """
+        if isinstance(value, torch.Tensor):
+            return value
+
+        # Get the device from the class parameters if not specified
+        if device is None:
+            # Try to find a registered buffer or parameter to get its device
+            for buffer_name, buffer in self._buffers.items():
+                if buffer is not None and isinstance(buffer, torch.Tensor):
+                    device = buffer.device
+                    break
+
+            if device is None:
+                for param_name, param in self._parameters.items():
+                    if param is not None:
+                        device = param.device
+                        break
+
+        # Convert scalar to tensor
+        if device is not None:
+            return torch.tensor(float(value), device=device)
+        return torch.tensor(float(value))
+
 
 class RankingLoss(Loss):
     def __init__(

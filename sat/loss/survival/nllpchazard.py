@@ -68,13 +68,16 @@ class SATNLLPCHazardLoss(Loss):
             references (torch.Tensor): Reference values. (dims: batch size x 4)
 
         Returns:
-            float: The loss value.
+            torch.Tensor: The loss value.
         """
         # variables x batch x events x duration cuts
         logits = predictions.logits
+        device = references.device
 
-        loss = 0.0
+        # Initialize loss as tensor
+        loss = torch.zeros(1, device=device)
         for i in range(self.num_events):
             loss += self.nllp_hazard_loss(logits, references, i)
 
-        return loss
+        # The ensure_tensor is still kept as a fallback
+        return self.ensure_tensor(loss, device=device)

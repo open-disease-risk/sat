@@ -4,10 +4,8 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 import pandas as pd
-import numpy as np
 import torch
-import torch.nn.functional as F
-from typing import Dict, Optional, Union, List, Tuple
+from typing import Dict, Optional, Union, List
 
 from ..balancing import BalancingStrategy
 from sat.models.heads import SAOutput
@@ -86,7 +84,8 @@ class DeepHitLikelihoodLoss(Loss):
         survival = predictions.survival  # [batch_size, num_events, num_time_bins+1]
 
         # Compute negative log-likelihood for uncensored subjects
-        uncensored_loss = 0.0
+        device = references.device
+        uncensored_loss = torch.zeros(1, device=device)
         num_uncensored = 0
 
         for i in range(self.num_events):
@@ -146,7 +145,7 @@ class DeepHitLikelihoodLoss(Loss):
 
         # Compute negative log-likelihood for censored subjects
         censored_mask = torch.all(events == 0, dim=1)
-        censored_loss = 0.0
+        censored_loss = torch.zeros(1, device=device)
 
         if censored_mask.sum() > 0:
             # For censored subjects, get the last observed time
@@ -181,7 +180,8 @@ class DeepHitLikelihoodLoss(Loss):
         total_subjects = batch_size
         total_loss = (uncensored_loss + censored_loss) / total_subjects
 
-        return total_loss
+        # Ensure the result is a proper tensor
+        return self.ensure_tensor(total_loss, device=references.device)
 
 
 class DeepHitRankingLoss(Loss):
@@ -256,7 +256,8 @@ class DeepHitRankingLoss(Loss):
         durations = self.durations(references)  # [batch_size, num_events]
 
         # Create indicator matrix for each event type
-        rank_loss = 0.0
+        device = references.device
+        rank_loss = torch.zeros(1, device=device)
 
         for event_type in range(self.num_events):
             # Get indices of subjects with this event type
@@ -308,9 +309,13 @@ class DeepHitRankingLoss(Loss):
                 rank_loss += valid_comparisons.sum()
 
         # Normalize by number of subjects
-        rank_loss = rank_loss / batch_size if batch_size > 0 else 0.0
+        if batch_size > 0:
+            rank_loss = rank_loss / batch_size
+        else:
+            rank_loss = torch.zeros(1, device=device)
 
-        return rank_loss
+        # The ensure_tensor is still kept as a fallback
+        return self.ensure_tensor(rank_loss, device=device)
 
 
 class DeepHitCalibrationLoss(Loss):
@@ -403,7 +408,8 @@ class DeepHitCalibrationLoss(Loss):
         events = self.events(references)  # [batch_size, num_events]
         durations = self.durations(references)  # [batch_size, num_events]
 
-        calibration_loss = 0.0
+        device = references.device
+        calibration_loss = torch.zeros(1, device=device)
         num_comparisons = 0
 
         for event_type in range(self.num_events):
@@ -434,8 +440,10 @@ class DeepHitCalibrationLoss(Loss):
                 num_comparisons += batch_size
 
         # Normalize by number of comparisons
-        calibration_loss = (
-            calibration_loss / num_comparisons if num_comparisons > 0 else 0.0
-        )
+        if num_comparisons > 0:
+            calibration_loss = calibration_loss / num_comparisons
+        else:
+            calibration_loss = torch.zeros(1, device=references.device)
 
-        return calibration_loss
+        # The ensure_tensor is still kept as a fallback
+        return self.ensure_tensor(calibration_loss, device=references.device)
