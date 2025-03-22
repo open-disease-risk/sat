@@ -1,16 +1,17 @@
 # @package _global_
 dataset: hsa_synthetic
-modelname: survival
+modelname: deephit_focal
 
 defaults:
   - hsa_synthetic/defaults
   - override /data/load: hsa_synthetic
   - override /data/parse: ${data/load}
-  - override /data/transform: default
-  - override /tokenizers: hsa_synthetic
-  - override /transformers: numeric_bert
+  - override /tokenizers: ${data/load}
+  - override /transformers: bert
   - override /tasks: survival
-  - override /trainer: hsa_synthetic/default
+  - override /tasks/losses: deephit_focal
+  - override /tasks/losses/balancing: grad
+  - override /trainer: ${data/load}/default
 
 survival_intermediate_size: 16
 survival_batch_norm: false

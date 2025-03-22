@@ -1,16 +1,16 @@
 # @package _global_
-dataset: metabric
+dataset: hsa_synthetic
 modelname: deephit
 
 defaults:
-  - metabric/defaults
-  - override /data/load: metabric
+  - hsa_synthetic/defaults
+  - override /data/load: hsa_synthetic
   - override /data/parse: ${data/load}
   - override /tokenizers: ${data/load}
   - override /transformers: bert
   - override /tasks: survival
   - override /tasks/losses: deephit
-  - override /tasks/losses/balancing: grad
+  - override /tasks/losses/balancing: adaptive
   - override /trainer: ${data/load}/default
 
 
