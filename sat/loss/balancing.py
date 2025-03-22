@@ -6,7 +6,7 @@ __status__ = "Development"
 import torch
 import torch.nn as nn
 from enum import Enum
-from typing import Dict, List, Optional, Union
+from typing import List, Optional, Union
 
 from sat.utils import logging
 
@@ -341,15 +341,87 @@ class UncertaintyWeightBalancer(LossBalancer):
     passes with proper gradient flow.
     """
 
-    def __init__(self, num_losses: int, init_sigma: float = 1.0):
+    # Class variable to track tensorboard writer instances
+    _tb_writers = {}  # Maps logging_dir to SummaryWriter instances
+    _global_step = 0  # Global step counter for logging
+    _log_dir = None  # Optional explicit log directory
+
+    @classmethod
+    def get_tb_writer(cls, logging_dir=None):
+        """Get or create a TensorBoard writer for the given logging directory."""
+        # Use the provided logging_dir, or the class-level _log_dir if set
+        if logging_dir is None:
+            # If class has a configured log_dir, use it
+            if cls._log_dir is not None:
+                logging_dir = cls._log_dir
+                logger.debug(f"Using configured log_dir: {logging_dir}")
+            else:
+                # Look in common places
+                import os
+
+                potential_dirs = ["./runs", "./outputs", "./logs", "./tensorboard"]
+
+                for d in potential_dirs:
+                    if os.path.exists(d):
+                        # Find most recent subdirectory by modification time
+                        subdirs = [
+                            os.path.join(d, sd)
+                            for sd in os.listdir(d)
+                            if os.path.isdir(os.path.join(d, sd))
+                        ]
+                        if subdirs:
+                            most_recent = max(subdirs, key=os.path.getmtime)
+                            logging_dir = most_recent
+                            logger.debug(f"Found existing log directory: {logging_dir}")
+                            break
+
+                if logging_dir is None:
+                    # No existing TB dirs found, create one
+                    fallback_dir = "./tb_logs/uncertainty_weights"
+                    os.makedirs(fallback_dir, exist_ok=True)
+                    logging_dir = fallback_dir
+                    logger.info(f"Created fallback logging directory: {logging_dir}")
+
+        # Create writer if needed
+        if logging_dir not in cls._tb_writers:
+            try:
+                from torch.utils.tensorboard import SummaryWriter
+
+                cls._tb_writers[logging_dir] = SummaryWriter(log_dir=logging_dir)
+                logger.info(f"Created TensorBoard writer at {logging_dir}")
+            except Exception as e:
+                logger.warning(f"Failed to create TensorBoard writer: {e}")
+                return None
+
+        return cls._tb_writers[logging_dir]
+
+    def __init__(
+        self,
+        num_losses: int,
+        init_sigma: float = 1.0,
+        log_interval: int = 10,
+        log_dir: str = None,
+    ):
         """
         Initialize uncertainty weighting balancer.
 
         Args:
             num_losses: Number of losses
             init_sigma: Initial uncertainty value (higher means lower initial weight)
+            log_interval: How often to log weights to tensorboard (in steps)
+            log_dir: Explicit directory to use for tensorboard logging
         """
         super().__init__(num_losses)
+
+        # Store the explicit logging directory if provided
+        if log_dir is not None:
+            self.__class__._log_dir = log_dir
+            logger.info(f"UncertaintyWeightBalancer will log to: {log_dir}")
+
+            # Create the directory if it doesn't exist
+            import os
+
+            os.makedirs(log_dir, exist_ok=True)
 
         # Initialize log variance parameters
         # Using Parameter ensures they get updated through gradient descent
@@ -360,9 +432,17 @@ class UncertaintyWeightBalancer(LossBalancer):
 
         # For state tracking and visualization
         self.register_buffer("iteration", torch.tensor(0))
+        self.log_interval = log_interval
+
+        # Initial precision = 1/variance = 1/sigma^2 = exp(-log_var)
+        init_precision = torch.exp(-init_log_var).tolist()
 
         # Log to console
         logger.info(f"Using SafeUncertaintyFunction Balancer with {num_losses} losses")
+        logger.info(f"Initial weights: {init_precision}")
+
+        # Direct TensorBoard logging
+        self._log_to_tensorboard(step=0, force=True)
 
     def forward(
         self, losses: List[torch.Tensor], iteration: Optional[int] = None
@@ -401,18 +481,58 @@ class UncertaintyWeightBalancer(LossBalancer):
             else:
                 total_loss = total_loss + weighted_loss
 
-        # Increment iteration counter for tracking
+        # Increment iteration and log to tensorboard
         with torch.no_grad():
+            # Use passed iteration if provided, otherwise use internal counter
+            if iteration is not None:
+                step = iteration
+            else:
+                step = self.__class__._global_step
+                self.__class__._global_step += 1
+
             self.iteration += 1
 
-            # Log current weights periodically
-            if self.iteration.item() % 10 == 0:
-                weights = self.get_weights()
-                logger.info(
-                    f"Iter {self.iteration.item()}: Uncertainty weights: {weights}"
-                )
+            # Periodically log to TensorBoard
+            if step % self.log_interval == 0:
+                self._log_to_tensorboard(step)
 
         return total_loss
+
+    def _log_to_tensorboard(self, step, force=False):
+        """Log current weights to TensorBoard."""
+        if force or step % self.log_interval == 0:
+            # Get weights
+            weights = self.get_weights()
+
+            # Try to get TensorBoard writer
+            writer = self.get_tb_writer()
+            if writer is not None:
+                # Log weights
+                for i, weight in enumerate(weights):
+                    writer.add_scalar(f"uncertainty_weights/weight_{i}", weight, step)
+
+                # If we have multiple weights, log their ratios
+                if len(weights) > 1:
+                    for i in range(len(weights)):
+                        for j in range(i + 1, len(weights)):
+                            ratio = weights[i] / (weights[j] + 1e-8)
+                            writer.add_scalar(
+                                f"uncertainty_weights/ratio_{i}_{j}", ratio, step
+                            )
+
+                # Also log raw log_var values
+                log_vars = self.log_var.detach().cpu().tolist()
+                for i, log_var in enumerate(log_vars):
+                    writer.add_scalar(f"uncertainty_weights/log_var_{i}", log_var, step)
+
+                # Flush to ensure all events are written
+                writer.flush()
+
+                # Console logging
+                if step % (self.log_interval * 5) == 0:
+                    logger.info(
+                        f"Step {step}: weights = {weights}, log_vars = {log_vars}"
+                    )
 
     def get_weights(self) -> List[float]:
         """

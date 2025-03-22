@@ -12,8 +12,6 @@ defaults:
   - override /tasks/losses: deephit_focal
   - override /tasks/losses/balancing: uncertainty
   - override /trainer: ${data/load}/default
-  - override /callbacks: earlystopping_lossweight
-
 
 survival_intermediate_size: 8
 survival_batch_norm: false

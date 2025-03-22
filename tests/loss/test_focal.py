@@ -336,6 +336,60 @@ def test_with_uncertainty_balancing(mock_predictions, mock_references):
     # Verify that log_var parameters have been updated
     assert not torch.allclose(balancer.log_var, initial_log_var)
 
+    # Print the object structure for debugging how it would be accessed in a HuggingFace model
+    print("\n-------------- DEBUG MODEL STRUCTURE --------------")
+    print(f"loss_fn type: {type(loss_fn).__name__}")
+    print(f"loss_fn has _balancer attribute: {hasattr(loss_fn, '_balancer')}")
+    print(f"loss_fn has get_loss_weights: {hasattr(loss_fn, 'get_loss_weights')}")
+    if hasattr(loss_fn, "_balancer"):
+        print(f"loss_fn._balancer type: {type(loss_fn._balancer).__name__}")
+
+    # Create a mock model like a HuggingFace model during evaluation
+    class MockHFModel(torch.nn.Module):
+        def __init__(self, loss_module):
+            super().__init__()
+            self.loss = loss_module
+
+    mock_model = MockHFModel(loss_fn)
+
+    # Try to find all paths to the balancer
+    print("\n--- Possible paths to balancer from a HuggingFace model ---")
+    # 1. Through loss attribute
+    if hasattr(mock_model, "loss"):
+        print(f"model.loss type: {type(mock_model.loss).__name__}")
+        print(f"model.loss has _balancer: {hasattr(mock_model.loss, '_balancer')}")
+        print(
+            f"model.loss has get_loss_weights: {hasattr(mock_model.loss, 'get_loss_weights')}"
+        )
+
+    # Import our LossWeightLoggerCallback to test it directly
+    from sat.transformers.callbacks import LossWeightLoggerCallback
+
+    # Create a simple callback and test it with our mock model
+    callback = LossWeightLoggerCallback()
+
+    # Create mock state and args
+    class MockState:
+        def __init__(self):
+            self.global_step = 0
+
+    class MockArgs:
+        def __init__(self):
+            self.logging_dir = "./test_logs"
+
+    mock_state = MockState()
+    mock_args = MockArgs()
+
+    print("\n--- Testing LossWeightLoggerCallback directly ---")
+    # Try to log weights, which should trigger our detailed debug logs
+    try:
+        result = callback._log_weights(mock_args, mock_state, mock_model, "test")
+        print(f"LossWeightLoggerCallback._log_weights result: {result}")
+    except Exception as e:
+        print(f"Error during _log_weights: {e}")
+
+    print("--------------- END DEBUG ---------------")
+
 
 def test_multi_focal_with_importance_weights(
     mock_predictions, mock_references, temp_weights_file

@@ -207,7 +207,10 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
 
     callbacks = []
     if "callbacks" in cfg:
+        logger.info("Loading callbacks...")
         callbacks = hydra.utils.instantiate(cfg.callbacks)
+        for i, cb in enumerate(callbacks):
+            logger.info(f"  Callback {i}: {type(cb).__name__}")
 
     args: TrainingArguments = hydra.utils.instantiate(cfg.trainer.training_arguments)
     logger.debug(f"Set random seed {args.seed} for HF training")
