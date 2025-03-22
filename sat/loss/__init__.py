@@ -10,6 +10,7 @@ from .classification.bce import CrossEntropyLoss
 
 from .ranking.sample import SampleRankingLoss
 from .ranking.multievent import MultiEventRankingLoss
+from .ranking.observation import ObservationEventRankingLoss
 
 from .regression.l1 import L1Loss
 from .regression.mse import MSELoss
@@ -30,6 +31,7 @@ __all__ = [
     "CrossEntropyLoss",
     "SampleRankingLoss",
     "MultiEventRankingLoss",
+    "ObservationEventRankingLoss",
     "L1Loss",
     "MSELoss",
     "QuantileLoss",
