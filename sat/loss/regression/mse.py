@@ -58,8 +58,11 @@ class MSELoss(Loss):
             # read training data into pandas dataframe with given columns
             df = pd.read_csv(training_set, header=0)
             for event in range(self.num_events):
-                training_event_times = df["duration"]
-                training_event_indicators = df["event"] == event + 1
+                duration_col = f"duration_event{event+1}"
+                event_col = f"event{event+1}"
+
+                training_event_times = df[duration_col]
+                training_event_indicators = df[event_col] == 1
                 self.kms.append(
                     KaplanMeierArea(training_event_times, training_event_indicators)
                 )

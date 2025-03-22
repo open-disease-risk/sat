@@ -117,7 +117,50 @@ def _train_labeltransform(cfg: DictConfig) -> None:
 
     transformed_data = feature_extractor(train_data)
     labels = pd.DataFrame(transformed_data["labels"])
-    labels.to_csv(transformed_labels, index=False, header=False)
+
+    # Enhanced debugging information
+    logger.debug(f"Transformed labels shape: {labels.shape}")
+    logger.debug(f"Transformed labels columns: {list(labels.columns)}")
+    logger.debug(f"Transformed labels: {labels}")
+
+    # Generate appropriate header names based on the structure (t, e, f, d for each event)
+    # Log the actual config values we're working with
+    logger.debug(f"Config num_events: {cfg.data.num_events}")
+    logger.debug(
+        f"Config transformed_duration_cols: {OmegaConf.to_object(cfg.data.transformed_duration_cols)}"
+    )
+
+    # Original calculation assumes transformed_duration_cols contains pairs for each event
+    calculated_events = (
+        len(OmegaConf.to_object(cfg.data.transformed_duration_cols)) // 2
+    )
+    logger.debug(
+        f"Calculated events from transformed_duration_cols: {calculated_events}"
+    )
+
+    # Use the explicitly configured num_events rather than calculating it
+    num_events = cfg.data.num_events  # This should match the actual data structure
+    header_names = []
+
+    # Add transformed time headers (t)
+    for i in range(num_events):
+        header_names.append(f"t_event{i+1}")
+
+    # Add event indicator headers (e)
+    for i in range(num_events):
+        header_names.append(f"event{i+1}")
+
+    # Add hazard function headers (f)
+    for i in range(num_events):
+        header_names.append(f"f_event{i+1}")
+
+    # Add original duration headers (d)
+    for i in range(num_events):
+        header_names.append(f"duration_event{i+1}")
+
+    # Apply headers and save with headers
+    labels.columns = header_names
+    labels.to_csv(transformed_labels, index=False, header=True)
 
     logger.debug("Serialize random number seed used for prepare_data")
     with Path(f"{out_dir}/train_labeltransform-seed.json").open("w") as f:
