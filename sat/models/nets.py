@@ -110,6 +110,7 @@ class CauseSpecificNet(nn.Module):
         num_events=1,
     ):
         super().__init__()
+        self.out_features = out_features  # Store out_features as class attribute
         self.event_nets = nn.ModuleList()
         for _ in range(num_events):
             net = tt.practical.MLPVanilla(
@@ -133,7 +134,7 @@ class CauseSpecificNet(nn.Module):
         out = torch.empty(
             batch_size,
             len(self.event_nets),
-            self.event_nets[0].out_features,
+            self.out_features,  # Use the class attribute instead
             device=input.device,
             dtype=input.dtype,
         )
@@ -160,6 +161,8 @@ class CauseSpecificNetCompRisk(nn.Module):
         num_events=1,
     ):
         super().__init__()
+        self.out_features = out_features  # Store out_features as class attribute
+        self.shared_intermediate_size = shared_intermediate_size  # Store for clarity
         self.shared_mlp = tt.practical.MLPVanilla(
             in_features=in_features,
             num_nodes=[shared_intermediate_size] * shared_num_hidden_layers,
@@ -199,7 +202,7 @@ class CauseSpecificNetCompRisk(nn.Module):
             out = torch.empty(
                 batch_size,
                 len(self.event_nets),
-                self.event_nets[0].out_features,
+                self.out_features,  # Use the class attribute instead
                 device=input.device,
                 dtype=input.dtype,
             )
