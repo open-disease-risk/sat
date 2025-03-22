@@ -10,7 +10,7 @@ defaults:
   - override /transformers: bert
   - override /tasks: survival
   - override /tasks/losses: deephit_focal
-  - override /tasks/losses/balancing: uncertainty
+  - override /tasks/losses/balancing: grad
   - override /trainer: ${data/load}/default
 
 survival_intermediate_size: 8
