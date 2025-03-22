@@ -111,8 +111,29 @@ class CauseSpecificNet(nn.Module):
     ):
         super().__init__()
         self.out_features = out_features  # Store out_features as class attribute
+
+        # Define a more conservative weight initialization function
+        # This matches the one in CauseSpecificNetCompRisk for consistency
+        def conservative_init(w):
+            if num_events > 1:
+                # For multi-event case, use a smaller scale factor to prevent
+                # large activation values that can cause numerical instability
+                scale_factor = 0.5  # Reduce the variance of the initialization
+                fan_mode = "fan_in"  # Initialize based on input size for stability
+                nn.init.kaiming_normal_(w, a=0.0, mode=fan_mode, nonlinearity="relu")
+                with torch.no_grad():
+                    w.mul_(scale_factor)  # Scale down the weights
+            else:
+                # For single event case, use standard initialization
+                nn.init.kaiming_normal_(w, nonlinearity="relu")
+
+            # Apply additional clipping to prevent extreme initial values
+            with torch.no_grad():
+                w.clamp_(-0.1, 0.1)  # Clip initial weights to a reasonable range
+
+        # Create the event-specific networks
         self.event_nets = nn.ModuleList()
-        for _ in range(num_events):
+        for i in range(num_events):
             net = tt.practical.MLPVanilla(
                 in_features=in_features,
                 num_nodes=[intermediate_size] * num_hidden_layers,
@@ -121,7 +142,21 @@ class CauseSpecificNet(nn.Module):
                 dropout=dropout,
                 activation=activation,
                 output_bias=bias,
+                w_init_=conservative_init,  # Use our custom initialization
             )
+
+            # For multi-event case, initialize the final output layer to small values
+            if num_events > 1:
+                with torch.no_grad():
+                    # Get the output layer (last module)
+                    output_layer = net.net[-1]
+                    if isinstance(output_layer, nn.Linear):
+                        # Initialize output weights with small values
+                        nn.init.zeros_(output_layer.weight)
+                        # Initialize bias to small negative values
+                        if output_layer.bias is not None:
+                            nn.init.constant_(output_layer.bias, -1.0)
+
             self.event_nets.append(net)
 
     def forward(self, input):
@@ -163,6 +198,27 @@ class CauseSpecificNetCompRisk(nn.Module):
         super().__init__()
         self.out_features = out_features  # Store out_features as class attribute
         self.shared_intermediate_size = shared_intermediate_size  # Store for clarity
+
+        # Define a more conservative weight initialization function
+        # Using He initialization with a smaller scale factor for multi-event case
+        def conservative_init(w):
+            if num_events > 1:
+                # For multi-event case, use a smaller scale factor to prevent
+                # large activation values that can cause numerical instability
+                scale_factor = 0.5  # Reduce the variance of the initialization
+                fan_mode = "fan_in"  # Initialize based on input size for stability
+                nn.init.kaiming_normal_(w, a=0.0, mode=fan_mode, nonlinearity="relu")
+                with torch.no_grad():
+                    w.mul_(scale_factor)  # Scale down the weights
+            else:
+                # For single event case, use standard initialization
+                nn.init.kaiming_normal_(w, nonlinearity="relu")
+
+            # Apply additional clipping to prevent extreme initial values
+            with torch.no_grad():
+                w.clamp_(-0.1, 0.1)  # Clip initial weights to a reasonable range
+
+        # Create the shared MLP with custom initialization
         self.shared_mlp = tt.practical.MLPVanilla(
             in_features=in_features,
             num_nodes=[shared_intermediate_size] * shared_num_hidden_layers,
@@ -171,9 +227,12 @@ class CauseSpecificNetCompRisk(nn.Module):
             dropout=dropout,
             activation=activation,
             output_bias=bias,
+            w_init_=conservative_init,  # Use our custom initialization
         )
+
+        # Create the per-event networks with custom initialization
         self.event_nets = nn.ModuleList()
-        for _ in range(num_events):
+        for i in range(num_events):
             net = tt.practical.MLPVanilla(
                 in_features=in_features + shared_intermediate_size,
                 num_nodes=[indiv_intermediate_size] * indiv_num_hidden_layers,
@@ -182,7 +241,23 @@ class CauseSpecificNetCompRisk(nn.Module):
                 dropout=dropout,
                 activation=activation,
                 output_bias=bias,
+                w_init_=conservative_init,  # Use our custom initialization
             )
+
+            # For multi-event case, initialize the final output layer close to zero
+            # This helps ensure the initial hazard rates are small and stable
+            if num_events > 1:
+                with torch.no_grad():
+                    # Get the output layer (last module)
+                    output_layer = net.net[-1]
+                    if isinstance(output_layer, nn.Linear):
+                        # Initialize output weights with small values
+                        nn.init.zeros_(output_layer.weight)
+                        # Initialize with a slight bias toward negative values
+                        # This will produce initially small hazard values after softplus
+                        if output_layer.bias is not None:
+                            nn.init.constant_(output_layer.bias, -1.0)
+
             self.event_nets.append(net)
 
     def forward(self, input):

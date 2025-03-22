@@ -112,35 +112,95 @@ class SurvivalTask(abc.ABC, BaseTask):
         super().__init__(config)
 
     def _init_linear_weight(self, module):
-        """Survival-specific linear weight initialization"""
+        """Survival-specific linear weight initialization with special handling for multi-event cases"""
         # Special initialization for output layer of survival networks
         if hasattr(self, "nets") and hasattr(module, "weight"):
-            # Check if this is the final output layer - need a better way to identify it
+            # Check if this is a multi-event model
+            is_multi_event = (
+                hasattr(self.config, "num_events") and self.config.num_events > 1
+            )
+
+            # Check if this is the final output layer
             if hasattr(self.nets, "event_nets") and any(
                 module is net.net[-1] for net in self.nets.event_nets
             ):
-                # Initialize final layer to produce small initial hazard values
-                logger.debug(f"SurvivalTask: initializing final output layer: {module}")
-                nn.init.constant_(module.weight, 0.01)
+                # For multi-event models, initialize with zeros to ensure stable starting point
+                if is_multi_event:
+                    logger.debug(
+                        f"SurvivalTask: initializing multi-event final output layer with zeros: {module}"
+                    )
+                    nn.init.zeros_(module.weight)
+                    # Note: we'll also handle the bias in _init_linear_bias
+                else:
+                    # For single event, use a small positive value
+                    logger.debug(
+                        f"SurvivalTask: initializing single-event final output layer: {module}"
+                    )
+                    nn.init.constant_(module.weight, 0.01)
+                return
+
+            # For hidden layers in multi-event models, use a more conservative initialization
+            elif is_multi_event:
+                logger.debug(
+                    f"SurvivalTask: conservative init for hidden layer in multi-event model: {module}"
+                )
+                # Reduce variance of initialization to prevent exploding gradients
+                if self.config.initializer == "normal":
+                    # Use a smaller standard deviation
+                    module.weight.data.normal_(
+                        mean=0.0, std=self.config.initializer_range * 0.5
+                    )
+                elif self.config.initializer in ["kaiming_normal", "kaiming_uniform"]:
+                    # Use fan_in mode for more conservative initialization
+                    if self.config.initializer == "kaiming_normal":
+                        nn.init.kaiming_normal_(
+                            module.weight, mode="fan_in", nonlinearity="relu"
+                        )
+                    else:
+                        nn.init.kaiming_uniform_(
+                            module.weight, mode="fan_in", nonlinearity="relu"
+                        )
+                    # Scale down the weights further
+                    with torch.no_grad():
+                        module.weight.data.mul_(0.5)
+                else:
+                    # Use default but scale down
+                    super()._init_linear_weight(module)
+                    with torch.no_grad():
+                        module.weight.data.mul_(0.5)
                 return
 
         # Default initialization for other layers
         super()._init_linear_weight(module)
 
     def _init_linear_bias(self, module):
-        """Survival-specific linear bias initialization"""
-        # Special initialization for output layer of survival networks
+        """Survival-specific linear bias initialization with special handling for multi-event cases"""
         if hasattr(self, "nets") and module.bias is not None:
+            # Check if this is a multi-event model
+            is_multi_event = (
+                hasattr(self.config, "num_events") and self.config.num_events > 1
+            )
+
             # Check if this is the final output layer
             if hasattr(self.nets, "event_nets") and any(
                 module is net.net[-1] for net in self.nets.event_nets
             ):
-                # Initialize bias to negative value for low initial hazards
-                logger.debug(f"SurvivalTask: initializing final output bias: {module}")
-                nn.init.constant_(module.bias, -2.0)
+                if is_multi_event:
+                    # For multi-event final layer, initialize bias to small negative values
+                    # This ensures initial hazard values will be small after softplus
+                    logger.debug(
+                        f"SurvivalTask: initializing multi-event final layer bias to -2.0: {module}"
+                    )
+                    nn.init.constant_(module.bias, -2.0)
+                else:
+                    # For single-event models, use a smaller negative value
+                    logger.debug(
+                        f"SurvivalTask: initializing single-event final layer bias: {module}"
+                    )
+                    nn.init.constant_(module.bias, -1.0)
                 return
 
-        # Default initialization for other layers
+        # For all other cases, use default initialization (zeros)
         super()._init_linear_bias(module)
 
 
