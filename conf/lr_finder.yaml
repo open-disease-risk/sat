@@ -1,0 +1,17 @@
+# @package _global_
+task: finetune
+
+defaults:
+  - _self_
+  - defaults
+
+# Learning Rate Finder configuration
+lr_finder:
+  enabled: true
+  start_lr: 1e-7
+  end_lr: 1.0
+  num_steps: 100
+  smooth_factor: 0.05
+  diverge_threshold: 4.0
+  save_plot: true
+  save_plot_dir: "${modelhub}/${dataset}/${modelname}/lr_finder_plots"
