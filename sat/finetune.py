@@ -230,17 +230,12 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
         )
         args.output_dir = args.output_dir + "/" + cfg.run_id
 
-    data_collator = collator.DefaultSATDataCollator(device=device_str)
-
-    # Using the standard setup without custom accelerator since we downgraded accelerate to be compatible
-
     # Configure trainer kwargs
     trainer_kwargs = {
         "model": model,
         "args": args,
         "train_dataset": mapped_labels_dataset["train"],
         "eval_dataset": mapped_labels_dataset["valid"],
-        "data_collator": data_collator,
         "compute_metrics": compute_metrics,
         "callbacks": callbacks,
     }
