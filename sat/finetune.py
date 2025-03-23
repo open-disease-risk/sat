@@ -32,6 +32,7 @@ from sat.models import heads
 from sat.models.heads.config import TokenEmbedding
 from sat.models.utils import get_device
 from sat.transformers.feature_extractor import SAFeatureExtractor
+from sat.transformers import trainer as satrain
 
 logger = logging.get_default_logger()
 
@@ -245,7 +246,10 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
     }
 
     # Create trainer
-    trainer = Trainer(**trainer_kwargs)
+    if cfg.get(cfg.trainer.custom, False):
+        trainer = satrain.SATTrainer(**trainer_kwargs)
+    else:
+        trainer = Trainer(**trainer_kwargs)
 
     logger.info("Start training")
     result = trainer.train()
