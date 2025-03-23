@@ -130,7 +130,7 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
                 "padding": cfg.tokenizers.padding_args.padding,
                 "pad_to_multiple_of": cfg.tokenizers.padding_args.pad_to_multiple_of,
             },
-            num_proc=4,  # Parallel processing for tokenization
+            num_proc=None,  # Parallel processing for tokenization
         )
 
         logger.debug(f"Dataset columns: {tokenized_dataset.column_names}")
@@ -147,7 +147,7 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
         mapped_labels_dataset = tokenized_dataset.map(
             map_label,
             batched=True,
-            num_proc=4,  # Parallel processing for label mapping
+            num_proc=None,  # Parallel processing for label mapping
         )
 
         # Process numerics if present
@@ -171,7 +171,7 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
                     "padding_direction": cfg.tokenizers.padding_args.direction,
                     "token_emb": cfg.token_emb,
                 },
-                num_proc=4,  # Parallel processing for numerics padding/truncation
+                num_proc=None,  # Parallel processing for numerics padding/truncation
             )
 
         logger.debug(f"labels mapped in dataset: {mapped_labels_dataset}")
