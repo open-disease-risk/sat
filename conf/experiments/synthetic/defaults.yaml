@@ -5,7 +5,7 @@ defaults:
 
 learning_rate: 0.001
 warmup_steps: 80
-weight_decay: 0.01
+weight_decay: 0.1
 
 select_hidden_layers: null
 sentence_emb: 3
