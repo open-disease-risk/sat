@@ -10,6 +10,7 @@ from torch import nn
 
 from sat.models.nets import CauseSpecificNet, CauseSpecificNetCompRisk, SimpleMLP
 from sat.utils import logging
+import logging as py_logging
 
 from .config import EventDurationTaskConfig
 from .base import RegressionTask
@@ -50,7 +51,8 @@ class EventDurationTaskHead(RegressionTask):
             )
 
         loss = config.loss[config.model_type]
-        logger.debug(f"Instantiate the loss {loss}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Instantiate the loss {loss}")
         self.loss = hydra.utils.instantiate(loss)
 
     def forward(self, sequence_output, labels=None, **kwargs):

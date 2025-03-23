@@ -10,7 +10,7 @@ defaults:
   - override /transformers: bert
   - override /tasks: survival
   - override /tasks/losses: deephit
-  - override /tasks/losses/balancing: adaptive
+  - override /tasks/losses/balancing: fixed
   - override /trainer: ${data/load}/default
 
 

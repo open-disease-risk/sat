@@ -11,7 +11,6 @@ import evaluate
 from sat.utils import logging
 from sat.models.tasks.loss import L1Loss
 from sat.models.tasks.heads import TaskOutput
-from sat.models.utils import get_device
 
 logger = logging.get_default_logger()
 
@@ -62,6 +61,7 @@ class L1(evaluate.Metric):
 
         output = TaskOutput(predictions=preds)
         loss = l1_loss(output, references)
-        logger.debug(f"Computed hazard loss: {loss}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Computed hazard loss: {loss}")
 
         return loss, event_losses

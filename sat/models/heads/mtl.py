@@ -10,16 +10,13 @@ from torch import nn
 from transformers import AutoModel
 from typing import Optional, Tuple, Union
 
-from sat.models.nets import CauseSpecificNet, CauseSpecificNetCompRisk, SimpleMLP
+from sat.models.nets import SimpleMLP
 from sat.utils import logging
 from .embeddings import TokenEmbedder, SentenceEmbedder
 
 from .config import (
     SentenceEmbedding,
-    SurvivalConfig,
     TokenEmbedding,
-    EventClassificationTaskConfig,
-    EventDurationTaskConfig,
     MTLConfig,
 )
 from .base import MTLTask
@@ -45,18 +42,24 @@ class MTLForSurvival(MTLTask):
         self.is_classification = False
         self.return_dict = config.return_dict
 
-        logger.debug(f"Using configuration {config}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Using configuration {config}")
 
         # Initialize transformer model
         self.transformer = None
-        logger.debug(f"Using configuration {self.config}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Using configuration {self.config}")
         if "pretrained_model_name_or_path" in self.config.pretrained_params:
-            logger.debug(f"Load model from pretrained {self.config.pretrained_params}")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(
+                    f"Load model from pretrained {self.config.pretrained_params}"
+                )
             self.transformer = AutoModel.from_pretrained(
                 **self.config.pretrained_params
             )
         else:
-            logger.debug(f"Load model from config {self.config.pretrained_params}")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"Load model from config {self.config.pretrained_params}")
             self.transformer = AutoModel.from_config(**self.config.pretrained_params)
 
         # Validate hidden layer selection if provided
@@ -71,13 +74,15 @@ class MTLForSurvival(MTLTask):
 
         # Store transformer forward arguments
         self.forward_args = list(inspect.signature(self.transformer.forward).parameters)
-        logger.debug(
-            f"Loaded transformer {self.transformer} supporting forward({self.forward_args})"
-        )
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                f"Loaded transformer {self.transformer} supporting forward({self.forward_args})"
+            )
 
         # Freeze transformer if specified
         if self.config.freeze_transformer:
-            logger.debug("Freeze the transformer")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("Freeze the transformer")
             for name, param in self.transformer.base_model.named_parameters():
                 param.requires_grad = False
 
@@ -110,7 +115,10 @@ class MTLForSurvival(MTLTask):
         ):
             self.in_features = self.in_features * self.config.num_features
 
-        logger.debug(f"Number of input features to the shared MLP: {self.in_features}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                f"Number of input features to the shared MLP: {self.in_features}"
+            )
 
         # Initialize shared network
         self.net = SimpleMLP(
@@ -126,7 +134,8 @@ class MTLForSurvival(MTLTask):
         # Initialize task heads
         self.heads = nn.ModuleList()
         for i, task_head_config in enumerate(self.config.task_heads):
-            logger.debug(f"{i}-th task configuration: {task_head_config}")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"{i}-th task configuration: {task_head_config}")
             model = AutoModel.from_config(task_head_config)
             if isinstance(model, SurvivalTaskHead):
                 logger.info("Survival task head initialized")
@@ -144,21 +153,26 @@ class MTLForSurvival(MTLTask):
 
         # Initialize weights when created as a standalone model
         if self.__class__.__name__ == "MTLForSurvival":
-            logger.debug("Standalone MTLForSurvival - initializing weights")
-            # First initialize only shared network weights
-            logger.debug("MTLTask: initializing shared network weights")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("Standalone MTLForSurvival - initializing weights")
+                # First initialize only shared network weights
+                logger.debug("MTLTask: initializing shared network weights")
             for name, module in self.named_children():
                 if name != "heads":  # Skip the heads module list
-                    logger.debug(f"Initializing MTL module: {name}")
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug(f"Initializing MTL module: {name}")
                     self.initialize_module(module)
 
             # Then initialize each task head with its specialized initialization
-            logger.debug("MTLTask: initializing task head weights")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("MTLTask: initializing task head weights")
             for i, head in enumerate(self.heads):
-                logger.debug(f"Initializing task head {i}")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(f"Initializing task head {i}")
                 head.post_init()
         else:
-            logger.debug("MTLForSurvival created as part of another model")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("MTLForSurvival created as part of another model")
 
     def forward(
         self,
@@ -186,19 +200,22 @@ class MTLForSurvival(MTLTask):
         # Filter arguments for transformer
         forward_dict = locals()
         del_args = [arg for arg in forward_dict if arg not in self.forward_args]
-        logger.debug(
-            f"Remove unsupported arguments to the transformers forward function: {del_args}"
-        )
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                f"Remove unsupported arguments to the transformers forward function: {del_args}"
+            )
         [forward_dict.pop(key) for key in del_args]
 
-        logger.debug(
-            f"""
-            Score the transformer with
-            - input ids {input_ids.shape}
-            """
-        )
-
-        logger.debug(f"Forward dictionary for the backend transformer {forward_dict}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                f"""
+                Score the transformer with
+                - input ids {input_ids.shape}
+                """
+            )
+            logger.debug(
+                f"Forward dictionary for the backend transformer {forward_dict}"
+            )
 
         # Always set output_hidden_states to True since we need them
         forward_dict["output_hidden_states"] = True
@@ -206,7 +223,8 @@ class MTLForSurvival(MTLTask):
         # Get transformer outputs
         sequence_output = self.transformer(**forward_dict, return_dict=self.return_dict)
 
-        logger.debug(f"Got {sequence_output} from transformer")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Got {sequence_output} from transformer")
 
         # Process hidden states through token embedder
         token_embeddings = self.token_embedder(
@@ -227,7 +245,8 @@ class MTLForSurvival(MTLTask):
         else:
             logits = self.net(sentence_embeddings)
 
-        logger.debug("Score the task heads")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("Score the task heads")
 
         # Process through task heads
         sa_output: SAOutput = None
@@ -239,13 +258,18 @@ class MTLForSurvival(MTLTask):
 
         # Process all task heads
         for i, h in enumerate(self.heads):
-            logger.debug(f"Score {i}-th task head")
-            logger.debug(f"head: {h}")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"Score {i}-th task head")
+                logger.debug(f"head: {h}")
+
             outputs[i] = h(
                 logits,
                 labels,
             )
-            logger.debug(f"Got output {outputs[i]} from the {i}-th task head")
+
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"Got output {outputs[i]} from the {i}-th task head")
+
             logits_tasks.append(outputs[i].logits)
             if labels is not None:
                 loss += outputs[i].loss * h.config.loss_weight
@@ -284,5 +308,7 @@ class MTLForSurvival(MTLTask):
                 attentions=sequence_output.attentions,
             )
 
-        logger.debug(f"Return output {sa_output} from MTLForSurvival task head")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Return output {sa_output} from MTLForSurvival task head")
+
         return sa_output

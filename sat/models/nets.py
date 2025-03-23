@@ -34,7 +34,8 @@ class MLP(nn.Module):
 
         # arrange hidden layers with the first one accepting the in_features
         for i in range(num_hidden_layers):
-            logger.debug(f"Creating hidden linear layer number {i}")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"Creating hidden linear layer number {i}")
             layers.append(
                 nn.Linear(
                     in_features if i == 0 else intermediate_size,
@@ -43,15 +44,19 @@ class MLP(nn.Module):
                 )
             )
             if batch_norm:
-                logger.debug("Add batch norm")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug("Add batch norm")
                 layers.append(nn.BatchNorm1d(intermediate_size))
             layers.append(activation())
             if dropout:
-                logger.debug("Add dropout")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug("Add dropout")
                 layers.append(nn.Dropout(dropout))
 
         if out_features > 0:
-            logger.debug("Creating output linear layer number")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("Creating output linear layer number")
+
             layers.append(
                 nn.Linear(
                     in_features if num_hidden_layers == 0 else intermediate_size,
@@ -160,24 +165,14 @@ class CauseSpecificNet(nn.Module):
             self.event_nets.append(net)
 
     def forward(self, input):
-        # Optimize for the common single event case
+        # Fast path for common single event case
         if len(self.event_nets) == 1:
             return self.event_nets[0](input).unsqueeze(1)
 
-        # More efficient batch processing for multiple events
-        batch_size = input.shape[0]
-        out = torch.empty(
-            batch_size,
-            len(self.event_nets),
-            self.out_features,  # Use the class attribute instead
-            device=input.device,
-            dtype=input.dtype,
-        )
-
-        for i, net in enumerate(self.event_nets):
-            out[:, i, :] = net(input)
-
-        return out
+        # Optimize multi-event case with torch.stack
+        # This is more memory efficient by avoiding pre-allocation and indexing
+        outputs = [net(input) for net in self.event_nets]
+        return torch.stack(outputs, dim=1)
 
 
 class CauseSpecificNetCompRisk(nn.Module):
@@ -264,24 +259,14 @@ class CauseSpecificNetCompRisk(nn.Module):
         # Compute shared features once
         shared_features = self.shared_mlp(input)
 
-        # More efficient residual connection with pre-allocation
+        # Create combined input for all networks
         combined = torch.cat([input, shared_features], dim=1)  # residual connections
 
-        # Batch processing for event networks instead of list comprehension
+        # Fast path for single event case (common scenario)
         if len(self.event_nets) == 1:
-            # Optimization for single event case (common scenario)
-            out = self.event_nets[0](combined).unsqueeze(1)
-        else:
-            # More efficient than list comprehension for multiple events
-            batch_size = combined.shape[0]
-            out = torch.empty(
-                batch_size,
-                len(self.event_nets),
-                self.out_features,  # Use the class attribute instead
-                device=input.device,
-                dtype=input.dtype,
-            )
-            for i, net in enumerate(self.event_nets):
-                out[:, i, :] = net(combined)
+            return self.event_nets[0](combined).unsqueeze(1)
 
-        return out
+        # Optimize multi-event case with torch.stack
+        # This avoids pre-allocation, indexing, and improves memory efficiency
+        outputs = [net(combined) for net in self.event_nets]
+        return torch.stack(outputs, dim=1)

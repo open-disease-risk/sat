@@ -137,16 +137,42 @@ class CIIPCW(evaluate.Metric):
             [tuple(x) for x in train_set], dtype=[("e", bool), ("t", float)]
         )
 
-        cindeces = []
-        for i, _ in enumerate(duration_cuts):
-            cindex = concordance_index_ipcw(
-                et_train,
-                et_test,
-                estimate=np.array(predictions)[:, i],
-                tau=duration_cuts[i],
-            )[0]
-            cindeces.append(cindex)
+        # Convert predictions to numpy array once, outside the loop
+        predictions_np = np.array(predictions)
 
-        logger.debug(f"Computed c-index: {cindeces}")
+        # Use joblib for parallel processing if available
+        try:
+            from joblib import Parallel, delayed
+
+            def compute_cindex(i, train_data, test_data, preds, cuts):
+                return concordance_index_ipcw(
+                    train_data,
+                    test_data,
+                    estimate=preds[:, i],
+                    tau=cuts[i],
+                )[0]
+
+            # Use parallel processing with all available cores
+            cindeces = Parallel(n_jobs=-1)(
+                delayed(compute_cindex)(
+                    i, et_train, et_test, predictions_np, duration_cuts
+                )
+                for i in range(len(duration_cuts))
+            )
+        except ImportError:
+            # Fallback to sequential processing if joblib is not available
+            # But still using pre-converted predictions for efficiency
+            cindeces = []
+            for i, _ in enumerate(duration_cuts):
+                cindex = concordance_index_ipcw(
+                    et_train,
+                    et_test,
+                    estimate=predictions_np[:, i],
+                    tau=duration_cuts[i],
+                )[0]
+                cindeces.append(cindex)
+
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Computed c-index: {cindeces}")
 
         return cindeces

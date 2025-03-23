@@ -61,7 +61,8 @@ class CrossEntropyLoss(Loss):
                     "If 'margin' is chosen, training set values must be included."
                 )
 
-            logger.debug("Train the Kaplan Meier Curves")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("Train the Kaplan Meier Curves")
             # read training data into pandas dataframe with given columns
             df = pd.read_csv(training_set, header=0)
             for event in range(self.num_events):
@@ -98,9 +99,10 @@ class CrossEntropyLoss(Loss):
             preds = predictions[:, event_type][relevant_for_classification].squeeze()
             targets = targets[relevant_for_classification]
 
-            logger.debug(
-                f"Compute loss between predictions {preds.shape} and targets {targets.shape}"
-            )
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(
+                    f"Compute loss between predictions {preds.shape} and targets {targets.shape}"
+                )
 
             loss = self.weights[event_type + 1] * torch.mean(
                 self.loss_func(preds, targets)
@@ -136,9 +138,10 @@ class CrossEntropyLoss(Loss):
             preds = predictions[:, event_type][relevant_for_classification].squeeze()
             targets = targets[relevant_for_classification]
 
-            logger.debug(
-                f"Compute loss between predictions {preds.shape} and targets {targets.shape}"
-            )
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(
+                    f"Compute loss between predictions {preds.shape} and targets {targets.shape}"
+                )
 
             losses = self.loss_func(preds, targets)
             losses[~event_indicator] = weights * losses[~event_indicator]

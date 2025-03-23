@@ -55,7 +55,9 @@ class L1Loss(Loss):
                     "If 'margin' is chosen, training set values must be included."
                 )
 
-            logger.debug("Train the Kaplan Meier Curves")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("Train the Kaplan Meier Curves")
+
             # read training data into pandas dataframe with given columns
             df = pd.read_csv(training_set, header=0)
             for event in range(self.num_events):

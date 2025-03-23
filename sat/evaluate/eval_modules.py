@@ -21,12 +21,14 @@ class SurvivalEvaluationModule(EvaluationModule):
         logger = logging.get_default_logger()
 
         try:
-            logger.debug(f"type of predictions: {type(predictions)}")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"type of predictions: {type(predictions)}")
             # predictions can be a numpy array
             if hasattr(predictions, "shape"):
-                logger.info(
-                    f"Predictions already has shape {predictions.shape}, returning as is"
-                )
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(
+                        f"Predictions already has shape {predictions.shape}, returning as is"
+                    )
                 return predictions[:, :, :, 1:]
 
             # or predictions can be a dictionary
@@ -81,7 +83,8 @@ class SurvivalEvaluationModule(EvaluationModule):
 
         except Exception as e:
             logger.error(f"Error in survival_predictions: {e}")
-            logger.debug(f"Got predictions: {predictions}")
+            if debug_enabled:
+                logger.debug(f"Got predictions: {predictions}")
             # Return empty array if we encounter any exception
             return np.array([])
 
@@ -96,8 +99,9 @@ class ComputeBrier(SurvivalEvaluationModule):
         self.per_horizon = per_horizon
 
     def compute_event(self, predictions, references, event):
-        logger.debug(f"predictions shape: {predictions.shape}")
-        logger.debug(f"references shape: {references.shape}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"predictions shape: {predictions.shape}")
+            logger.debug(f"references shape: {references.shape}")
 
         # Check if predictions is valid for computing metrics
         if predictions.size == 0 or predictions.ndim < 4:
@@ -148,7 +152,8 @@ class ComputeBrier(SurvivalEvaluationModule):
 
     def compute(self, predictions, references):
         predictions = self.survival_predictions(predictions)
-        logger.debug(f"survival predictions shape {predictions.shape}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"survival predictions shape {predictions.shape}")
 
         brier_mean = 0.0
         brier_balanced_mean = 0.0
@@ -185,8 +190,9 @@ class ComputeCIndex(SurvivalEvaluationModule):
         self.duration_cuts = df.cuts.values[1:]  # we do not need the start point
 
     def compute_event(self, predictions, references, event):
-        logger.debug(f"predictions shape: {predictions.shape}")
-        logger.debug(f"references shape: {references.shape}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"predictions shape: {predictions.shape}")
+            logger.debug(f"references shape: {references.shape}")
 
         # Check if predictions is valid for computing metrics
         if predictions.size == 0 or predictions.ndim < 4:
@@ -285,7 +291,8 @@ class ComputeMismatch(EvaluationModule):
 
     def compute(self, predictions, references):
         predictions = self.survival_predictions(predictions)
-        logger.debug(f"predictions: {predictions}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"predictions: {predictions}")
         logger.debug(f"references: {references}")
         mismatch = evaluate.load("./sat/evaluate/mismatch")
 

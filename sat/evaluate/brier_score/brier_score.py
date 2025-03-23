@@ -14,7 +14,7 @@ from sat.utils import logging
 logger = logging.get_default_logger()
 
 
-_CITATION = """\
+_CITATION = """
 @article{https://doi.org/10.1002/(SICI)1097-0258(19990915/30)18:17/18<2529::AID-SIM274>3.0.CO;2-5,
 author = {Graf, Erika and Schmoor, Claudia and Sauerbrei, Willi and Schumacher, Martin},
 title = {Assessment and comparison of prognostic classification schemes for survival data},
@@ -30,7 +30,7 @@ year = {1999}
 }
 """
 
-_DESCRIPTION = """\
+_DESCRIPTION = """
 Estimate the time-dependent Brier score for right censored data.
 
 The time-dependent Brier score is the mean squared error at time point :math:`t`:
@@ -115,6 +115,31 @@ _KWARGS_DESCRIPTION = """
 
 @evaluate.utils.file_utils.add_start_docstrings(_DESCRIPTION, _KWARGS_DESCRIPTION)
 class BrierScore(evaluate.Metric):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Initialize cache for struct arrays and predictions
+        self._array_cache = {}
+        self._prediction_cache = {}
+
+    def _clear_cache(self):
+        """Clear the cache to free memory"""
+        self._array_cache.clear()
+        self._prediction_cache.clear()
+
+    def _get_struct_array(self, data, key):
+        """Get or create a structured array for survival data"""
+        # Use cache key based on data id and shape
+        cache_key = f"{key}_{id(data)}_{len(data)}"
+
+        if cache_key in self._array_cache:
+            return self._array_cache[cache_key]
+
+        # Create the structured array
+        arr = np.array([tuple(x) for x in data], dtype=[("e", bool), ("t", float)])
+        # Store in cache
+        self._array_cache[cache_key] = arr
+        return arr
+
     def _info(self):
         return evaluate.MetricInfo(
             description=_DESCRIPTION,
@@ -142,20 +167,34 @@ class BrierScore(evaluate.Metric):
         duration_cuts,
         per_horizon=False,
     ):
-        et_test = np.array(
-            [tuple(x) for x in references], dtype=[("e", bool), ("t", float)]
-        )
-        et_train = np.array(
-            [tuple(x) for x in train_set], dtype=[("e", bool), ("t", float)]
-        )
+        # Get cached arrays or create new ones
+        et_test = self._get_struct_array(references, "test")
+        et_train = self._get_struct_array(train_set, "train")
 
+        # Convert predictions to numpy array for efficiency
+        # Use cache based on predictions ID
+        pred_cache_key = f"pred_{id(predictions)}_{len(predictions)}"
+        if pred_cache_key in self._prediction_cache:
+            preds_np = self._prediction_cache[pred_cache_key]
+        else:
+            preds_np = np.array(predictions)
+            self._prediction_cache[pred_cache_key] = preds_np
+
+        # Compute scores
         if per_horizon:
-            brs = brier_score(et_train, et_test, predictions, duration_cuts)[1]
+            # Calculate per-horizon Brier scores
+            brs = brier_score(et_train, et_test, preds_np, duration_cuts)[1]
         else:
             brs = []
 
-        ibrs = integrated_brier_score(et_train, et_test, predictions, duration_cuts)
+        # Calculate integrated Brier score
+        ibrs = integrated_brier_score(et_train, et_test, preds_np, duration_cuts)
 
-        logger.debug(f"Computed brier score: {brs}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Computed brier score: {brs}")
+
+        # Clear cache if it's getting too large (optional)
+        if len(self._array_cache) > 10 or len(self._prediction_cache) > 10:
+            self._clear_cache()
 
         return ibrs, brs

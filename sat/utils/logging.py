@@ -12,6 +12,34 @@ import numpy as np
 
 def get_default_logger(prefix="sat") -> logging.Logger:
     return logging.getLogger(prefix)
+    """
+    Get the default logger instance with the given prefix.
+
+    Args:
+        prefix: Logger name prefix
+
+    Returns:
+        Logger instance
+    """
+    logger = logging.getLogger(prefix)
+
+    # Add isEnabledFor method if not already present
+    if not hasattr(logger, "isEnabledFor"):
+        setattr(logger, "isEnabledFor", lambda level: logger.level <= level)
+
+    return logger
+
+
+# Add standard logging levels for convenient access
+DEBUG = logging.DEBUG
+INFO = logging.INFO
+WARNING = logging.WARNING
+ERROR = logging.ERROR
+CRITICAL = logging.CRITICAL
+
+
+def get_default_logger(prefix="sat") -> logging.Logger:
+    return logging.getLogger(prefix)
 
 
 def log_gpu_utilization():

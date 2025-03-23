@@ -6,14 +6,11 @@ __status__ = "Development"
 import datasets
 import torch
 
-from logging import DEBUG, ERROR
-
 import evaluate
 
 from sat.utils import logging
 from sat.models.tasks.loss import CrossEntropyLoss
 from sat.models.tasks.heads import TaskOutput
-from sat.models.utils import get_device
 
 logger = logging.get_default_logger()
 
@@ -67,6 +64,7 @@ class CrossEntropyScores(evaluate.Metric):
 
         output = TaskOutput(predictions=preds)
         loss = ce_loss(output, references)
-        logger.debug(f"Computed Cross Entropy loss: {loss}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Computed Cross Entropy loss: {loss}")
 
         return loss, event_losses

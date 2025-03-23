@@ -119,7 +119,8 @@ class MismatchLoss(Loss):
         """
         logits = predictions.logits
         mean_lifetimes = self.mean_lifetime(logits, references)
-        logger.debug(f"Mean lifetimes {mean_lifetimes}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Mean lifetimes {mean_lifetimes}")
 
         # Compute loss (already a tensor from mismatch_loss)
         loss = self.mismatch_loss(references, mean_lifetimes)
