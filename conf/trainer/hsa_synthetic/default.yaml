@@ -1,14 +1,16 @@
+custom: false
+
 training_arguments:
   _target_: transformers.TrainingArguments
   report_to: "tensorboard"
   optim: adamw_torch
-  overwrite_output_dir: True
+  overwrite_output_dir: true
   num_train_epochs: 200
   per_device_train_batch_size: 256
   per_device_eval_batch_size: 512
-  load_best_model_at_end: True
+  load_best_model_at_end: true
   greater_is_better: ${tasks.eval_metric_greater_is_better}
-  evaluation_strategy: "steps"
+  eval_strategy: "steps"
   eval_steps: 10
   logging_strategy: "steps"
   logging_steps: 10
@@ -19,10 +21,11 @@ training_arguments:
   metric_for_best_model: ${tasks.eval_metric}
   learning_rate: ${learning_rate}
   lr_scheduler_type: cosine
-  gradient_accumulation_steps: 1
+  gradient_accumulation_steps: 2
   warmup_steps: ${warmup_steps}
   save_total_limit: 2
   output_dir: ${modelhub}/${dataset}/${modelname}
   save_safetensors: false
   gradient_checkpointing: false
   dataloader_pin_memory: true
+  remove_unused_columns: false
