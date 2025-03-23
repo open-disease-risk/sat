@@ -6,11 +6,9 @@ __status__ = "Development"
 import datasets
 import numpy as np
 
-from logging import DEBUG, ERROR
-
 import evaluate
 
-from sat.sksurv.metrics import concordance_index_ipcw
+from sksurv.metrics import concordance_index_ipcw
 from sat.utils import logging
 
 logger = logging.get_default_logger()
