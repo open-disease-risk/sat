@@ -8,7 +8,7 @@ defaults:
 # Learning Rate Finder configuration
 lr_finder:
   enabled: true
-  start_lr: 1e-7
+  start_lr: 1e-5
   end_lr: 1.0
   num_steps: 100
   smooth_factor: 0.05
