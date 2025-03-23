@@ -9,7 +9,7 @@ training_arguments:
   greater_is_better: ${tasks.eval_metric_greater_is_better}
   load_best_model_at_end: True
   logging_strategy: "no"
-  evaluation_strategy: "epoch"
+  eval_strategy: "epoch"
   eval_steps: 10
   save_strategy: "epoch"
   save_steps: 10
