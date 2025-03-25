@@ -11,7 +11,15 @@ from sat.utils import logging
 logger = logging.get_default_logger()
 
 
+# Cache device detection result for efficiency
+_CACHED_DEVICE = None
+
+
 def get_device():
+    global _CACHED_DEVICE
+    if _CACHED_DEVICE is not None:
+        return _CACHED_DEVICE
+
     device_str = "cpu"
     if torch.cuda.is_available():
         device_str = "cuda"
@@ -19,12 +27,23 @@ def get_device():
         device_str = "mps"
 
     device = torch.device(device_str)
-    return (device_str, device)
+    _CACHED_DEVICE = (device_str, device)
+
+    if logger.isEnabledFor(logging.DEBUG):
+        logger.debug(f"Using device: {device_str}")
+
+    return _CACHED_DEVICE
 
 
 def load_model(resolved_archive_file, model):
+    # Get target device for loading
+    _, device = get_device()
+
     try:
-        state_dict = torch.load(resolved_archive_file, map_location="cpu")
+        # Load directly to the target device for efficiency
+        state_dict = torch.load(resolved_archive_file, map_location=device)
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Loaded model weights to {device}")
     except Exception:
         raise OSError(
             "Unable to load weights from pytorch checkpoint file. "
@@ -58,7 +77,9 @@ def load_model(resolved_archive_file, model):
     # PyTorch's `_load_from_state_dict` does not copy parameters in a module's descendants
     # so we need to apply the function recursively.
     def load(module: nn.Module, prefix=""):
-        logger.debug(f"load state for module {module} with prefix {prefix}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"load state for module {module} with prefix {prefix}")
+
         local_metadata = {} if metadata is None else metadata.get(prefix[:-1], {})
         module._load_from_state_dict(
             state_dict,

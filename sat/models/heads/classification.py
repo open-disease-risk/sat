@@ -6,7 +6,7 @@ __status__ = "Development"
 import hydra
 import torch
 
-from sat.models.nets import CauseSpecificNet, CauseSpecificNetCompRisk, SimpleMLP
+from sat.models.nets import CauseSpecificNet, CauseSpecificNetCompRisk
 from sat.utils import logging
 
 from .config import EventClassificationTaskConfig
@@ -49,7 +49,8 @@ class EventClassificationTaskHead(ClassificationTask):
             )
 
         loss = config.loss[config.model_type]
-        logger.debug(f"Instantiate the loss {loss}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Instantiate the loss {loss}")
         self.loss = hydra.utils.instantiate(loss)
 
     def forward(self, sequence_output, labels=None, **kwargs):

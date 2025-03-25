@@ -81,10 +81,12 @@ class SurvivalAnalysisEvaluator(Evaluator):
         Returns:
             Dict containing processed numpy arrays of predictions
         """
-        logger.debug(f"Processing {len(predictions)} predictions")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Processing {len(predictions)} predictions")
 
         if not predictions:
-            logger.debug("No predictions to process")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("No predictions to process")
             return {"predictions": np.array([])}
 
         # Helper function for tensor conversion - avoids code duplication
@@ -129,7 +131,8 @@ class SurvivalAnalysisEvaluator(Evaluator):
                 stacked_predictions[i, 1] = tensor_to_numpy(pred.risk)  # risk
                 stacked_predictions[i, 2] = tensor_to_numpy(pred.survival)  # survival
 
-            logger.debug(f"Final predictions shape: {stacked_predictions.shape}")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"Final predictions shape: {stacked_predictions.shape}")
             return {"predictions": stacked_predictions}
 
         except Exception as e:
@@ -225,7 +228,8 @@ class SurvivalAnalysisEvaluator(Evaluator):
             **metric_predictions_dict,
         }
 
-        logger.debug(f"metric_inputs {metric_inputs}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"metric_inputs {metric_inputs}")
 
         # Compute metrics from references and predictions
         metric_results = self.compute_metric(
@@ -291,9 +295,11 @@ class SurvivalAnalysisEvaluator(Evaluator):
             def build_args_metric(metric=None, key=None):
                 def args_metric(data):
                     predictions, references = data
-                    logger.debug(
-                        f"args_metric: predictions in build args: {predictions} and {references} for metric key {key}"
-                    )
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug(
+                            f"args_metric: predictions in build args: {predictions} and {references} for metric key {key}"
+                        )
+
                     return metric.compute(
                         predictions=predictions, references=references
                     )[key]
@@ -303,11 +309,16 @@ class SurvivalAnalysisEvaluator(Evaluator):
             stat_func_dict = {}
             theta_hat_dict = {}
 
-            logger.debug("Build the statistical functions dictionary")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("Build the statistical functions dictionary")
             for key in metric_keys:
-                logger.debug(f"Add statistical metric {key} to the function dictionary")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(
+                        f"Add statistical metric {key} to the function dictionary"
+                    )
                 stat_func_dict[key] = build_args_metric(metric, key)
-                logger.debug(f"Compute statistical metric {key} for the data")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(f"Compute statistical metric {key} for the data")
                 try:
                     theta_hat_dict[key] = stat_func_dict[key](data)
                 except Exception as e:

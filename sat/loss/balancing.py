@@ -354,7 +354,8 @@ class UncertaintyWeightBalancer(LossBalancer):
             # If class has a configured log_dir, use it
             if cls._log_dir is not None:
                 logging_dir = cls._log_dir
-                logger.debug(f"Using configured log_dir: {logging_dir}")
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(f"Using configured log_dir: {logging_dir}")
             else:
                 # Look in common places
                 import os
@@ -372,7 +373,10 @@ class UncertaintyWeightBalancer(LossBalancer):
                         if subdirs:
                             most_recent = max(subdirs, key=os.path.getmtime)
                             logging_dir = most_recent
-                            logger.debug(f"Found existing log directory: {logging_dir}")
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.debug(
+                                    f"Found existing log directory: {logging_dir}"
+                                )
                             break
 
                 if logging_dir is None:

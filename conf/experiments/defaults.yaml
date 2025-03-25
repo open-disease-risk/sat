@@ -10,6 +10,7 @@ one_calibration_bins: 10
 ranking_loss_coeff: 0.3
 event_ranking_loss_coeff: 0.1
 ranking_loss_sigma: 0.1
+ranking_loss_margin: 0.05
 event_ranking_loss_sigma: 0.1
 calibration_loss_coeff: 0.2
 focal_loss_coeff: 0.1

@@ -8,7 +8,7 @@ import torch
 
 import torch.nn.functional as F
 
-from sat.models.nets import CauseSpecificNet, CauseSpecificNetCompRisk, SimpleMLP
+from sat.models.nets import CauseSpecificNet, CauseSpecificNetCompRisk
 from sat.utils import logging
 
 from .config import SurvivalConfig
@@ -54,30 +54,34 @@ class SurvivalTaskHead(SurvivalTask):
         # If we're part of an MTL model, the MTL model will handle calling post_init
         # We can detect if we're standalone by checking our parent class
         if self.__class__.__name__ == "SurvivalTaskHead":
-            logger.debug("Standalone SurvivalTaskHead - initializing weights")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("Standalone SurvivalTaskHead - initializing weights")
             self.post_init()
         else:
-            logger.debug(
-                "SurvivalTaskHead created as part of MTL - will be initialized by MTL"
-            )
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(
+                    "SurvivalTaskHead created as part of MTL - will be initialized by MTL"
+                )
 
         loss = config.loss[config.model_type]
-        logger.debug(f"Instantiate the loss {loss}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Instantiate the loss {loss}")
         self.loss = hydra.utils.instantiate(loss)
 
     def forward(self, sequence_output, labels=None, **kwargs):
+        # Compute network output
         logits = self.nets(sequence_output)  # num events x batch x duration cuts
+
+        # Apply activation and add padding column
         hazard = F.softplus(logits)
         hazard = pad_col(hazard, where="start")
-        # Optimized tensor operations: fuse cumsum+mul+exp into a single operation
-        surv = (
-            -hazard.cumsum(dim=2)
-        ).exp()  # More efficient than cumsum().mul(-1).exp()
-        # Use in-place operation to create risk from survival
-        risk = torch.ones_like(surv).sub_(
-            surv
-        )  # Equivalent to 1.0 - surv but more efficient
 
+        # Optimized single-op tensor calculation for survival
+        cumsum = hazard.cumsum(dim=2)
+        surv = torch.exp(-cumsum)
+        risk = 1.0 - surv
+
+        # Create output container
         output = SAOutput(
             loss=None,
             logits=logits,
@@ -87,13 +91,13 @@ class SurvivalTaskHead(SurvivalTask):
             hidden_states=sequence_output,
         )
 
+        # Compute loss if labels are provided
         if labels is not None:
-            logger.debug(
-                f"Computing loss with logits {logits[0].shape} and labels {labels.shape}"
-            )
-            output.loss = self.loss(
-                output,
-                labels,
-            )
+            # Debug logging can be expensive in production - consider disabling
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(
+                    f"Computing loss with logits {logits[0].shape} and labels {labels.shape}"
+                )
+            output.loss = self.loss(output, labels)
 
         return output

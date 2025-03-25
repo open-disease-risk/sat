@@ -23,9 +23,10 @@ class BaseTask(PreTrainedModel):
         """Override the post_init method to apply ownership-based initialization"""
         # Instead of using apply on the entire model, we'll initialize only direct children
         for name, module in self.named_children():
-            logger.debug(
-                f"Initializing module {name} directly owned by {self.__class__.__name__}"
-            )
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(
+                    f"Initializing module {name} directly owned by {self.__class__.__name__}"
+                )
             # Initialize this module with the task's specific initialization
             self.initialize_module(module)
 
@@ -50,7 +51,10 @@ class BaseTask(PreTrainedModel):
 
     def _init_linear_weight(self, module):
         """Initialize linear layer weights based on config"""
-        logger.debug(f"{self.__class__.__name__} initializing linear weights: {module}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                f"{self.__class__.__name__} initializing linear weights: {module}"
+            )
 
         if self.config.initializer == "normal":
             module.weight.data.normal_(mean=0.0, std=self.config.initializer_range)
@@ -80,9 +84,10 @@ class BaseTask(PreTrainedModel):
 
     def _init_layernorm_weight(self, module):
         """Initialize layernorm weights"""
-        logger.debug(
-            f"{self.__class__.__name__} initializing layernorm weights: {module}"
-        )
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                f"{self.__class__.__name__} initializing layernorm weights: {module}"
+            )
         module.weight.data.fill_(1.0)
 
     def _init_layernorm_bias(self, module):
@@ -121,29 +126,41 @@ class SurvivalTask(abc.ABC, BaseTask):
             )
 
             # Check if this is the final output layer
-            if hasattr(self.nets, "event_nets") and any(
-                module is net.net[-1] for net in self.nets.event_nets
-            ):
+            # Check if this is the final output layer - safely
+            is_final_output = False
+            if hasattr(self.nets, "event_nets"):
+                try:
+                    is_final_output = any(
+                        hasattr(net, "net") and module is net.net[-1]
+                        for net in self.nets.event_nets
+                    )
+                except (AttributeError, TypeError):
+                    pass
+
+            if is_final_output:
                 # For multi-event models, initialize with zeros to ensure stable starting point
                 if is_multi_event:
-                    logger.debug(
-                        f"SurvivalTask: initializing multi-event final output layer with zeros: {module}"
-                    )
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug(
+                            f"SurvivalTask: initializing multi-event final output layer with zeros: {module}"
+                        )
                     nn.init.zeros_(module.weight)
                     # Note: we'll also handle the bias in _init_linear_bias
                 else:
                     # For single event, use a small positive value
-                    logger.debug(
-                        f"SurvivalTask: initializing single-event final output layer: {module}"
-                    )
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug(
+                            f"SurvivalTask: initializing single-event final output layer: {module}"
+                        )
                     nn.init.constant_(module.weight, 0.01)
                 return
 
             # For hidden layers in multi-event models, use a more conservative initialization
             elif is_multi_event:
-                logger.debug(
-                    f"SurvivalTask: conservative init for hidden layer in multi-event model: {module}"
-                )
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(
+                        f"SurvivalTask: conservative init for hidden layer in multi-event model: {module}"
+                    )
                 # Reduce variance of initialization to prevent exploding gradients
                 if self.config.initializer == "normal":
                     # Use a smaller standard deviation
@@ -182,21 +199,36 @@ class SurvivalTask(abc.ABC, BaseTask):
             )
 
             # Check if this is the final output layer
-            if hasattr(self.nets, "event_nets") and any(
-                module is net.net[-1] for net in self.nets.event_nets
-            ):
+            is_final_output = False
+            if hasattr(self.nets, "event_nets"):
+                try:
+                    # Check for CauseSpecificNet pattern (event_nets with net member)
+                    is_final_output = any(
+                        hasattr(net, "net") and module is net.net[-1] 
+                        for net in self.nets.event_nets
+                    )
+                    
+                    # Check for SimpleCompRiskNet pattern (event_nets with direct Linear layers)
+                    if not is_final_output:
+                        is_final_output = any(module is net for net in self.nets.event_nets)
+                except (AttributeError, TypeError):
+                    pass
+                    
+            if is_final_output:
                 if is_multi_event:
                     # For multi-event final layer, initialize bias to small negative values
                     # This ensures initial hazard values will be small after softplus
-                    logger.debug(
-                        f"SurvivalTask: initializing multi-event final layer bias to -2.0: {module}"
-                    )
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug(
+                            f"SurvivalTask: initializing multi-event final layer bias to -2.0: {module}"
+                        )
                     nn.init.constant_(module.bias, -2.0)
                 else:
                     # For single-event models, use a smaller negative value
-                    logger.debug(
-                        f"SurvivalTask: initializing single-event final layer bias: {module}"
-                    )
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug(
+                            f"SurvivalTask: initializing single-event final layer bias: {module}"
+                        )
                     nn.init.constant_(module.bias, -1.0)
                 return
 
@@ -217,13 +249,27 @@ class RegressionTask(abc.ABC, BaseTask):
         # Special initialization for output layer of regression networks
         if hasattr(self, "nets") and hasattr(module, "weight"):
             # Check if this is the final output layer
-            if hasattr(self.nets, "event_nets") and any(
-                module is net.net[-1] for net in self.nets.event_nets
-            ):
+            is_final_output = False
+            if hasattr(self.nets, "event_nets"):
+                try:
+                    # Check for CauseSpecificNet pattern (event_nets with net member)
+                    is_final_output = any(
+                        hasattr(net, "net") and module is net.net[-1] 
+                        for net in self.nets.event_nets
+                    )
+                    
+                    # Check for SimpleCompRiskNet pattern (event_nets with direct Linear layers)
+                    if not is_final_output:
+                        is_final_output = any(module is net for net in self.nets.event_nets)
+                except (AttributeError, TypeError):
+                    pass
+                    
+            if is_final_output:
                 # Output layer initialization for regression with ReLU
-                logger.debug(
-                    f"RegressionTask: initializing final output layer: {module}"
-                )
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(
+                        f"RegressionTask: initializing final output layer: {module}"
+                    )
                 nn.init.kaiming_normal_(
                     module.weight, mode="fan_in", nonlinearity="relu"
                 )
@@ -237,13 +283,27 @@ class RegressionTask(abc.ABC, BaseTask):
         # Special initialization for output layer of regression networks
         if hasattr(self, "nets") and module.bias is not None:
             # Check if this is the final output layer
-            if hasattr(self.nets, "event_nets") and any(
-                module is net.net[-1] for net in self.nets.event_nets
-            ):
+            is_final_output = False
+            if hasattr(self.nets, "event_nets"):
+                try:
+                    # Check for CauseSpecificNet pattern (event_nets with net member)
+                    is_final_output = any(
+                        hasattr(net, "net") and module is net.net[-1] 
+                        for net in self.nets.event_nets
+                    )
+                    
+                    # Check for SimpleCompRiskNet pattern (event_nets with direct Linear layers)
+                    if not is_final_output:
+                        is_final_output = any(module is net for net in self.nets.event_nets)
+                except (AttributeError, TypeError):
+                    pass
+                    
+            if is_final_output:
                 # Initialize bias to positive value for ReLU
-                logger.debug(
-                    f"RegressionTask: initializing final output bias: {module}"
-                )
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(
+                        f"RegressionTask: initializing final output bias: {module}"
+                    )
                 nn.init.constant_(module.bias, 0.1)
                 return
 
@@ -264,13 +324,27 @@ class ClassificationTask(abc.ABC, BaseTask):
         # Special initialization for output layer of classification networks
         if hasattr(self, "nets") and hasattr(module, "weight"):
             # Check if this is the final output layer
-            if hasattr(self.nets, "event_nets") and any(
-                module is net.net[-1] for net in self.nets.event_nets
-            ):
+            is_final_output = False
+            if hasattr(self.nets, "event_nets"):
+                try:
+                    # Check for CauseSpecificNet pattern (event_nets with net member)
+                    is_final_output = any(
+                        hasattr(net, "net") and module is net.net[-1] 
+                        for net in self.nets.event_nets
+                    )
+                    
+                    # Check for SimpleCompRiskNet pattern (event_nets with direct Linear layers)
+                    if not is_final_output:
+                        is_final_output = any(module is net for net in self.nets.event_nets)
+                except (AttributeError, TypeError):
+                    pass
+                    
+            if is_final_output:
                 # Output layer initialization for sigmoid activation
-                logger.debug(
-                    f"ClassificationTask: initializing final output layer: {module}"
-                )
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(
+                        f"ClassificationTask: initializing final output layer: {module}"
+                    )
                 nn.init.xavier_uniform_(module.weight, gain=1.0)
                 return
 
@@ -282,13 +356,27 @@ class ClassificationTask(abc.ABC, BaseTask):
         # Special initialization for output layer of classification networks
         if hasattr(self, "nets") and module.bias is not None:
             # Check if this is the final output layer
-            if hasattr(self.nets, "event_nets") and any(
-                module is net.net[-1] for net in self.nets.event_nets
-            ):
+            is_final_output = False
+            if hasattr(self.nets, "event_nets"):
+                try:
+                    # Check for CauseSpecificNet pattern (event_nets with net member)
+                    is_final_output = any(
+                        hasattr(net, "net") and module is net.net[-1] 
+                        for net in self.nets.event_nets
+                    )
+                    
+                    # Check for SimpleCompRiskNet pattern (event_nets with direct Linear layers)
+                    if not is_final_output:
+                        is_final_output = any(module is net for net in self.nets.event_nets)
+                except (AttributeError, TypeError):
+                    pass
+                    
+            if is_final_output:
                 # Initialize bias to zero for balanced sigmoid
-                logger.debug(
-                    f"ClassificationTask: initializing final output bias: {module}"
-                )
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(
+                        f"ClassificationTask: initializing final output bias: {module}"
+                    )
                 nn.init.zeros_(module.bias)
                 return
 
@@ -321,34 +409,41 @@ class MTLTask(abc.ABC, BaseTask):
         caller_name = caller_frame.f_code.co_name
 
         if caller_name != "__init__":
-            logger.debug(
-                "MTLTask.post_init called from outside __init__, doing initialization"
-            )
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(
+                    "MTLTask.post_init called from outside __init__, doing initialization"
+                )
             # First initialize only the shared networks that MTL directly owns
             for name, module in self.named_children():
                 # Skip the heads module list - these will be initialized separately
                 if name != "heads":
-                    logger.debug(f"MTLTask: initializing shared module {name}")
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug(f"MTLTask: initializing shared module {name}")
                     self.initialize_module(module)
 
             # Now initialize each task head with its own specific initialization
             if hasattr(self, "heads"):
                 for i, head in enumerate(self.heads):
-                    logger.debug(
-                        f"MTLTask: initializing task head {i} using its own initializer"
-                    )
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug(
+                            f"MTLTask: initializing task head {i} using its own initializer"
+                        )
                     head.post_init()
         else:
-            logger.debug(
-                "MTLTask.post_init called from __init__, skipping (already initialized)"
-            )
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(
+                    "MTLTask.post_init called from __init__, skipping (already initialized)"
+                )
             # No need to do anything, initialization was already done in __init__
 
     def _init_linear_weight(self, module):
         """MTL-specific linear weight initialization"""
         # Special initialization for MTL shared network
         if hasattr(self, "net") and hasattr(module, "weight"):
-            logger.debug(f"MTLTask: initializing shared network linear layer: {module}")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(
+                    f"MTLTask: initializing shared network linear layer: {module}"
+                )
             nn.init.kaiming_uniform_(
                 module.weight, mode="fan_out", nonlinearity="leaky_relu"
             )
@@ -361,7 +456,8 @@ class MTLTask(abc.ABC, BaseTask):
         """MTL-specific linear bias initialization"""
         # Special initialization for MTL shared network
         if hasattr(self, "net") and module.bias is not None:
-            logger.debug(f"MTLTask: initializing shared network bias: {module}")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"MTLTask: initializing shared network bias: {module}")
             nn.init.zeros_(module.bias)
             return
 

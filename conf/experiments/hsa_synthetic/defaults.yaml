@@ -2,11 +2,9 @@
 defaults:
   - ../defaults
 
-learning_rate: 0.001
+learning_rate: 0.01
 warmup_steps: 40
 weight_decay: 0.1
-ranking_loss_coeff: 0.05
-event_ranking_loss_coeff: 0.05
 
 select_hidden_layers: null
 

@@ -11,7 +11,6 @@ import evaluate
 from sat.utils import logging
 from sat.models.tasks.loss import MSELoss
 from sat.models.tasks.heads import TaskOutput
-from sat.models.utils import get_device
 
 logger = logging.get_default_logger()
 
@@ -63,6 +62,7 @@ class MSEScores(evaluate.Metric):
 
         output = TaskOutput(predictions=preds)
         loss = mse_loss(output, references)
-        logger.debug(f"Computed MSE loss: {loss}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Computed MSE loss: {loss}")
 
         return loss, event_losses

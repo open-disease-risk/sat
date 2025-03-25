@@ -5,7 +5,7 @@ __status__ = "Development"
 
 import torch
 from torch import nn
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple
 
 from sat.utils import logging
 from .config import TokenEmbedding, SentenceEmbedding
@@ -27,7 +27,10 @@ class TokenEmbedder(nn.Module):
         super().__init__()
         self.hidden_size = hidden_size
         self.token_emb_strategy = token_emb_strategy
-        logger.debug(f"TokenEmbedder initialized with strategy: {token_emb_strategy}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                f"TokenEmbedder initialized with strategy: {token_emb_strategy}"
+            )
 
     def forward(
         self,
@@ -50,7 +53,9 @@ class TokenEmbedder(nn.Module):
         """
         # Special case for BERT pooler
         if self.token_emb_strategy == TokenEmbedding.BERT.value:
-            logger.debug("Using Bert-pooler for the token embeddings")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("Using Bert-pooler for the token embeddings")
+
             # HuggingFace's BERT pooler applies a linear layer to the CLS token from the last layer
             return sequence_output[1]
 
@@ -60,26 +65,31 @@ class TokenEmbedder(nn.Module):
 
         # Subset the layers if specified
         if select_hidden_layers:
-            logger.debug(f"Select hidden layers {select_hidden_layers}")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"Select hidden layers {select_hidden_layers}")
             token_embeddings = token_embeddings[select_hidden_layers, :, :, :]
 
         # batch x tokens x layers x features
         token_embeddings = token_embeddings.permute(1, 2, 0, 3)
-        logger.debug(
-            f"Dimensions of token embeddings after layer selection {token_embeddings.shape}"
-        )
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                f"Dimensions of token embeddings after layer selection {token_embeddings.shape}"
+            )
 
         # Process token embeddings based on configuration
         if self.token_emb_strategy == TokenEmbedding.AVG.value:
-            logger.debug("Average the token embeddings across layers")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("Average the token embeddings across layers")
             token_embeddings = torch.mean(token_embeddings, dim=2)
 
         elif self.token_emb_strategy == TokenEmbedding.SUM.value:
-            logger.debug("Sum the token embeddings across layers")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("Sum the token embeddings across layers")
             token_embeddings = torch.sum(token_embeddings, dim=2)
 
         elif self.token_emb_strategy == TokenEmbedding.CAT.value:
-            logger.debug("Concatenate the token embeddings across layers")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("Concatenate the token embeddings across layers")
             # Split along the layer dimension
             layers = torch.tensor_split(
                 token_embeddings, token_embeddings.shape[2], dim=2
@@ -88,7 +98,8 @@ class TokenEmbedder(nn.Module):
 
         # ATTENTION option removed to avoid stability issues
 
-        logger.debug(f"Final token embeddings shape: {token_embeddings.shape}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Final token embeddings shape: {token_embeddings.shape}")
         return token_embeddings
 
 
@@ -104,9 +115,10 @@ class SentenceEmbedder(nn.Module):
     ):
         super().__init__()
         self.sentence_emb_strategy = sentence_emb_strategy
-        logger.debug(
-            f"SentenceEmbedder initialized with strategy: {sentence_emb_strategy}"
-        )
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                f"SentenceEmbedder initialized with strategy: {sentence_emb_strategy}"
+            )
 
     def forward(
         self,
@@ -125,12 +137,14 @@ class SentenceEmbedder(nn.Module):
         """
         # BERT pooler output is already a sentence embedding
         if len(token_embeddings.shape) == 2:
-            logger.debug("Using pre-pooled embeddings (likely from BERT pooler)")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("Using pre-pooled embeddings (likely from BERT pooler)")
             return token_embeddings
 
         # Apply pooling based on strategy
         if self.sentence_emb_strategy == SentenceEmbedding.AVG.value:
-            logger.debug("Average across tokens to produce sentence embeddings")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("Average across tokens to produce sentence embeddings")
             if attention_mask is not None:
                 # Compute masked average (only over non-padding tokens)
                 expanded_mask = attention_mask.unsqueeze(-1)
@@ -147,7 +161,8 @@ class SentenceEmbedder(nn.Module):
                 sentence_embeddings = torch.mean(token_embeddings, dim=1)
 
         elif self.sentence_emb_strategy == SentenceEmbedding.MAX.value:
-            logger.debug("Max across tokens to produce sentence embeddings")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("Max across tokens to produce sentence embeddings")
             if attention_mask is not None:
                 # Create a mask for padding tokens (replace padding with large negative values)
                 padding_mask = (1 - attention_mask).unsqueeze(-1) * -1e4
@@ -159,8 +174,10 @@ class SentenceEmbedder(nn.Module):
                 sentence_embeddings = torch.max(token_embeddings, dim=1)[0]
 
         else:  # SentenceEmbedding.NONE.value
-            logger.debug("No pooling applied to token embeddings")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("No pooling applied to token embeddings")
             sentence_embeddings = token_embeddings
 
-        logger.debug(f"Sentence embeddings shape: {sentence_embeddings.shape}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Sentence embeddings shape: {sentence_embeddings.shape}")
         return sentence_embeddings

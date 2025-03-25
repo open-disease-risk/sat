@@ -11,7 +11,6 @@ import evaluate
 from sat.utils import logging
 from sat.models.tasks.loss import MismatchLoss
 from sat.models.tasks.heads import SAOutput
-from sat.models.utils import get_device
 
 logger = logging.get_default_logger()
 
@@ -49,6 +48,7 @@ class MismatchScores(evaluate.Metric):
         output = SAOutput(logits=logits)
         loss = mismatch_loss(output, references)
 
-        logger.debug(f"Computed hazard loss: {loss}")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Computed hazard loss: {loss}")
 
         return loss
