@@ -210,9 +210,10 @@ class DeepHitRankingLoss(Loss):
         importance_sample_weights: Optional[str] = None,
         balance_strategy: Optional[Union[str, BalancingStrategy]] = "fixed",
         balance_params: Optional[Dict] = None,
+        margin: float = 0.05,  # Margin for the ranking loss
     ):
         """
-        Initialize DeepHitRankingLoss.
+        Initialize DeepHitRankingLoss with enhanced discriminative capability.
 
         Args:
             duration_cuts: Path to CSV file containing duration cut points for discretization
@@ -221,6 +222,7 @@ class DeepHitRankingLoss(Loss):
             importance_sample_weights: Optional path to CSV file with importance weights
             balance_strategy: Strategy for balancing loss components
             balance_params: Additional parameters for the balancing strategy
+            margin: Minimum margin required between survival probabilities
         """
         super(DeepHitRankingLoss, self).__init__(
             num_events=num_events,
@@ -229,6 +231,9 @@ class DeepHitRankingLoss(Loss):
         )
 
         self.sigma = sigma
+        self.margin = (
+            margin  # Margin for the ranking loss - enforces minimum difference
+        )
 
         # Load duration cut points
         df = pd.read_csv(duration_cuts, header=None, names=["cuts"])
@@ -248,7 +253,7 @@ class DeepHitRankingLoss(Loss):
 
     def forward(self, predictions: SAOutput, references: torch.Tensor) -> torch.Tensor:
         """
-        Compute the ranking loss component with vectorized operations.
+        Compute the enhanced ranking loss component with margin and improved stability.
 
         Args:
             predictions: Model predictions (SAOutput with survival probabilities)
@@ -272,6 +277,7 @@ class DeepHitRankingLoss(Loss):
 
         # Initialize loss accumulator
         rank_loss = torch.zeros(1, device=device)
+        pair_count = 0  # Track number of valid pairs
 
         # Process each event type with vectorized operations where possible
         for event_type in range(self.num_events):
@@ -280,18 +286,22 @@ class DeepHitRankingLoss(Loss):
             event_count = event_occurred.sum().item()
 
             # Skip if no events of this type
-            if event_count == 0:
+            if event_count < 2:  # Need at least 2 events to rank
                 continue
 
             # Get indices and times for subjects with this event
             event_indices = torch.where(event_occurred)[0]
             event_times = durations[event_occurred, event_type]
 
+            # More efficient pair-based calculation using matrix operations
             # Calculate each event sample's contribution in batch
             for i, (i_idx, time_i) in enumerate(zip(event_indices, event_times)):
                 # Create risk indicator using vectorized comparison
                 # 1 if subject j's time > subject i's time (j should be lower risk)
                 risk_indicator = (durations[:, event_type] > time_i).float()
+
+                if risk_indicator.sum() == 0:
+                    continue  # No valid comparisons
 
                 # Find time bin index efficiently
                 time_bin_idx = torch.searchsorted(duration_cuts, time_i)
@@ -308,13 +318,22 @@ class DeepHitRankingLoss(Loss):
                 # Get reference subject's survival
                 i_survival_at_t = all_survival_at_t[i_idx]
 
-                # Vectorized computation of survival differences and exponential scaling
-                # This avoids loops over all samples
+                # Vectorized computation of survival differences
                 survival_diff = i_survival_at_t - all_survival_at_t
+
+                # Apply margin to enforce minimum difference
+                # Only penalize when the difference is smaller than the margin
+                margin_diff = torch.clamp(self.margin - survival_diff, min=0.0)
+
+                # Combine with exponential scaling for traditional DeepHit loss
                 exp_diff = torch.exp(survival_diff / self.sigma)
 
+                # Combine margin and exponential components
+                # This creates a hybrid loss that enforces both margin and exponential ranking
+                combined_diff = exp_diff + margin_diff
+
                 # Apply risk indicator to only consider valid pairs
-                valid_comparisons = risk_indicator * exp_diff
+                valid_comparisons = risk_indicator * combined_diff
 
                 # Apply weight if needed
                 if self.weights is not None:
@@ -322,14 +341,18 @@ class DeepHitRankingLoss(Loss):
                     weight = self.weights[event_type + 1].to(device)
                     valid_comparisons.mul_(weight)  # In-place multiplication
 
-                # Accumulate loss
+                # Accumulate loss and count pairs
                 rank_loss += valid_comparisons.sum()
+                pair_count += risk_indicator.sum().item()
 
-        # Normalize efficiently
-        if batch_size > 0:
-            rank_loss.div_(batch_size)  # In-place division
+        # Normalize by number of pairs instead of batch size for more stable gradients
+        if pair_count > 0:
+            rank_loss = rank_loss / pair_count
+        else:
+            # No valid pairs for ranking
+            rank_loss = torch.zeros(1, device=device)
+            logger.warning("No valid pairs found for ranking loss")
 
-        # Return tensor directly (it's already a tensor on the correct device)
         return rank_loss
 
 
