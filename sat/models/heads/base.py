@@ -126,9 +126,18 @@ class SurvivalTask(abc.ABC, BaseTask):
             )
 
             # Check if this is the final output layer
-            if hasattr(self.nets, "event_nets") and any(
-                module is net.net[-1] for net in self.nets.event_nets
-            ):
+            # Check if this is the final output layer - safely
+            is_final_output = False
+            if hasattr(self.nets, "event_nets"):
+                try:
+                    is_final_output = any(
+                        hasattr(net, "net") and module is net.net[-1]
+                        for net in self.nets.event_nets
+                    )
+                except (AttributeError, TypeError):
+                    pass
+
+            if is_final_output:
                 # For multi-event models, initialize with zeros to ensure stable starting point
                 if is_multi_event:
                     if logger.isEnabledFor(logging.DEBUG):
