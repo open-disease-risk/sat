@@ -6,7 +6,6 @@ __status__ = "Development"
 import torch
 import torchtuples as tt
 
-from logging import DEBUG, ERROR
 from torch import nn
 
 from sat.utils import logging
@@ -36,6 +35,7 @@ class MLP(nn.Module):
         for i in range(num_hidden_layers):
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug(f"Creating hidden linear layer number {i}")
+
             layers.append(
                 nn.Linear(
                     in_features if i == 0 else intermediate_size,
@@ -194,7 +194,8 @@ class SimpleCompRiskNet(nn.Module):
         activation=nn.LeakyReLU,
     ):
         super().__init__()
-        logger.warning(f"Creating SimpleCompRiskNet with {num_events} events")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Creating SimpleCompRiskNet with {num_events} events")
 
         # Store parameters for validation
         self.in_features = in_features
@@ -229,11 +230,11 @@ class SimpleCompRiskNet(nn.Module):
             if dropout > 0:
                 shared_layers.append(nn.Dropout(dropout))
 
-        self.shared_network = nn.Sequential(*shared_layers)
+        self.shared_net = nn.Sequential(*shared_layers)
 
         # Create separate output heads for each event
         # Use completely different networks for each event type
-        self.output_heads = nn.ModuleList()
+        self.event_nets = nn.ModuleList()
 
         # Flag to check if we've already broken symmetry
         self._symmetry_broken = False
@@ -280,11 +281,12 @@ class SimpleCompRiskNet(nn.Module):
                     position_scale = torch.linspace(-0.5, 0.5, out_features)
                     head.bias.data += position_scale * (1.0 + i * 0.5)
 
-            self.output_heads.append(head)
+            self.event_nets.append(head)
 
-        logger.warning(
-            f"SimpleCompRiskNet created with {len(self.output_heads)} output heads"
-        )
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                f"SimpleCompRiskNet created with {len(self.event_nets)} output heads"
+            )
 
         # Break symmetry between events one more time
         self._break_symmetry()
@@ -299,7 +301,7 @@ class SimpleCompRiskNet(nn.Module):
 
         with torch.no_grad():
             # For each event output head
-            for i, head in enumerate(self.output_heads):
+            for i, head in enumerate(self.event_nets):
                 # Scale factor increases with event index
                 scale = 0.1 * (i + 1)
 
@@ -315,14 +317,15 @@ class SimpleCompRiskNet(nn.Module):
                     head.bias.data += torch.randn_like(head.bias) * scale
 
             # Also add some noise to shared network to break symmetry
-            for module in self.shared_network.modules():
+            for module in self.shared_net.modules():
                 if isinstance(module, nn.Linear):
                     # Small noise to shared network
                     module.weight.data += torch.randn_like(module.weight) * 0.01
 
         # Mark symmetry as broken
         self._symmetry_broken = True
-        logger.warning("Symmetry breaking applied to network")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("Symmetry breaking applied to network")
 
     def _validate_symmetry_breaking(self):
         """Validate that symmetry breaking worked by comparing event outputs"""
@@ -335,35 +338,37 @@ class SimpleCompRiskNet(nn.Module):
                 if len(self.output_heads) > 0:
                     in_features = self.output_heads[0].weight.shape[1]
                 else:
-                    logger.warning(
-                        "Cannot validate symmetry breaking - no output heads"
-                    )
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug(
+                            "Cannot validate symmetry breaking - no output heads"
+                        )
                     return
             else:
                 in_features = self.in_features
 
             # Create input tensor on the same device as model
-            device = self.output_heads[0].weight.device
+            device = self.event_nets[0].weight.device
             dummy_input = torch.randn(batch_size, in_features, device=device)
 
             # Get shared features
             with torch.no_grad():
-                shared_out = self.shared_network(dummy_input)
+                shared_out = self.shared_net(dummy_input)
 
                 # Get outputs from each head
                 outputs = []
                 means = []
                 stds = []
 
-                for i, head in enumerate(self.output_heads):
+                for i, head in enumerate(self.event_nets):
                     out = head(shared_out)
                     outputs.append(out)
                     means.append(out.mean().item())
                     stds.append(out.std().item())
 
-                    logger.warning(
-                        f"Event {i} test output: mean={means[-1]:.6f}, std={stds[-1]:.6f}"
-                    )
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug(
+                            f"Event {i} test output: mean={means[-1]:.6f}, std={stds[-1]:.6f}"
+                        )
 
                 # For multiple events, check differences
                 if len(outputs) >= 2:
@@ -372,15 +377,17 @@ class SimpleCompRiskNet(nn.Module):
                         [outputs[0].flatten(), outputs[1].flatten()]
                     )
                     corr = torch.corrcoef(stacked_outputs)[0, 1].item()
-                    logger.warning(
-                        f"Test output correlation between events: {corr:.6f}"
-                    )
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug(
+                            f"Test output correlation between events: {corr:.6f}"
+                        )
 
                     # Calculate absolute difference
                     abs_diff = torch.abs(outputs[0] - outputs[1]).mean().item()
-                    logger.warning(
-                        f"Test output mean difference between events: {abs_diff:.6f}"
-                    )
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug(
+                            f"Test output mean difference between events: {abs_diff:.6f}"
+                        )
 
                     # Check for issues
                     if corr > 0.9:
@@ -399,19 +406,20 @@ class SimpleCompRiskNet(nn.Module):
 
     def _force_asymmetry(self):
         """Force asymmetry by using completely different architectures for each event"""
-        logger.warning("Forced asymmetry being applied")
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("Forced asymmetry being applied")
 
         with torch.no_grad():
             # For event 0, make all weights negative
-            if len(self.output_heads) > 0:
-                head0 = self.output_heads[0]
+            if len(self.event_nets) > 0:
+                head0 = self.event_nets[0]
                 head0.weight.data = torch.abs(head0.weight.data) * -1.0
                 if head0.bias is not None:
                     head0.bias.data = torch.abs(head0.bias.data) * -1.0
 
             # For event 1, make all weights positive
-            if len(self.output_heads) > 1:
-                head1 = self.output_heads[1]
+            if len(self.event_nets) > 1:
+                head1 = self.event_nets[1]
                 head1.weight.data = torch.abs(head1.weight.data)
                 if head1.bias is not None:
                     head1.bias.data = (
@@ -420,17 +428,17 @@ class SimpleCompRiskNet(nn.Module):
 
     def forward(self, x):
         # First, run shared network
-        shared_features = self.shared_network(x)
+        shared_features = self.shared_net(x)
 
         batch_size = x.shape[0]
-        num_events = len(self.output_heads)
-        out_features = self.output_heads[0].out_features
+        num_events = len(self.event_nets)
+        out_features = self.event_nets[0].out_features
 
         # Create output tensor of appropriate shape
         outputs = torch.zeros(batch_size, num_events, out_features, device=x.device)
 
         # Process each event with its output head
-        for i, head in enumerate(self.output_heads):
+        for i, head in enumerate(self.event_nets):
             # For multi-event case, add event-specific variations to inputs
             if num_events > 1:
                 # Add small event-specific offset to make inputs different
@@ -497,13 +505,10 @@ class CauseSpecificNetCompRisk(nn.Module):
         self.num_events = num_events
         self.in_features = in_features
 
-        # Set up logging
-        from sat.utils import logging
-
-        self.logger = logging.get_default_logger()
-        self.logger.warning(
-            f"Initializing CauseSpecificNetCompRisk with {num_events} events"
-        )
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                f"Initializing CauseSpecificNetCompRisk with {num_events} events"
+            )
 
         # Create a simpler implementation that emphasizes different behavior for each event
         # First, a shared feature extractor for all events
@@ -623,9 +628,10 @@ class CauseSpecificNetCompRisk(nn.Module):
             self.event_nets.append(nn.Sequential(*event_layers))
 
             # Debug output
-            self.logger.warning(
-                f"Created event {event_idx} network with {len(event_layers)} layers"
-            )
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(
+                    f"Created event {event_idx} network with {len(event_layers)} layers"
+                )
 
     def forward(self, input):
         # Run through shared network
@@ -660,9 +666,10 @@ class CauseSpecificNetCompRisk(nn.Module):
                     mean_val = event_output.mean().item()
                     std_val = event_output.std().item()
                     batch_var = torch.var(event_output, dim=0).mean().item()
-                    self.logger.warning(
-                        f"Event {event_idx} output - mean={mean_val:.4f}, std={std_val:.4f}, batch_var={batch_var:.6f}"
-                    )
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug(
+                            f"Event {event_idx} output - mean={mean_val:.4f}, std={std_val:.4f}, batch_var={batch_var:.6f}"
+                        )
 
                 # Add output to results
                 outputs.append(event_output)
@@ -683,7 +690,7 @@ class CauseSpecificNetCompRisk(nn.Module):
 
                 # If all outputs are too similar across batch, add noise
                 if mean_std < 1e-4:
-                    self.logger.error(
+                    logger.error(
                         f"Event {event_idx} has uniform outputs (std={mean_std:.6f}) - forcing variability"
                     )
                     # Force different outputs by adding significant noise

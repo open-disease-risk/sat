@@ -199,9 +199,22 @@ class SurvivalTask(abc.ABC, BaseTask):
             )
 
             # Check if this is the final output layer
-            if hasattr(self.nets, "event_nets") and any(
-                module is net.net[-1] for net in self.nets.event_nets
-            ):
+            is_final_output = False
+            if hasattr(self.nets, "event_nets"):
+                try:
+                    # Check for CauseSpecificNet pattern (event_nets with net member)
+                    is_final_output = any(
+                        hasattr(net, "net") and module is net.net[-1] 
+                        for net in self.nets.event_nets
+                    )
+                    
+                    # Check for SimpleCompRiskNet pattern (event_nets with direct Linear layers)
+                    if not is_final_output:
+                        is_final_output = any(module is net for net in self.nets.event_nets)
+                except (AttributeError, TypeError):
+                    pass
+                    
+            if is_final_output:
                 if is_multi_event:
                     # For multi-event final layer, initialize bias to small negative values
                     # This ensures initial hazard values will be small after softplus
@@ -236,9 +249,22 @@ class RegressionTask(abc.ABC, BaseTask):
         # Special initialization for output layer of regression networks
         if hasattr(self, "nets") and hasattr(module, "weight"):
             # Check if this is the final output layer
-            if hasattr(self.nets, "event_nets") and any(
-                module is net.net[-1] for net in self.nets.event_nets
-            ):
+            is_final_output = False
+            if hasattr(self.nets, "event_nets"):
+                try:
+                    # Check for CauseSpecificNet pattern (event_nets with net member)
+                    is_final_output = any(
+                        hasattr(net, "net") and module is net.net[-1] 
+                        for net in self.nets.event_nets
+                    )
+                    
+                    # Check for SimpleCompRiskNet pattern (event_nets with direct Linear layers)
+                    if not is_final_output:
+                        is_final_output = any(module is net for net in self.nets.event_nets)
+                except (AttributeError, TypeError):
+                    pass
+                    
+            if is_final_output:
                 # Output layer initialization for regression with ReLU
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug(
@@ -257,9 +283,22 @@ class RegressionTask(abc.ABC, BaseTask):
         # Special initialization for output layer of regression networks
         if hasattr(self, "nets") and module.bias is not None:
             # Check if this is the final output layer
-            if hasattr(self.nets, "event_nets") and any(
-                module is net.net[-1] for net in self.nets.event_nets
-            ):
+            is_final_output = False
+            if hasattr(self.nets, "event_nets"):
+                try:
+                    # Check for CauseSpecificNet pattern (event_nets with net member)
+                    is_final_output = any(
+                        hasattr(net, "net") and module is net.net[-1] 
+                        for net in self.nets.event_nets
+                    )
+                    
+                    # Check for SimpleCompRiskNet pattern (event_nets with direct Linear layers)
+                    if not is_final_output:
+                        is_final_output = any(module is net for net in self.nets.event_nets)
+                except (AttributeError, TypeError):
+                    pass
+                    
+            if is_final_output:
                 # Initialize bias to positive value for ReLU
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug(
@@ -285,9 +324,22 @@ class ClassificationTask(abc.ABC, BaseTask):
         # Special initialization for output layer of classification networks
         if hasattr(self, "nets") and hasattr(module, "weight"):
             # Check if this is the final output layer
-            if hasattr(self.nets, "event_nets") and any(
-                module is net.net[-1] for net in self.nets.event_nets
-            ):
+            is_final_output = False
+            if hasattr(self.nets, "event_nets"):
+                try:
+                    # Check for CauseSpecificNet pattern (event_nets with net member)
+                    is_final_output = any(
+                        hasattr(net, "net") and module is net.net[-1] 
+                        for net in self.nets.event_nets
+                    )
+                    
+                    # Check for SimpleCompRiskNet pattern (event_nets with direct Linear layers)
+                    if not is_final_output:
+                        is_final_output = any(module is net for net in self.nets.event_nets)
+                except (AttributeError, TypeError):
+                    pass
+                    
+            if is_final_output:
                 # Output layer initialization for sigmoid activation
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug(
@@ -304,9 +356,22 @@ class ClassificationTask(abc.ABC, BaseTask):
         # Special initialization for output layer of classification networks
         if hasattr(self, "nets") and module.bias is not None:
             # Check if this is the final output layer
-            if hasattr(self.nets, "event_nets") and any(
-                module is net.net[-1] for net in self.nets.event_nets
-            ):
+            is_final_output = False
+            if hasattr(self.nets, "event_nets"):
+                try:
+                    # Check for CauseSpecificNet pattern (event_nets with net member)
+                    is_final_output = any(
+                        hasattr(net, "net") and module is net.net[-1] 
+                        for net in self.nets.event_nets
+                    )
+                    
+                    # Check for SimpleCompRiskNet pattern (event_nets with direct Linear layers)
+                    if not is_final_output:
+                        is_final_output = any(module is net for net in self.nets.event_nets)
+                except (AttributeError, TypeError):
+                    pass
+                    
+            if is_final_output:
                 # Initialize bias to zero for balanced sigmoid
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug(
