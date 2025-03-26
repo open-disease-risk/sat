@@ -17,18 +17,15 @@ class SampleRankingLoss(RankingLoss):
     """
     Computes ranking loss by comparing survival probabilities between observations.
 
-    This is a highly efficient implementation of the DeepHit ranking loss that uses
-    tensor permutation and the base RankingLoss's ranking_loss method. It ensures
-    subjects with earlier events have appropriately higher risk than those with
-    later events.
+    This is a highly efficient implementation that ensures subjects with earlier
+    events have appropriately higher risk than those with later events.
+    Uses tensor permutation for comparing different observations with the same event type.
 
     Performance characteristics:
-    - More efficient than DeepHitRankingLoss, especially for larger batch sizes and event counts
+    - Permutes dimensions to [events, batch] for efficient observation comparison
+    - Uses vectorized ranking implementation from parent class
     - Scales linearly with both batch size and number of events
-    - Preserves the same ranking behavior as DeepHitRankingLoss
-
-    Note: This implementation produces lower absolute values than DeepHitRankingLoss
-    but maintains identical relative ranking behavior.
+    - Complements MultiEventRankingLoss which ranks different event types for the same observation
     """
 
     def __init__(
@@ -65,17 +62,29 @@ class SampleRankingLoss(RankingLoss):
         Returns:
             torch.Tensor: The loss value
         """
+        # Permute the dimensions to change from [batch, events] to [events, batch]
+        # This allows comparing different observations with the same event type
         events = self.events(references).permute(1, 0)
-        e = events.shape[1]
+        e = events.shape[1]  # Batch size after permutation
 
-        # This calculation already returns a tensor
+        # Create weight tensor if needed - permuted to match the new tensor orientation
+        weights_expanded = None
+        if self.weights is not None:
+            # Skip the first weight (censoring) and use only event weights
+            weights_expanded = self.weights[1:].to(references.device)
+            # Expand to match the expected dimensions with the permuted orientation
+            weights_expanded = (
+                weights_expanded.unsqueeze(1).unsqueeze(2).repeat(1, e, e)
+            )
+
+        # Use the vectorized ranking loss from the parent class
+        # with permuted tensors to compare observations instead of events
         eta = self.ranking_loss(
             events,
             self.durations(references).permute(1, 0),
             predictions.survival.permute(1, 0, 2),
             predictions.hazard.permute(1, 0, 2),
-            self.weights[1:].unsqueeze(1).unsqueeze(2).repeat(1, e, e),
+            weights_expanded,
         )
 
-        # The ensure_tensor is still kept as a fallback
-        return self.ensure_tensor(eta, device=references.device)
+        return eta
