@@ -8,7 +8,7 @@ sat-transformer:
     - _target_: sat.loss.DeepHitLikelihoodLoss
       num_events: ${data.num_events}
       importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
-    - _target_: sat.loss.DeepHitRankingLoss
+    - _target_: sat.loss.SampleRankingLoss
       duration_cuts: ${data.label_transform.save_dir}/duration_cuts.csv
       num_events: ${data.num_events}
       sigma: ${ranking_loss_sigma}  # Scaling factor for ranking loss

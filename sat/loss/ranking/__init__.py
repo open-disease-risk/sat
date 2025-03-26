@@ -5,4 +5,3 @@ __status__ = "Development"
 
 from .multievent import MultiEventRankingLoss  # noqa
 from .sample import SampleRankingLoss  # noqa
-from .observation import ObservationEventRankingLoss  # noqa

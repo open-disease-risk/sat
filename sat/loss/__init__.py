@@ -10,7 +10,6 @@ from .classification.bce import CrossEntropyLoss
 
 from .ranking.sample import SampleRankingLoss
 from .ranking.multievent import MultiEventRankingLoss
-from .ranking.observation import ObservationEventRankingLoss
 
 from .regression.l1 import L1Loss
 from .regression.mse import MSELoss
@@ -20,7 +19,6 @@ from .survival.nllpchazard import SATNLLPCHazardLoss
 from .survival.focal import SurvivalFocalLoss
 from .survival.deephit import (
     DeepHitLikelihoodLoss,
-    DeepHitRankingLoss,
     DeepHitCalibrationLoss,
 )
 
@@ -31,13 +29,11 @@ __all__ = [
     "CrossEntropyLoss",
     "SampleRankingLoss",
     "MultiEventRankingLoss",
-    "ObservationEventRankingLoss",
     "L1Loss",
     "MSELoss",
     "QuantileLoss",
     "SATNLLPCHazardLoss",
     "SurvivalFocalLoss",
     "DeepHitLikelihoodLoss",
-    "DeepHitRankingLoss",
     "DeepHitCalibrationLoss",
 ]

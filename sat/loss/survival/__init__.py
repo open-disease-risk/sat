@@ -8,7 +8,6 @@ from .mismatch import MismatchLoss
 from .focal import SurvivalFocalLoss
 from .deephit import (
     DeepHitLikelihoodLoss,
-    DeepHitRankingLoss,
     DeepHitCalibrationLoss,
 )
 
@@ -17,6 +16,5 @@ __all__ = [
     "MismatchLoss",
     "SurvivalFocalLoss",
     "DeepHitLikelihoodLoss",
-    "DeepHitRankingLoss",
     "DeepHitCalibrationLoss",
 ]

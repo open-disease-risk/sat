@@ -133,10 +133,12 @@ class RankingLoss(Loss):
         importance_sample_weights: str = None,
         sigma: float = 1.0,
         num_events: int = 1,
+        margin: float = 0.0,  # Added margin parameter with default of 0 (no margin)
     ):
         super(RankingLoss, self).__init__(num_events)
 
         self.sigma = sigma
+        self.margin = margin  # Store margin value
 
         # load the importance sampling weights if not None
         if importance_sample_weights is not None:
@@ -151,6 +153,7 @@ class RankingLoss(Loss):
         self.register_buffer(
             "duration_cuts", torch.Tensor(df.cuts.values)
         )  # tn duration cut points
+        self.num_time_bins = len(df.cuts)
 
     def ranking_loss(
         self, events, durations, survival, hazard, weights
@@ -248,13 +251,25 @@ class RankingLoss(Loss):
             A1 * I_censored.unsqueeze(1).repeat(1, e, 1).float()
         )  # and A_{ij}=1 when subject j is censored (n x e x e)
 
+        # Apply margin-based loss component if margin > 0
+        if hasattr(self, "margin") and self.margin > 0:
+            # Apply margin to enforce minimum difference (only for valid ranking pairs)
+            margin_dS1 = torch.clamp(self.margin - dS1, min=0.0) * A1
+            margin_dS2 = torch.clamp(self.margin - dS2, min=0.0) * A2
+            margin_dS3 = torch.clamp(self.margin - dS3, min=0.0) * A3
+
+            # Combine exponential and margin components
+            loss_dS1 = torch.exp(dS1 / self.sigma) + margin_dS1
+            loss_dS2 = torch.exp(dS2 / self.sigma) + margin_dS2
+            loss_dS3 = torch.exp(dS3 / self.sigma) + margin_dS3
+        else:
+            # Traditional DeepHit loss using only exponential scaling
+            loss_dS1 = torch.exp(dS1 / self.sigma)
+            loss_dS2 = torch.exp(dS2 / self.sigma)
+            loss_dS3 = torch.exp(dS3 / self.sigma)
+
         eta = torch.mean(
-            weights
-            * (
-                A1 * torch.exp(dS1 / self.sigma)
-                + A2 * torch.exp(dS2 / self.sigma)
-                + A3 * torch.exp(dS3 / self.sigma)
-            ),
+            weights * (A1 * loss_dS1 + A2 * loss_dS2 + A3 * loss_dS3),
         )
 
         return eta  # (1 x 1)
