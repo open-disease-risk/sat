@@ -7,7 +7,7 @@ defaults:
   - override /data/load: hsa_synthetic
   - override /data/parse: ${data/load}
   - override /tokenizers: ${data/load}
-  - override /transformers: bert
+  - override /transformers: numeric_bert
   - override /tasks: survival
   - override /tasks/losses: deephit_focal
   - override /tasks/losses/balancing: grad
