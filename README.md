@@ -67,6 +67,11 @@ finetuning script like so `python -m sat.finetune experiments=seer/survival
 learning_rate=0.001`. You can also append any other configuration variable shall
 you wish to change more than one.
 
+*Note 3*: Use `TOKENIZERS_PARALLELISM=false poetry run ...` to execute
+finetuning to avoid potential performance (on small datasets) and deadlock
+issues. The finetuning script may need to address the tokenization scheme such
+that parallelization can be utilized within the training procedure.
+
 ### Run the scripts in Azure
 1. Go to `ml.azure.com` and select the workspace to use for the experiments
 2. Download the `config.json` of the workspace configuration and put it into the
