@@ -1,0 +1,27 @@
+# DeepHit loss components for configuring MetaLoss
+defaults:
+  - balancing: default
+
+sat-transformer:
+  _target_: sat.loss.MetaLoss
+  losses:
+    - _target_: sat.loss.DeepHitLikelihoodLoss
+      num_events: ${data.num_events}
+      importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
+    - _target_: sat.loss.ranking.SampleListMLELoss
+      duration_cuts: ${data.label_transform.save_dir}/duration_cuts.csv
+      importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
+      num_events: ${data.num_events}
+      epsilon: ${listmle_epsilon}
+      temperature: ${listmle_temperature}
+    - _target_: sat.loss.DeepHitCalibrationLoss
+      duration_cuts: ${data.label_transform.save_dir}/duration_cuts.csv
+      num_events: ${data.num_events}
+      eval_times: null  # Set to specific times or null to use all duration cuts
+      importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
+  coeffs:
+    - ${likelihood_loss_coeff}  # Weight for likelihood loss
+    - ${ranking_loss_coeff}  # Weight for ranking loss
+    - ${calibration_loss_coeff}  # Weight for calibration loss (optional, set to 0 to disable)
+  balance_strategy: ${tasks.losses.balancing.balance_strategy}
+  balance_params: ${tasks.losses.balancing.balance_params}

@@ -25,6 +25,9 @@ focal_loss_gamma: [2.0]
 observation_ranking_loss_coeff: 0.3
 observation_ranking_loss_sigma: 0.1
 
+listmle_epsilon: 1e-10
+listmle_temperature: 1.0
+
 loss_balancing_scale_alpha: 0.9
 loss_balancing_scale_eps: 1.0e-8
 loss_balancing_grad_alpha: 0.9

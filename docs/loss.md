@@ -95,10 +95,43 @@ The `MetaLoss` class provides a framework for combining multiple loss components
 
 It can be used to combine FocalLoss with other loss functions or to combine multiple FocalLoss instances with different configurations.
 
+## Ranking Loss Functions
+
+The SAT toolkit provides multiple ranking approaches for survival analysis:
+
+### Pairwise Ranking
+
+Pairwise ranking losses treat the ranking problem as a classification problem on pairs of items.
+
+#### SampleRankingLoss
+
+Computes ranking loss by comparing survival probabilities between observations, ensuring subjects with earlier events have higher risk than those with later events. Uses efficient tensor permutation for comparing observations with the same event type.
+
+#### MultiEventRankingLoss
+
+Computes ranking loss between different event types for the same observation. Specifically designed for competing risks scenarios, enforcing a ranking between event types based on their risk for each subject.
+
+### Listwise Ranking (ListMLE)
+
+ListMLE (List Maximum Likelihood Estimation) losses treat ranking as a problem of ordering an entire list at once, rather than comparing pairs. This approach has several advantages:
+
+- Scales better with data size than pairwise methods - O(n log n) vs O(n²)
+- Provides listwise context rather than focusing on individual pairs
+- More directly optimizes the ranking metric than pairwise approaches
+
+#### SampleListMLELoss
+
+Computes ListMLE loss by comparing survival probabilities between observations. Similar to SampleRankingLoss but uses a listwise approach rather than pairwise, which scales better with dataset size.
+
+#### EventListMLELoss
+
+Computes ListMLE loss between different event types for the same observation. Designed for competing risks scenarios, enforcing a ranking between event types using a listwise approach rather than pairwise.
+
+The `temperature` parameter in ListMLE losses controls the sharpness of the probability distribution. Lower values make the model more discriminative, penalizing ranking errors more severely.
+
 ## Other Loss Functions
 
 The SAT toolkit includes various other loss functions for different tasks:
 - Regression losses (L1, MSE, Quantile)
 - Classification losses (CrossEntropy)
-- Ranking losses (SampleRanking, MultiEventRanking)
 - Survival-specific losses (NLLPCHazard, Mismatch, DeepHit components)
