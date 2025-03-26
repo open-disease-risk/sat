@@ -15,6 +15,9 @@ from ..base import Loss
 
 logger = logging.get_default_logger()
 
+# Note: DeepHitRankingLoss has been replaced by SampleRankingLoss, which is functionally
+# equivalent but with better performance. See sat.loss.ranking.sample.SampleRankingLoss.
+
 
 class DeepHitLikelihoodLoss(Loss):
     """
@@ -193,169 +196,6 @@ class DeepHitLikelihoodLoss(Loss):
         return self.ensure_tensor(total_loss, device=device)
 
 
-class DeepHitRankingLoss(Loss):
-    """
-    Ranking loss component of DeepHit.
-
-    Computes the ranking loss to ensure proper ordering of survival probabilities,
-    penalizing when subjects with earlier events have higher survival probabilities
-    than those with later events.
-    """
-
-    def __init__(
-        self,
-        duration_cuts: str,
-        sigma: float = 0.1,
-        num_events: int = 1,
-        importance_sample_weights: Optional[str] = None,
-        balance_strategy: Optional[Union[str, BalancingStrategy]] = "fixed",
-        balance_params: Optional[Dict] = None,
-        margin: float = 0.05,  # Margin for the ranking loss
-    ):
-        """
-        Initialize DeepHitRankingLoss with enhanced discriminative capability.
-
-        Args:
-            duration_cuts: Path to CSV file containing duration cut points for discretization
-            sigma: Scaling factor for ranking loss (smaller values = sharper differences)
-            num_events: Number of competing events
-            importance_sample_weights: Optional path to CSV file with importance weights
-            balance_strategy: Strategy for balancing loss components
-            balance_params: Additional parameters for the balancing strategy
-            margin: Minimum margin required between survival probabilities
-        """
-        super(DeepHitRankingLoss, self).__init__(
-            num_events=num_events,
-            balance_strategy=balance_strategy,
-            balance_params=balance_params,
-        )
-
-        self.sigma = sigma
-        self.margin = (
-            margin  # Margin for the ranking loss - enforces minimum difference
-        )
-
-        # Load duration cut points
-        df = pd.read_csv(duration_cuts, header=None, names=["cuts"])
-        self.register_buffer(
-            "duration_cuts", torch.tensor(df.cuts.values, dtype=torch.float32)
-        )
-        self.num_time_bins = len(df.cuts)
-
-        # Load importance sampling weights if provided
-        if importance_sample_weights is not None:
-            df = pd.read_csv(importance_sample_weights, header=None, names=["weights"])
-            weights = torch.tensor(df.weights.values).to(torch.float32)
-        else:
-            weights = torch.ones(self.num_events + 1)
-
-        self.register_buffer("weights", weights)
-
-    def forward(self, predictions: SAOutput, references: torch.Tensor) -> torch.Tensor:
-        """
-        Compute the enhanced ranking loss component with margin and improved stability.
-
-        Args:
-            predictions: Model predictions (SAOutput with survival probabilities)
-            references: Ground truth references
-
-        Returns:
-            Ranking loss component
-        """
-        batch_size = predictions.logits.shape[0]
-        survival = predictions.survival  # [batch_size, num_events, num_time_bins+1]
-        device = references.device
-
-        # Extract event information
-        events = self.events(references)  # [batch_size, num_events]
-        durations = self.durations(references)  # [batch_size, num_events]
-
-        # Pre-compute device-specific constants
-        duration_cuts = self.duration_cuts.to(device)
-        max_time_bin = self.num_time_bins - 1
-        max_survival_idx = survival.size(2) - 1
-
-        # Initialize loss accumulator
-        rank_loss = torch.zeros(1, device=device)
-        pair_count = 0  # Track number of valid pairs
-
-        # Process each event type with vectorized operations where possible
-        for event_type in range(self.num_events):
-            # Get mask for this event type
-            event_occurred = events[:, event_type] == 1
-            event_count = event_occurred.sum().item()
-
-            # Skip if no events of this type
-            if event_count < 2:  # Need at least 2 events to rank
-                continue
-
-            # Get indices and times for subjects with this event
-            event_indices = torch.where(event_occurred)[0]
-            event_times = durations[event_occurred, event_type]
-
-            # More efficient pair-based calculation using matrix operations
-            # Calculate each event sample's contribution in batch
-            for i, (i_idx, time_i) in enumerate(zip(event_indices, event_times)):
-                # Create risk indicator using vectorized comparison
-                # 1 if subject j's time > subject i's time (j should be lower risk)
-                risk_indicator = (durations[:, event_type] > time_i).float()
-
-                if risk_indicator.sum() == 0:
-                    continue  # No valid comparisons
-
-                # Find time bin index efficiently
-                time_bin_idx = torch.searchsorted(duration_cuts, time_i)
-                time_bin_idx = torch.clamp(time_bin_idx, max=max_time_bin)
-
-                # Get survival index with bounds checking
-                survival_idx = torch.min(
-                    time_bin_idx + 1, torch.tensor(max_survival_idx, device=device)
-                )
-
-                # Get survival values for all subjects at this time
-                all_survival_at_t = survival[:, event_type, survival_idx]
-
-                # Get reference subject's survival
-                i_survival_at_t = all_survival_at_t[i_idx]
-
-                # Vectorized computation of survival differences
-                survival_diff = i_survival_at_t - all_survival_at_t
-
-                # Apply margin to enforce minimum difference
-                # Only penalize when the difference is smaller than the margin
-                margin_diff = torch.clamp(self.margin - survival_diff, min=0.0)
-
-                # Combine with exponential scaling for traditional DeepHit loss
-                exp_diff = torch.exp(survival_diff / self.sigma)
-
-                # Combine margin and exponential components
-                # This creates a hybrid loss that enforces both margin and exponential ranking
-                combined_diff = exp_diff + margin_diff
-
-                # Apply risk indicator to only consider valid pairs
-                valid_comparisons = risk_indicator * combined_diff
-
-                # Apply weight if needed
-                if self.weights is not None:
-                    # Get weight for this event type directly on device
-                    weight = self.weights[event_type + 1].to(device)
-                    valid_comparisons.mul_(weight)  # In-place multiplication
-
-                # Accumulate loss and count pairs
-                rank_loss += valid_comparisons.sum()
-                pair_count += risk_indicator.sum().item()
-
-        # Normalize by number of pairs instead of batch size for more stable gradients
-        if pair_count > 0:
-            rank_loss = rank_loss / pair_count
-        else:
-            # No valid pairs for ranking
-            rank_loss = torch.zeros(1, device=device)
-            logger.warning("No valid pairs found for ranking loss")
-
-        return rank_loss
-
-
 class DeepHitCalibrationLoss(Loss):
     """
     Calibration loss component of DeepHit.
@@ -424,7 +264,7 @@ class DeepHitCalibrationLoss(Loss):
 
     def forward(self, predictions: SAOutput, references: torch.Tensor) -> torch.Tensor:
         """
-        Compute the calibration loss component.
+        Compute the calibration loss component with optimized tensor operations.
 
         Args:
             predictions: Model predictions (SAOutput with survival probabilities)
@@ -435,53 +275,70 @@ class DeepHitCalibrationLoss(Loss):
         """
         batch_size = predictions.logits.shape[0]
         survival = predictions.survival  # [batch_size, num_events, num_time_bins+1]
+        device = references.device
 
         # If no evaluation times provided, use all duration cut points
         if self.eval_time_indices is None:
-            eval_time_indices = torch.arange(self.num_time_bins, device=survival.device)
+            eval_time_indices = torch.arange(self.num_time_bins, device=device)
         else:
-            eval_time_indices = self.eval_time_indices.to(survival.device)
+            eval_time_indices = self.eval_time_indices.to(device)
 
-        # Extract event information
+        # Extract all event information at once
         events = self.events(references)  # [batch_size, num_events]
         durations = self.durations(references)  # [batch_size, num_events]
 
-        device = references.device
+        # Pre-compute time values for all evaluation indices
+        time_values = torch.zeros(len(eval_time_indices), device=device)
+        for i, t_idx in enumerate(eval_time_indices):
+            t_idx_safe = min(t_idx.item(), len(self.duration_cuts) - 1)
+            time_values[i] = self.duration_cuts[t_idx_safe]
+
+        # Initialize loss and counters
         calibration_loss = torch.zeros(1, device=device)
         num_comparisons = 0
 
+        # Optimize the nested loop structure
+        # We still need loops, but we'll process data more efficiently within them
         for event_type in range(self.num_events):
-            for t_idx in eval_time_indices:
-                # Get time value (ensure t_idx is within bounds)
+            # Pre-compute event mask for this event type
+            event_mask = (events[:, event_type] == 1).float()
+            event_durations = durations[:, event_type]
+
+            # Create a tensor for holding all binary indicators for this event type
+            # This avoids repeated creation of the same tensor
+            all_event_indicators = torch.zeros(
+                len(eval_time_indices), batch_size, device=device
+            )
+            all_pred_probs = torch.zeros(
+                len(eval_time_indices), batch_size, device=device
+            )
+
+            # Compute all indicators and predictions at once for this event type
+            for i, (t_idx, t) in enumerate(zip(eval_time_indices, time_values)):
+                # Create binary indicator: 1 if subject had event before time t
+                all_event_indicators[i] = event_mask * (event_durations <= t).float()
+
+                # Get predicted probability (1 - survival)
                 t_idx_safe = min(t_idx.item(), len(self.duration_cuts) - 1)
-                t = self.duration_cuts[t_idx_safe]
-
-                # Create binary indicator: 1 if subject had event of this type before time t
-                event_before_t = (
-                    (events[:, event_type] == 1) & (durations[:, event_type] <= t)
-                ).float()
-
-                # Get predicted probability of event before time t
-                # 1 - S(t) for this event type
-                # +1 because survival includes time 0, but ensure it's within bounds
                 survival_idx = min(t_idx_safe + 1, survival.size(2) - 1)
-                pred_prob = 1.0 - survival[:, event_type, survival_idx]
+                all_pred_probs[i] = 1.0 - survival[:, event_type, survival_idx]
 
-                # Square difference between actual and predicted
-                squared_diff = (event_before_t - pred_prob) ** 2
+            # Compute squared differences and weight in one operation
+            all_squared_diffs = (all_event_indicators - all_pred_probs) ** 2
 
-                # Apply weight for this event type
-                if self.weights is not None:
-                    squared_diff = squared_diff * self.weights[event_type + 1]
+            # Apply weight for this event type if available
+            if self.weights is not None:
+                all_squared_diffs *= self.weights[event_type + 1]
 
-                calibration_loss += squared_diff.sum()
-                num_comparisons += batch_size
+            # Sum all squared differences
+            calibration_loss += all_squared_diffs.sum()
+            num_comparisons += batch_size * len(eval_time_indices)
 
         # Normalize by number of comparisons
         if num_comparisons > 0:
             calibration_loss = calibration_loss / num_comparisons
         else:
-            calibration_loss = torch.zeros(1, device=references.device)
+            calibration_loss = torch.zeros(1, device=device)
 
-        # The ensure_tensor is still kept as a fallback
-        return self.ensure_tensor(calibration_loss, device=references.device)
+        # Return properly formed tensor
+        return self.ensure_tensor(calibration_loss, device=device)

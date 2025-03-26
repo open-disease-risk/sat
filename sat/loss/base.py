@@ -133,10 +133,12 @@ class RankingLoss(Loss):
         importance_sample_weights: str = None,
         sigma: float = 1.0,
         num_events: int = 1,
+        margin: float = 0.0,  # Added margin parameter with default of 0 (no margin)
     ):
         super(RankingLoss, self).__init__(num_events)
 
         self.sigma = sigma
+        self.margin = margin  # Store margin value
 
         # load the importance sampling weights if not None
         if importance_sample_weights is not None:
@@ -151,110 +153,154 @@ class RankingLoss(Loss):
         self.register_buffer(
             "duration_cuts", torch.Tensor(df.cuts.values)
         )  # tn duration cut points
+        self.num_time_bins = len(df.cuts)
 
     def ranking_loss(
         self, events, durations, survival, hazard, weights
     ) -> torch.Tensor:
-        device = events.device
-        n = events.shape[0]
-        e = events.shape[1]
+        """
+        Efficient implementation of ranking loss with vectorized operations.
 
+        Args:
+            events: Event indicators (dims: batch_size x num_events)
+            durations: Event times (dims: batch_size x num_events)
+            survival: Survival probabilities (dims: batch_size x num_events x num_time_bins+1)
+            hazard: Hazard values (dims: batch_size x num_events x num_time_bins)
+            weights: Importance weights (dims: batch_size x num_events-1 x num_events or None)
+
+        Returns:
+            torch.Tensor: The computed loss value
+        """
+        device = events.device
+        n = events.shape[0]  # Batch size
+        e = events.shape[1]  # Number of events
+
+        # Create event masks once
         I = events.to(bool)
         I_censored = ~I  # censored indicator (n x e)
 
-        T = self.duration_cuts.expand(n, e, -1)  # duration cut points (n x e x tn)
-        indexSmaller = self.duration_cuts.view(1, 1, -1) <= durations.unsqueeze(2)
-        t0Index = (
-            torch.sum(indexSmaller, dim=2) - 1
-        )  # left boundary of time interval (n x e)
-        t0Index = t0Index.unsqueeze(1).repeat(1, e, 1)
-        t1Index = t0Index + 1  # right boundary of time interval (n x e)
+        # Initialize duration cut points tensor efficiently
+        T = self.duration_cuts.to(device).expand(n, e, -1)  # (n x e x tn)
 
-        # if we run out of bounds, we match t0Index this means that dT will be
-        # zero and causes NaNs in hstar, which we need to fix
-        fixOOB = t1Index == len(self.duration_cuts)
-        t1Index[fixOOB] = len(self.duration_cuts) - 1
+        # Compute indices for time intervals - done once and reused
+        durations_expanded = durations.unsqueeze(2)  # (n x e x 1)
+        cuts_expanded = self.duration_cuts.to(device).view(1, 1, -1)  # (1 x 1 x tn)
+        indexSmaller = cuts_expanded <= durations_expanded  # (n x e x tn)
 
-        T0 = torch.gather(
-            T, 2, t0Index
-        )  # left boundary of time interval for all events i and time constraints j (n x e x e)
-        T1 = torch.gather(
-            T, 2, t1Index
-        )  # right boundary of time interval for all events i and time constraints j (n x e)
+        # Calculate left and right boundary indices
+        t0Index = torch.sum(indexSmaller, dim=2) - 1  # (n x e)
+        t0Index = t0Index.unsqueeze(1).repeat(1, e, 1)  # (n x e x e)
+        t1Index = t0Index + 1  # (n x e x e)
 
-        SatT0 = torch.gather(survival, 2, t0Index)  # survival at T0 (n x e x e)
-        SatT1 = torch.gather(survival, 2, t1Index)  # survival at T1 (n x e x e)
-        hstar = torch.gather(hazard, 2, t0Index)  # hazard at T0 (n x e x e)
+        # Fix out of bounds indices
+        max_idx = len(self.duration_cuts) - 1
+        fixOOB = t1Index >= len(self.duration_cuts)
+        t1Index[fixOOB] = max_idx
 
-        dT = T1 - T0
+        # Gather time values efficiently
+        T0 = torch.gather(T, 2, t0Index)  # (n x e x e)
+        T1 = torch.gather(T, 2, t1Index)  # (n x e x e)
 
-        # when dT is zero or negative we know that the time duration for an
-        # observation is greater or equal to the maximum duration cut. So, we
-        # need to use the corresponding hazard rather than interpolating. Since
-        # we initialized hstar with the hazard at T0, we only need to take care
-        # of the valid interpolations below:
+        # Gather survival and hazard values efficiently
+        SatT0 = torch.gather(survival, 2, t0Index)  # (n x e x e)
+        SatT1 = torch.gather(survival, 2, t1Index)  # (n x e x e)
+        hstar = torch.gather(hazard, 2, t0Index)  # (n x e x e)
+
+        # Calculate time differences
+        dT = T1 - T0  # (n x e x e)
+
+        # Handle interpolation for hazard
         positive_mask = torch.gt(dT, 0.0)
-        hstar[positive_mask] = torch.div(
-            torch.log(0.000001 + SatT0[positive_mask])
-            - torch.log(0.000001 + SatT1[positive_mask]),
-            (dT[positive_mask]),
-        )  # solve for hazard given the survival at T0 and T1 (n x e x e)
 
-        SatT = SatT0 * torch.exp(
-            -(durations.unsqueeze(1).repeat(1, e, 1) - T0) * hstar
-        )  # solve for survival at time t (n x e x e)
+        # Use masked operations to avoid unnecessary calculations
+        if positive_mask.any():
+            # Add small epsilon for numerical stability
+            epsilon = 1e-6
+            log_SatT0 = torch.log(SatT0[positive_mask] + epsilon)
+            log_SatT1 = torch.log(SatT1[positive_mask] + epsilon)
+            hstar[positive_mask] = (log_SatT0 - log_SatT1) / dT[positive_mask]
 
-        # compute an epsilon time to be subtracted from t in order to compute
-        # the survival at t-epsilon for when the event occurred for sample i and
-        # j
+        # Calculate survival at specific times
+        durations_tiled = durations.unsqueeze(1).repeat(1, e, 1)  # (n x e x e)
+        SatT = SatT0 * torch.exp(-(durations_tiled - T0) * hstar)  # (n x e x e)
+
+        # Calculate epsilon time for survival computation
         t_epsilon = (
             self.duration_cuts[-1] - self.duration_cuts[0]
         ) / self.duration_cuts[-1]
-        TMinus = torch.nn.functional.relu(
-            durations.unsqueeze(1).repeat(1, e, 1) - t_epsilon
-        )
-        SatTMinus = SatT0 * torch.exp(
-            -(TMinus - T0) * hstar
-        )  # solve for survival at time t-epsilon (n x e x e)
+        TMinus = torch.nn.functional.relu(durations_tiled - t_epsilon)  # (n x e x e)
 
-        # get the n inner diagonals of e x e and repeat column-wise
-        diag_S = torch.diagonal(SatT, dim1=-2, dim2=-1).unsqueeze(2).repeat(1, 1, e)
+        # Calculate survival at t-epsilon
+        SatTMinus = SatT0 * torch.exp(-(TMinus - T0) * hstar)  # (n x e x e)
+
+        # Extract diagonals efficiently
+        diag_S = (
+            torch.diagonal(SatT, dim1=1, dim2=2).unsqueeze(2).repeat(1, 1, e)
+        )  # (n x e x e)
         diag_S2 = (
-            torch.diagonal(SatTMinus, dim1=-2, dim2=-1).unsqueeze(2).repeat(1, 1, e)
-        )
+            torch.diagonal(SatTMinus, dim1=1, dim2=2).unsqueeze(2).repeat(1, 1, e)
+        )  # (n x e x e)
 
-        dS1 = diag_S - torch.transpose(
-            SatT, 1, 2
-        )  # dS_{ij} = S_{i}(T_{i}) - S_{j}(T_{i}) (n x e x e)
-        dS2 = SatTMinus - torch.transpose(
-            diag_S2, 1, 2
-        )  # dS_{ij} = S_{i}(T_{j}-1) - S_{j}(T_{j}-1) (n x e x e)
-        dS3 = SatT - torch.transpose(
-            diag_S, 1, 2
-        )  # dS_{ij} = S_{i}(T_{j}) - S_{j}(T_{j}) (n x e x e)
+        # Calculate survival differences
+        SatT_T = torch.transpose(SatT, 1, 2)  # (n x e x e)
+        diag_S2_T = torch.transpose(diag_S2, 1, 2)  # (n x e x e)
+        diag_S_T = torch.transpose(diag_S, 1, 2)  # (n x e x e)
 
-        # A_{nij}=1 if t_i < t_j and A_{ij}=0 if t_i >= t_j
-        #              and A_{ij}=1 when event occured for subject i (n x e x e)
-        A1 = I.unsqueeze(2).repeat(1, 1, e).float() * torch.nn.functional.relu(
-            torch.sign(
-                durations.unsqueeze(1).repeat(1, e, 1)
-                - durations.unsqueeze(2).repeat(1, 1, e)
-            )
-        )
-        A2 = (
-            A1 * I.unsqueeze(1).repeat(1, e, 1).float()
-        )  # and A_{ij}=1 when event occured for subject j (n x e x e)
-        A3 = (
-            A1 * I_censored.unsqueeze(1).repeat(1, e, 1).float()
-        )  # and A_{ij}=1 when subject j is censored (n x e x e)
+        dS1 = diag_S - SatT_T  # (n x e x e)
+        dS2 = SatTMinus - diag_S2_T  # (n x e x e)
+        dS3 = SatT - diag_S_T  # (n x e x e)
 
-        eta = torch.mean(
-            weights
-            * (
-                A1 * torch.exp(dS1 / self.sigma)
-                + A2 * torch.exp(dS2 / self.sigma)
-                + A3 * torch.exp(dS3 / self.sigma)
-            ),
-        )
+        # Create comparison masks efficiently
+        durations_i = durations.unsqueeze(1).repeat(1, e, 1)  # (n x e x e)
+        durations_j = durations.unsqueeze(2).repeat(1, 1, e)  # (n x e x e)
+        comp = torch.sign(durations_i - durations_j)  # (n x e x e)
 
-        return eta  # (1 x 1)
+        # Apply ReLU to keep only positive values
+        comp_pos = torch.nn.functional.relu(comp)  # (n x e x e)
+
+        # Create event masks efficiently
+        I_expanded = I.unsqueeze(2).repeat(1, 1, e).float()  # (n x e x e)
+        I_T = I.unsqueeze(1).repeat(1, e, 1).float()  # (n x e x e)
+        I_censored_T = I_censored.unsqueeze(1).repeat(1, e, 1).float()  # (n x e x e)
+
+        # Create ranking pair masks efficiently
+        A1 = I_expanded * comp_pos  # (n x e x e)
+        A2 = A1 * I_T  # (n x e x e)
+        A3 = A1 * I_censored_T  # (n x e x e)
+
+        # Apply margin-based ranking penalties if margin > 0
+        if hasattr(self, "margin") and self.margin > 0:
+            # Calculate margin penalties where applicable
+            margin_dS1 = torch.clamp(self.margin - dS1, min=0.0) * A1
+            margin_dS2 = torch.clamp(self.margin - dS2, min=0.0) * A2
+            margin_dS3 = torch.clamp(self.margin - dS3, min=0.0) * A3
+
+            # Combine exponential and margin components
+            loss_dS1 = torch.exp(dS1 / self.sigma) + margin_dS1
+            loss_dS2 = torch.exp(dS2 / self.sigma) + margin_dS2
+            loss_dS3 = torch.exp(dS3 / self.sigma) + margin_dS3
+        else:
+            # Traditional loss using only exponential scaling
+            loss_dS1 = torch.exp(dS1 / self.sigma)
+            loss_dS2 = torch.exp(dS2 / self.sigma)
+            loss_dS3 = torch.exp(dS3 / self.sigma)
+
+        # Apply weights if provided
+        if weights is not None:
+            # Ensure weights have appropriate device
+            weights = weights.to(device)
+            loss_term = weights * (A1 * loss_dS1 + A2 * loss_dS2 + A3 * loss_dS3)
+        else:
+            loss_term = A1 * loss_dS1 + A2 * loss_dS2 + A3 * loss_dS3
+
+        # Calculate mean efficiently
+        # Count number of non-zero elements for proper normalization
+        num_valid = torch.sum((A1 + A2 + A3) > 0)
+
+        if num_valid > 0:
+            eta = torch.sum(loss_term) / num_valid
+        else:
+            # Return zero tensor with gradient if no valid comparisons
+            eta = torch.tensor(0.0, device=device, requires_grad=True)
+
+        return eta

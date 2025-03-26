@@ -5,16 +5,25 @@ transformer_layer_norm: false
 label_transform_scheme: equidistant
 label_transform_cuts: 4
 
-likelihood_loss_coeff: 0.4
 one_calibration_bins: 10
-ranking_loss_coeff: 0.3
+
+likelihood_loss_coeff: 0.5
+
 event_ranking_loss_coeff: 0.1
+event_ranking_loss_sigma: 0.1
+event_ranking_loss_margin: 0.05
+
+ranking_loss_coeff: 0.2
 ranking_loss_sigma: 0.1
 ranking_loss_margin: 0.05
-event_ranking_loss_sigma: 0.1
+
 calibration_loss_coeff: 0.2
+
 focal_loss_coeff: 0.1
 focal_loss_gamma: [2.0]
+
+observation_ranking_loss_coeff: 0.3
+observation_ranking_loss_sigma: 0.1
 
 loss_balancing_scale_alpha: 0.9
 loss_balancing_scale_eps: 1.0e-8

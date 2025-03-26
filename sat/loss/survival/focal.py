@@ -194,42 +194,33 @@ class SurvivalFocalLoss(Loss):
             This function expects predictions and targets to have the same shape.
             Shape transformation should be handled before calling this function.
         """
-        device = predictions.device
-
-        # Get binary targets for the current event type
+        # Ensure targets are float for calculations
         targets = targets.float()
 
-        # Clamp predictions for numerical stability
+        # Clamp predictions for numerical stability (in-place is faster)
         epsilon = 1e-7
         predictions = torch.clamp(predictions, epsilon, 1.0 - epsilon)
 
-        # Compute binary cross entropy manually for better shape handling
-        # Manually implementing BCE for better control over dimensions
-        bce_loss = -targets * torch.log(predictions) - (1 - targets) * torch.log(
-            1 - predictions
-        )
+        # Compute p_t directly
+        p_t = torch.where(targets > 0.5, predictions, 1 - predictions)
 
-        # Compute focal weights: (1 - p_t)^gamma
-        p_t = targets * predictions + (1 - targets) * (1 - predictions)
+        # Compute log(p_t) directly
+        log_pt = torch.where(
+            targets > 0.5, torch.log(predictions), torch.log(1 - predictions)
+        )
 
         # Get the appropriate gamma for this event type
-        if self.multi_focal:
-            gamma_value = self.gamma[event_type]
-        else:
-            gamma_value = self.gamma
+        gamma_value = self.gamma[event_type] if self.multi_focal else self.gamma
 
-        focal_weights = (1 - p_t) ** gamma_value
+        # Compute (1 - p_t)^gamma * -log(p_t)
+        focal_term = ((1 - p_t) ** gamma_value) * (-log_pt)
 
-        # Apply importance weights
-        # Use event_type + 1 for positive examples (since weight[0] is for no-event/background)
-        # and use 0 index for negative examples
-        weight_t = (
-            targets * self.weights[event_type + 1] + (1 - targets) * self.weights[0]
+        # Apply importance weights (vectorized)
+        # Weight is event_type + 1 for positive examples, 0 for negative
+        weight_t = torch.where(
+            targets > 0.5, self.weights[event_type + 1], self.weights[0]
         )
-        focal_weights = weight_t * focal_weights
-
-        # Apply focal weights to BCE loss
-        focal_loss = focal_weights * bce_loss
+        focal_loss = weight_t * focal_term
 
         # Apply reduction
         if self.reduction == "mean":
@@ -267,39 +258,39 @@ class SurvivalFocalLoss(Loss):
 
         device = references.device
 
-        # Initialize loss as tensor
+        # Get all event indicators at once
+        all_events = self.events(references)
+
+        # Initialize loss on correct device
         loss = torch.zeros(1, device=device)
 
+        # Process all event types
         for event_type in range(self.num_events):
             # Get event indicators for this event type
-            event_indicators = self.events(references)[:, event_type]
+            event_indicators = all_events[:, event_type]
 
             # Get survival predictions for this event type
-            # Survival is typically a list with one tensor per event type
             event_survival = survival[event_type]
 
-            # Ensure shapes are compatible
-            if event_survival.dim() > 1 and event_indicators.dim() == 1:
-                # If event_survival is [batch_size, time_bins] and event_indicators is [batch_size]
-                # We need to decide which time point to focus on
-
-                # Option 1: Use the last time point (final survival probability)
+            # Efficiently handle shape compatibility
+            if event_survival.dim() > 1:
+                # Use the last time point for survival probability if multi-dimensional
                 if event_survival.shape[1] > 0:
                     event_survival = event_survival[:, -1]
                 else:
                     event_survival = event_survival.squeeze(1)
 
-            # Reshape to ensure compatible dimensions
-            event_survival = event_survival.view(-1)
-            event_indicators = event_indicators.view(-1)
+            # Ensure consistent shapes without creating unnecessary copies
+            batch_size = event_survival.size(0)
+            if event_indicators.size(0) != batch_size:
+                # This should rarely happen, but handle it just in case
+                event_indicators = event_indicators[:batch_size]
 
-            # Compute focal loss for this event type's survival function
+            # Compute loss for this event type
             event_loss = self.focal_loss_function(
                 event_survival, event_indicators, event_type
             )
 
-            # Add to total loss
             loss += event_loss
 
-        # Return tensor
         return loss

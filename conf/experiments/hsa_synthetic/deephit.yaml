@@ -7,10 +7,10 @@ defaults:
   - override /data/load: hsa_synthetic
   - override /data/parse: ${data/load}
   - override /tokenizers: ${data/load}
-  - override /transformers: bert
+  - override /transformers: numeric_bert
   - override /tasks: survival
   - override /tasks/losses: deephit
-  - override /tasks/losses/balancing: fixed
+  - override /tasks/losses/balancing: scale
   - override /trainer: ${data/load}/default
 
 

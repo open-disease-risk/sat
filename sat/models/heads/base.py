@@ -204,16 +204,18 @@ class SurvivalTask(abc.ABC, BaseTask):
                 try:
                     # Check for CauseSpecificNet pattern (event_nets with net member)
                     is_final_output = any(
-                        hasattr(net, "net") and module is net.net[-1] 
+                        hasattr(net, "net") and module is net.net[-1]
                         for net in self.nets.event_nets
                     )
-                    
+
                     # Check for SimpleCompRiskNet pattern (event_nets with direct Linear layers)
                     if not is_final_output:
-                        is_final_output = any(module is net for net in self.nets.event_nets)
+                        is_final_output = any(
+                            module is net for net in self.nets.event_nets
+                        )
                 except (AttributeError, TypeError):
                     pass
-                    
+
             if is_final_output:
                 if is_multi_event:
                     # For multi-event final layer, initialize bias to small negative values
@@ -254,16 +256,18 @@ class RegressionTask(abc.ABC, BaseTask):
                 try:
                     # Check for CauseSpecificNet pattern (event_nets with net member)
                     is_final_output = any(
-                        hasattr(net, "net") and module is net.net[-1] 
+                        hasattr(net, "net") and module is net.net[-1]
                         for net in self.nets.event_nets
                     )
-                    
+
                     # Check for SimpleCompRiskNet pattern (event_nets with direct Linear layers)
                     if not is_final_output:
-                        is_final_output = any(module is net for net in self.nets.event_nets)
+                        is_final_output = any(
+                            module is net for net in self.nets.event_nets
+                        )
                 except (AttributeError, TypeError):
                     pass
-                    
+
             if is_final_output:
                 # Output layer initialization for regression with ReLU
                 if logger.isEnabledFor(logging.DEBUG):
@@ -288,16 +292,18 @@ class RegressionTask(abc.ABC, BaseTask):
                 try:
                     # Check for CauseSpecificNet pattern (event_nets with net member)
                     is_final_output = any(
-                        hasattr(net, "net") and module is net.net[-1] 
+                        hasattr(net, "net") and module is net.net[-1]
                         for net in self.nets.event_nets
                     )
-                    
+
                     # Check for SimpleCompRiskNet pattern (event_nets with direct Linear layers)
                     if not is_final_output:
-                        is_final_output = any(module is net for net in self.nets.event_nets)
+                        is_final_output = any(
+                            module is net for net in self.nets.event_nets
+                        )
                 except (AttributeError, TypeError):
                     pass
-                    
+
             if is_final_output:
                 # Initialize bias to positive value for ReLU
                 if logger.isEnabledFor(logging.DEBUG):
@@ -329,16 +335,18 @@ class ClassificationTask(abc.ABC, BaseTask):
                 try:
                     # Check for CauseSpecificNet pattern (event_nets with net member)
                     is_final_output = any(
-                        hasattr(net, "net") and module is net.net[-1] 
+                        hasattr(net, "net") and module is net.net[-1]
                         for net in self.nets.event_nets
                     )
-                    
+
                     # Check for SimpleCompRiskNet pattern (event_nets with direct Linear layers)
                     if not is_final_output:
-                        is_final_output = any(module is net for net in self.nets.event_nets)
+                        is_final_output = any(
+                            module is net for net in self.nets.event_nets
+                        )
                 except (AttributeError, TypeError):
                     pass
-                    
+
             if is_final_output:
                 # Output layer initialization for sigmoid activation
                 if logger.isEnabledFor(logging.DEBUG):
@@ -361,16 +369,18 @@ class ClassificationTask(abc.ABC, BaseTask):
                 try:
                     # Check for CauseSpecificNet pattern (event_nets with net member)
                     is_final_output = any(
-                        hasattr(net, "net") and module is net.net[-1] 
+                        hasattr(net, "net") and module is net.net[-1]
                         for net in self.nets.event_nets
                     )
-                    
+
                     # Check for SimpleCompRiskNet pattern (event_nets with direct Linear layers)
                     if not is_final_output:
-                        is_final_output = any(module is net for net in self.nets.event_nets)
+                        is_final_output = any(
+                            module is net for net in self.nets.event_nets
+                        )
                 except (AttributeError, TypeError):
                     pass
-                    
+
             if is_final_output:
                 # Initialize bias to zero for balanced sigmoid
                 if logger.isEnabledFor(logging.DEBUG):
