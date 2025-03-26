@@ -18,9 +18,10 @@ class MultiEventRankingLoss(RankingLoss):
         importance_sample_weights: str = None,
         sigma: float = 1.0,
         num_events: int = 1,
+        margin: float = 0.0,
     ):
         super(MultiEventRankingLoss, self).__init__(
-            duration_cuts, importance_sample_weights, sigma, num_events
+            duration_cuts, importance_sample_weights, sigma, num_events, margin
         )
 
     def forward(self, predictions: SAOutput, references: torch.Tensor) -> torch.Tensor:
