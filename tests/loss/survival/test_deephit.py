@@ -9,9 +9,9 @@ import numpy as np
 
 from sat.loss.survival.deephit import (
     DeepHitLikelihoodLoss,
-    DeepHitRankingLoss,
     DeepHitCalibrationLoss,
 )
+from sat.loss.ranking.sample import SampleRankingLoss
 from sat.loss.meta import MetaLoss
 from sat.models.heads import SAOutput
 
@@ -100,8 +100,8 @@ def test_likelihood_loss_init(tmp_duration_cuts):
 
 
 def test_ranking_loss_init(tmp_duration_cuts):
-    """Test initialization of the DeepHitRankingLoss class."""
-    loss_fn = DeepHitRankingLoss(
+    """Test initialization of the SampleRankingLoss class (replaces DeepHitRankingLoss)."""
+    loss_fn = SampleRankingLoss(
         duration_cuts=tmp_duration_cuts,
         sigma=0.1,
         num_events=2,
@@ -151,8 +151,8 @@ def test_likelihood_loss_forward(mock_predictions, mock_references):
 
 
 def test_ranking_loss_forward(tmp_duration_cuts, mock_predictions, mock_references):
-    """Test ranking loss computation."""
-    loss_fn = DeepHitRankingLoss(
+    """Test ranking loss computation using SampleRankingLoss."""
+    loss_fn = SampleRankingLoss(
         duration_cuts=tmp_duration_cuts,
         sigma=0.1,
         num_events=2,
@@ -166,9 +166,9 @@ def test_ranking_loss_forward(tmp_duration_cuts, mock_predictions, mock_referenc
     assert torch.isfinite(rank_loss)
 
 
-def test_deephit_ranking_loss_multi_event(tmp_duration_cuts):
+def test_sample_ranking_loss_multi_event(tmp_duration_cuts):
     """
-    Test that DeepHitRankingLoss correctly penalizes when subjects with earlier events
+    Test that SampleRankingLoss correctly penalizes when subjects with earlier events
     have lower risk than subjects with later events (for the same event type) in multi-event setting.
     """
     batch_size = 4
@@ -176,7 +176,7 @@ def test_deephit_ranking_loss_multi_event(tmp_duration_cuts):
     num_time_bins = 10
 
     # Create loss function
-    loss_fn = DeepHitRankingLoss(
+    loss_fn = SampleRankingLoss(
         duration_cuts=tmp_duration_cuts,
         sigma=0.1,
         num_events=num_events,
@@ -285,23 +285,23 @@ def test_deephit_ranking_loss_multi_event(tmp_duration_cuts):
         loss_incorrect > loss_correct * 1.5
     ), f"Expected significant difference, got {loss_correct} vs {loss_incorrect}"
 
-    # Verify that DeepHitRankingLoss compares within each event type separately
+    # Verify that SampleRankingLoss compares within each event type separately
     # It should compare subject 0 with subject 1 (both had event type 0)
     # And compare subject 2 with subject 3 (both had event type 1)
     # But it should NOT compare subject 0 with subject 2, or subject 1 with subject 3
-    # (those are different event types and should be handled by ObservationEventRankingLoss)
+    # (those are different event types and should be handled by MultiEventRankingLoss)
 
 
-def test_deephit_ranking_loss_single_event(tmp_duration_cuts):
+def test_sample_ranking_loss_single_event(tmp_duration_cuts):
     """
-    Test that DeepHitRankingLoss correctly works for a single event setting.
+    Test that SampleRankingLoss correctly works for a single event setting.
     """
     batch_size = 4
     num_events = 1  # Single event
     num_time_bins = 10
 
     # Create loss function
-    loss_fn = DeepHitRankingLoss(
+    loss_fn = SampleRankingLoss(
         duration_cuts=tmp_duration_cuts,
         sigma=0.1,
         num_events=num_events,
@@ -405,7 +405,7 @@ def test_meta_loss_combination(tmp_duration_cuts, mock_predictions, mock_referen
     """Test combining DeepHit components with MetaLoss."""
     # Create individual loss components
     likelihood_loss = DeepHitLikelihoodLoss(num_events=2)
-    ranking_loss = DeepHitRankingLoss(
+    ranking_loss = SampleRankingLoss(
         duration_cuts=tmp_duration_cuts, sigma=0.1, num_events=2
     )
     calibration_loss = DeepHitCalibrationLoss(
@@ -431,7 +431,7 @@ def test_with_balancing(tmp_duration_cuts, mock_predictions, mock_references):
     """Test DeepHit components with balancing strategy."""
     # Create individual loss components
     likelihood_loss = DeepHitLikelihoodLoss(num_events=2)
-    ranking_loss = DeepHitRankingLoss(
+    ranking_loss = SampleRankingLoss(
         duration_cuts=tmp_duration_cuts, sigma=0.1, num_events=2
     )
     calibration_loss = DeepHitCalibrationLoss(

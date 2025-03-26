@@ -1,0 +1,34 @@
+# DeepHit hybrid approach with both sample and multi-event ranking for HSA synthetic dataset
+defaults:
+  - balancing: default
+
+sat-transformer:
+  _target_: sat.loss.MetaLoss
+  losses:
+    - _target_: sat.loss.DeepHitLikelihoodLoss
+      num_events: ${data.num_events}
+      importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
+    - _target_: sat.loss.SampleRankingLoss
+      duration_cuts: ${data.label_transform.save_dir}/duration_cuts.csv
+      num_events: ${data.num_events}
+      sigma: ${ranking_loss_sigma}  # Scaling factor for within-event ranking
+      margin: ${ranking_loss_margin}
+      importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
+    - _target_: sat.loss.MultiEventRankingLoss
+      duration_cuts: ${data.label_transform.save_dir}/duration_cuts.csv
+      num_events: ${data.num_events}
+      sigma: ${event_ranking_loss_sigma}  # Scaling factor for cross-event ranking
+      margin: ${event_ranking_loss_margin}
+      importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
+    - _target_: sat.loss.DeepHitCalibrationLoss
+      duration_cuts: ${data.label_transform.save_dir}/duration_cuts.csv
+      num_events: ${data.num_events}
+      eval_times: null  # Set to specific times or null to use all duration cuts
+      importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
+  coeffs:
+    - ${likelihood_loss_coeff}  # Weight for likelihood loss
+    - ${ranking_loss_coeff}  # Weight for within-event ranking loss
+    - ${event_ranking_loss_coeff}  # Weight for cross-event ranking loss
+    - ${calibration_loss_coeff}  # Weight for calibration loss
+  balance_strategy: ${tasks.losses.balancing.balance_strategy}
+  balance_params: ${tasks.losses.balancing.balance_params}
