@@ -264,7 +264,7 @@ class DeepHitCalibrationLoss(Loss):
 
     def forward(self, predictions: SAOutput, references: torch.Tensor) -> torch.Tensor:
         """
-        Compute the calibration loss component.
+        Compute the calibration loss component with optimized tensor operations.
 
         Args:
             predictions: Model predictions (SAOutput with survival probabilities)
@@ -275,53 +275,70 @@ class DeepHitCalibrationLoss(Loss):
         """
         batch_size = predictions.logits.shape[0]
         survival = predictions.survival  # [batch_size, num_events, num_time_bins+1]
+        device = references.device
 
         # If no evaluation times provided, use all duration cut points
         if self.eval_time_indices is None:
-            eval_time_indices = torch.arange(self.num_time_bins, device=survival.device)
+            eval_time_indices = torch.arange(self.num_time_bins, device=device)
         else:
-            eval_time_indices = self.eval_time_indices.to(survival.device)
+            eval_time_indices = self.eval_time_indices.to(device)
 
-        # Extract event information
+        # Extract all event information at once
         events = self.events(references)  # [batch_size, num_events]
         durations = self.durations(references)  # [batch_size, num_events]
 
-        device = references.device
+        # Pre-compute time values for all evaluation indices
+        time_values = torch.zeros(len(eval_time_indices), device=device)
+        for i, t_idx in enumerate(eval_time_indices):
+            t_idx_safe = min(t_idx.item(), len(self.duration_cuts) - 1)
+            time_values[i] = self.duration_cuts[t_idx_safe]
+
+        # Initialize loss and counters
         calibration_loss = torch.zeros(1, device=device)
         num_comparisons = 0
 
+        # Optimize the nested loop structure
+        # We still need loops, but we'll process data more efficiently within them
         for event_type in range(self.num_events):
-            for t_idx in eval_time_indices:
-                # Get time value (ensure t_idx is within bounds)
+            # Pre-compute event mask for this event type
+            event_mask = (events[:, event_type] == 1).float()
+            event_durations = durations[:, event_type]
+
+            # Create a tensor for holding all binary indicators for this event type
+            # This avoids repeated creation of the same tensor
+            all_event_indicators = torch.zeros(
+                len(eval_time_indices), batch_size, device=device
+            )
+            all_pred_probs = torch.zeros(
+                len(eval_time_indices), batch_size, device=device
+            )
+
+            # Compute all indicators and predictions at once for this event type
+            for i, (t_idx, t) in enumerate(zip(eval_time_indices, time_values)):
+                # Create binary indicator: 1 if subject had event before time t
+                all_event_indicators[i] = event_mask * (event_durations <= t).float()
+
+                # Get predicted probability (1 - survival)
                 t_idx_safe = min(t_idx.item(), len(self.duration_cuts) - 1)
-                t = self.duration_cuts[t_idx_safe]
-
-                # Create binary indicator: 1 if subject had event of this type before time t
-                event_before_t = (
-                    (events[:, event_type] == 1) & (durations[:, event_type] <= t)
-                ).float()
-
-                # Get predicted probability of event before time t
-                # 1 - S(t) for this event type
-                # +1 because survival includes time 0, but ensure it's within bounds
                 survival_idx = min(t_idx_safe + 1, survival.size(2) - 1)
-                pred_prob = 1.0 - survival[:, event_type, survival_idx]
+                all_pred_probs[i] = 1.0 - survival[:, event_type, survival_idx]
 
-                # Square difference between actual and predicted
-                squared_diff = (event_before_t - pred_prob) ** 2
+            # Compute squared differences and weight in one operation
+            all_squared_diffs = (all_event_indicators - all_pred_probs) ** 2
 
-                # Apply weight for this event type
-                if self.weights is not None:
-                    squared_diff = squared_diff * self.weights[event_type + 1]
+            # Apply weight for this event type if available
+            if self.weights is not None:
+                all_squared_diffs *= self.weights[event_type + 1]
 
-                calibration_loss += squared_diff.sum()
-                num_comparisons += batch_size
+            # Sum all squared differences
+            calibration_loss += all_squared_diffs.sum()
+            num_comparisons += batch_size * len(eval_time_indices)
 
         # Normalize by number of comparisons
         if num_comparisons > 0:
             calibration_loss = calibration_loss / num_comparisons
         else:
-            calibration_loss = torch.zeros(1, device=references.device)
+            calibration_loss = torch.zeros(1, device=device)
 
-        # The ensure_tensor is still kept as a fallback
-        return self.ensure_tensor(calibration_loss, device=references.device)
+        # Return properly formed tensor
+        return self.ensure_tensor(calibration_loss, device=device)

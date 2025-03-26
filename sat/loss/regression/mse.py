@@ -80,28 +80,62 @@ class MSELoss(Loss):
         predictions = predictions[:, event_type]
 
         if self.l2_type == "uncensored":
-            scores = durations[event_indicators] - predictions[event_indicators]
-            loss = torch.mean(torch.square(scores))
+            # Only compute loss for samples where events occurred
+            if torch.sum(event_indicators) > 0:
+                scores = durations[event_indicators] - predictions[event_indicators]
+                loss = torch.mean(torch.square(scores))
+            else:
+                loss = torch.zeros(1, device=device)
         elif self.l2_type == "margin":
-            censor_times = durations[~event_indicators]
-            weights = torch.Tensor(
-                1.0 - self.kms[event_type].predict(censor_times.detach().cpu().numpy())
-            ).to(device)
-            best_guesses = torch.Tensor(
-                self.kms[event_type].best_guess(censor_times.detach().cpu().numpy())
-            ).to(device)
+            # Handle censored samples
+            censor_mask = ~event_indicators
+            censor_count = torch.sum(censor_mask)
+            event_count = torch.sum(event_indicators)
 
-            scores = torch.empty_like(predictions)
-            scores[event_indicators] = (
-                durations[event_indicators] - predictions[event_indicators]
-            )
-            scores[~event_indicators] = weights * (
-                best_guesses - predictions[~event_indicators]
-            )
-            weighted_multiplier = torch.ones(1).to(device) / (
-                torch.sum(event_indicators) + torch.sum(weights)
-            )
-            loss = (weighted_multiplier * torch.mean(torch.square(scores)))[0]
+            # Initialize scores tensor
+            scores = torch.zeros_like(predictions)
+
+            # Process event samples
+            if event_count > 0:
+                scores[event_indicators] = (
+                    durations[event_indicators] - predictions[event_indicators]
+                )
+
+            # Process censored samples
+            if censor_count > 0:
+                censor_times = durations[censor_mask]
+
+                # Convert to numpy for KM functions, then back to tensor on device
+                censor_times_np = censor_times.detach().cpu().numpy()
+                weights = torch.tensor(
+                    1.0 - self.kms[event_type].predict(censor_times_np),
+                    device=device,
+                    dtype=torch.float32,
+                )
+                best_guesses = torch.tensor(
+                    self.kms[event_type].best_guess(censor_times_np),
+                    device=device,
+                    dtype=torch.float32,
+                )
+
+                scores[censor_mask] = weights * (
+                    best_guesses - predictions[censor_mask]
+                )
+
+                # Calculate weighted multiplier
+                weighted_multiplier = 1.0 / (event_count + torch.sum(weights))
+                loss = (
+                    weighted_multiplier
+                    * torch.sum(torch.square(scores))
+                    / predictions.size(0)
+                )
+            else:
+                # If no censored samples, just use event samples
+                loss = (
+                    torch.mean(torch.square(scores[event_indicators]))
+                    if event_count > 0
+                    else torch.zeros(1, device=device)
+                )
         else:
             raise ValueError("L2 type must be either 'uncensored' or 'margin'.")
 
@@ -113,10 +147,12 @@ class MSELoss(Loss):
         predictions = predictions.predictions
         device = references.device
 
-        # Initialize loss as tensor
+        # Initialize loss as tensor on the correct device
         loss = torch.zeros(1, device=device)
-        for i in range(self.num_events):
-            loss += self.mse(predictions, references, i)
 
-        # The ensure_tensor is still kept as a fallback
-        return self.ensure_tensor(loss, device=device)
+        # Process all events
+        if self.num_events > 0:
+            for i in range(self.num_events):
+                loss += self.mse(predictions, references, i)
+
+        return loss
