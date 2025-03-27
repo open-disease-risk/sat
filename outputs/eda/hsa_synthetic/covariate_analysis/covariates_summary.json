@@ -1,0 +1,131 @@
+{
+  "distributions": {
+    "n_samples": 5000,
+    "n_features": 2,
+    "feature_stats": {
+      "count": {
+        "x": 5000,
+        "split": 5000
+      },
+      "unique": {
+        "x": 1,
+        "split": 3
+      },
+      "top": {
+        "x": "x_1 x_2 x_3 x_4 x_5 x_6 x_7 x_8 x_9 x_10 x_11 x_12 x_13 x_14 x_15",
+        "split": "train"
+      },
+      "freq": {
+        "x": 5000,
+        "split": 3499
+      }
+    },
+    "correlations": {}
+  },
+  "Event_1": {
+    "feature_importance": {
+      "n_samples": 5000,
+      "n_features": 2,
+      "feature_importance": {
+        "categorical_logrank": {
+          "split": 0.0457852491672231
+        },
+        "combined": {
+          "split": 0.0457852491672231
+        }
+      }
+    },
+    "risk_factors": {
+      "risk_factors": {
+        "coef": {},
+        "exp(coef)": {},
+        "se(coef)": {},
+        "coef lower 95%": {},
+        "coef upper 95%": {},
+        "exp(coef) lower 95%": {},
+        "exp(coef) upper 95%": {},
+        "cmp to": {},
+        "z": {},
+        "p": {},
+        "-log2(p)": {}
+      },
+      "protective_factors": {
+        "coef": {},
+        "exp(coef)": {},
+        "se(coef)": {},
+        "coef lower 95%": {},
+        "coef upper 95%": {},
+        "exp(coef) lower 95%": {},
+        "exp(coef) upper 95%": {},
+        "cmp to": {},
+        "z": {},
+        "p": {},
+        "-log2(p)": {}
+      },
+      "risk_scores": {
+        "mean": 4.440892098500626e-19,
+        "std": 0.0036059071562756493,
+        "min": -0.006914275383771032,
+        "max": 0.004737449950452004,
+        "quartiles": [
+          0.001301075931388626,
+          0.001301075931388626,
+          0.001301075931388626
+        ]
+      }
+    }
+  },
+  "Event_2": {
+    "feature_importance": {
+      "n_samples": 5000,
+      "n_features": 2,
+      "feature_importance": {
+        "categorical_logrank": {
+          "split": 0.5804953349925006
+        },
+        "combined": {
+          "split": 0.5804953349925006
+        }
+      }
+    },
+    "risk_factors": {
+      "risk_factors": {
+        "coef": {},
+        "exp(coef)": {},
+        "se(coef)": {},
+        "coef lower 95%": {},
+        "coef upper 95%": {},
+        "exp(coef) lower 95%": {},
+        "exp(coef) upper 95%": {},
+        "cmp to": {},
+        "z": {},
+        "p": {},
+        "-log2(p)": {}
+      },
+      "protective_factors": {
+        "coef": {},
+        "exp(coef)": {},
+        "se(coef)": {},
+        "coef lower 95%": {},
+        "coef upper 95%": {},
+        "exp(coef) lower 95%": {},
+        "exp(coef) upper 95%": {},
+        "cmp to": {},
+        "z": {},
+        "p": {},
+        "-log2(p)": {}
+      },
+      "risk_scores": {
+        "mean": 4.263256414560601e-18,
+        "std": 0.030895558136014894,
+        "min": -0.08591548186825242,
+        "max": 0.01607701543013922,
+        "quartiles": [
+          -0.013282453602328591,
+          0.01607701543013922,
+          0.01607701543013922
+        ]
+      }
+    }
+  }
+}
