@@ -9,3 +9,6 @@ from .sample import SampleRankingLoss  # noqa
 from .event_list_mle import EventListMLELoss  # noqa
 from .sample_list_mle import SampleListMLELoss  # noqa
 from .survrnc import SurvRNCLoss  # noqa
+from .soap import SOAPLoss  # noqa
+from .sample_soap import SampleSOAPLoss  # noqa
+from .event_soap import EventSOAPLoss  # noqa
