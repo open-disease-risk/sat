@@ -4,16 +4,90 @@ __authors__ = ["Dominik Dahlem", "Mahed Abroshan"]
 __status__ = "Development"
 
 import abc
+import json
 import torch
 
+from enum import Enum
 from torch import nn
+from typing import Dict, Any
+from transformers import PretrainedConfig
 from transformers.modeling_utils import PreTrainedModel
+from transformers.models.bert.configuration_bert import BertConfig
 
 from sat.utils import logging
 
-from .config import BaseConfig
-
 logger = logging.get_default_logger()
+
+
+class TokenEmbedding(Enum):
+    """Determine what to do with the hidden states of the encoder layers."""
+
+    SUM = 2
+    AVG = 3
+    CAT = 4
+    BERT = 5
+
+
+class SentenceEmbedding(Enum):
+    """Determine what to do to get sentence embeddings."""
+
+    NONE = 1
+    MAX = 2
+    AVG = 3
+
+
+class BaseConfig(abc.ABC, PretrainedConfig):
+    def __init__(
+        self,
+        loss_weight: float = 1.0,
+        metric_train_sample_size: int = 5000,
+        freeze_transformer: bool = False,
+        initializer_range: int = 0.02,
+        initializer: str = "kaiming_uniform",
+        num_events: int = 1,
+        loss: Dict[str, Any] = {},
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.freeze_transformer = freeze_transformer
+        self.loss_weight = loss_weight
+        self.metric_train_sample_size = metric_train_sample_size
+        self.initializer_range = initializer_range
+        self.initializer = initializer
+        self.task_specific_params: Dict[str, Any] = {}
+        self.num_events = num_events
+        self.loss = loss
+
+    # deal with nested dictionaries
+    def to_json_string(self, use_diff=True):
+        """
+        Serializes this instance to a JSON string.
+
+        Args:
+            use_diff (:obj:`bool`):
+                If set to True, only the difference between the config instance and the default PretrainedConfig() is serialized to JSON string.
+
+        Returns:
+            :obj:`string`: String containing all the attributes that make up this configuration instance in JSON format.
+        """
+        if use_diff is True:
+            config_dict = self.to_diff_dict()
+        else:
+            config_dict = self.to_dict()
+
+        return (
+            json.dumps(
+                config_dict, default=lambda o: o.__dict__, indent=2, sort_keys=True
+            )
+            + "\n"
+        )
+
+
+class SatBertConfig(BertConfig):
+    model_type = "sat-bert"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
 
 class BaseTask(PreTrainedModel):

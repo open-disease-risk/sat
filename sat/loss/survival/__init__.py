@@ -10,6 +10,7 @@ from .deephit import (
     DeepHitLikelihoodLoss,
     DeepHitCalibrationLoss,
 )
+from .dsm import DSMLoss
 
 __all__ = [
     "SATNLLPCHazardLoss",
@@ -17,4 +18,5 @@ __all__ = [
     "SurvivalFocalLoss",
     "DeepHitLikelihoodLoss",
     "DeepHitCalibrationLoss",
+    "DSMLoss",
 ]

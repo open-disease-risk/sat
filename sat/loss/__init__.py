@@ -21,6 +21,7 @@ from .survival.deephit import (
     DeepHitLikelihoodLoss,
     DeepHitCalibrationLoss,
 )
+from .survival.dsm import DSMLoss
 
 __all__ = [
     "Loss",
@@ -36,4 +37,5 @@ __all__ = [
     "SurvivalFocalLoss",
     "DeepHitLikelihoodLoss",
     "DeepHitCalibrationLoss",
+    "DSMLoss",
 ]

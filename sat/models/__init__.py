@@ -17,27 +17,30 @@ AutoConfig.register(
 )
 AutoModel.register(sat_bert_config.NumericBertConfig, sat_bert_model.NumericBertModel)
 
-AutoConfig.register(heads.config.SatBertConfig.model_type, heads.config.SatBertConfig)
+AutoConfig.register(heads.SatBertConfig.model_type, heads.SatBertConfig)
 
-AutoConfig.register(heads.config.SurvivalConfig.model_type, heads.config.SurvivalConfig)
-AutoModel.register(heads.config.SurvivalConfig, heads.SurvivalTaskHead)
+AutoConfig.register(heads.SurvivalConfig.model_type, heads.SurvivalConfig)
+AutoModel.register(heads.SurvivalConfig, heads.SurvivalTaskHead)
+
+AutoConfig.register(heads.DSMConfig.model_type, heads.DSMConfig)
+AutoModel.register(heads.DSMConfig, heads.DSMTaskHead)
 
 AutoConfig.register(
-    heads.config.EventClassificationTaskConfig.model_type,
-    heads.config.EventClassificationTaskConfig,
+    heads.EventClassificationTaskConfig.model_type,
+    heads.EventClassificationTaskConfig,
 )
 AutoModel.register(
-    heads.config.EventClassificationTaskConfig, heads.EventClassificationTaskHead
+    heads.EventClassificationTaskConfig, heads.EventClassificationTaskHead
 )
 
 AutoConfig.register(
-    heads.config.EventDurationTaskConfig.model_type,
-    heads.config.EventDurationTaskConfig,
+    heads.EventDurationTaskConfig.model_type,
+    heads.EventDurationTaskConfig,
 )
-AutoModel.register(heads.config.EventDurationTaskConfig, heads.EventDurationTaskHead)
+AutoModel.register(heads.EventDurationTaskConfig, heads.EventDurationTaskHead)
 
-AutoConfig.register(heads.config.MTLConfig.model_type, heads.config.MTLConfig)
-AutoModel.register(heads.config.MTLConfig, heads.MTLForSurvival)
+AutoConfig.register(heads.MTLConfig.model_type, heads.MTLConfig)
+AutoModel.register(heads.MTLConfig, heads.MTLForSurvival)
 
 AutoConfig.register(
     sat_gpt2_config.NumericGPT2Config.model_type, sat_gpt2_config.NumericGPT2Config

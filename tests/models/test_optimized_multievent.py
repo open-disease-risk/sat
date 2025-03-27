@@ -1,4 +1,4 @@
-"""Tests for optimized MultiEventRankingLoss implementation."""
+"""Tests for MultiEventRankingLoss implementation."""
 
 import os
 import tempfile
@@ -10,10 +10,7 @@ from typing import Tuple, Dict, List
 import matplotlib.pyplot as plt
 
 from sat.models.heads import SAOutput
-from sat.loss.ranking.multievent import (
-    MultiEventRankingLoss,
-    OptimizedMultiEventRankingLoss,
-)
+from sat.loss.ranking.multievent import MultiEventRankingLoss
 from sat.loss.ranking.sample import SampleRankingLoss
 
 
@@ -21,17 +18,21 @@ def create_fake_data(
     batch_size: int = 16, num_events: int = 2, num_cuts: int = 10
 ) -> Tuple[SAOutput, torch.Tensor]:
     """Create synthetic data for testing ranking losses."""
-    # Create fake hazard and survival tensors
-    hazard = torch.rand(batch_size, num_events, num_cuts)
+    # Create fake hazard (ensure it's non-negative)
+    hazard = torch.abs(torch.rand(batch_size, num_events, num_cuts))
 
     # Ensure survival is decreasing for visualization
-    survival_base = torch.cumsum(
-        torch.nn.functional.softplus(torch.randn(batch_size, num_events, num_cuts)),
-        dim=2,
+    # First create a decreasing sequence for survival
+    survival_base = (
+        torch.linspace(0.9, 0.1, num_cuts)
+        .view(1, 1, -1)
+        .expand(batch_size, num_events, -1)
     )
-    # Scale to 0-1 range and flip to get decreasing values
-    max_vals = survival_base.max(dim=2, keepdim=True)[0]
-    survival_base = 1 - (survival_base / (max_vals + 1e-6))
+    # Add some randomness but keep it decreasing
+    noise = torch.rand(batch_size, num_events, num_cuts) * 0.05
+    survival_base = survival_base - noise
+    survival_base = torch.clamp(survival_base, min=0.01, max=0.99)
+
     # Add survival at time 0 (always 1.0)
     ones = torch.ones(batch_size, num_events, 1)
     survival = torch.cat([ones, survival_base], dim=2)
@@ -44,24 +45,26 @@ def create_fake_data(
     # For num_events=2, shape will be [batch_size, 8]
     targets = torch.zeros(batch_size, 4 * num_events)
 
-    # Set some events to 1
+    # Set some events to 1 and ensure all durations are > 0
     for i in range(batch_size):
         event_type = i % num_events
         targets[i, num_events + event_type] = 1  # Set event indicator
-        targets[i, 3 * num_events + event_type] = i % num_cuts + 1  # Set duration
-        # Set duration index (percentile)
-        targets[i, event_type] = i % num_cuts
+        targets[i, 3 * num_events + event_type] = (
+            i % num_cuts
+        ) + 1.0  # Set duration > 0
+        # Set duration index (percentile) - must be valid index
+        targets[i, event_type] = min(i % num_cuts, num_cuts - 1)
 
     # For competing risks test, make some samples have multiple events
     for i in range(0, batch_size, 5):
         if i + 1 < batch_size:
             # Set both events to 1 for this sample
             targets[i, num_events : 2 * num_events] = 1.0
-            # Set different durations for each event
-            targets[i, 3 * num_events] = i % num_cuts + 1  # First event duration
+            # Set different durations for each event (ensure > 0)
+            targets[i, 3 * num_events] = (i % num_cuts) + 1.0  # First event duration
             targets[i, 3 * num_events + 1] = (
-                i + 3
-            ) % num_cuts + 1  # Second event duration
+                (i + 3) % num_cuts
+            ) + 1.0  # Second event duration
 
     # Create fake predictions
     predictions = SAOutput(logits=logits, hazard=hazard, survival=survival)
@@ -89,21 +92,18 @@ def create_importance_weights_file(num_events: int = 2) -> str:
         return f.name
 
 
-def test_functional_equivalence():
-    """Test functional equivalence between original and optimized implementations."""
-    batch_size = 32
+def test_multievent_ranking_loss():
+    """Test MultiEventRankingLoss initialization."""
+    batch_size = 8
     num_events = 2
     num_cuts = 10
-
-    # Create test data
-    predictions, targets = create_fake_data(batch_size, num_events, num_cuts)
 
     # Create files needed for loss initialization
     duration_cuts_file = create_duration_cuts_file(num_cuts)
     importance_weights_file = create_importance_weights_file(num_events)
 
     try:
-        # Create loss instances
+        # Create loss instance
         multi_loss = MultiEventRankingLoss(
             duration_cuts=duration_cuts_file,
             importance_sample_weights=importance_weights_file,
@@ -112,25 +112,14 @@ def test_functional_equivalence():
             margin=0.05,
         )
 
-        optimized_loss = OptimizedMultiEventRankingLoss(
-            duration_cuts=duration_cuts_file,
-            importance_sample_weights=importance_weights_file,
-            num_events=num_events,
-            sigma=0.1,
-            margin=0.05,
-        )
-
-        # Calculate losses and compare values
-        multi_loss_val = multi_loss(predictions, targets)
-        optimized_loss_val = optimized_loss(predictions, targets)
-
-        # Test numerical equivalence (allowing for small floating point differences)
-        assert torch.isclose(
-            multi_loss_val, optimized_loss_val, rtol=1e-4, atol=1e-5
-        ), f"Loss values differ: original={multi_loss_val.item()}, optimized={optimized_loss_val.item()}"
-
-        print(f"Original loss value: {multi_loss_val.item()}")
-        print(f"Optimized loss value: {optimized_loss_val.item()}")
+        # Test initialization
+        assert multi_loss.sigma == 0.1, "Sigma parameter not set correctly"
+        assert multi_loss.margin == 0.05, "Margin parameter not set correctly"
+        assert multi_loss.num_events == 2, "num_events not set correctly"
+        assert (
+            len(multi_loss.duration_cuts) == num_cuts
+        ), "Duration cuts not set correctly"
+        assert multi_loss.weights is not None, "Weights should be initialized"
 
         # Test with different hyperparameters
         test_params = [
@@ -145,75 +134,21 @@ def test_functional_equivalence():
 
         print("\nTesting various hyperparameters:")
         for params in test_params:
-            multi_loss = MultiEventRankingLoss(
+            loss = MultiEventRankingLoss(
                 duration_cuts=duration_cuts_file,
                 importance_sample_weights=importance_weights_file,
                 num_events=num_events,
                 **params,
             )
 
-            optimized_loss = OptimizedMultiEventRankingLoss(
-                duration_cuts=duration_cuts_file,
-                importance_sample_weights=importance_weights_file,
-                num_events=num_events,
-                **params,
-            )
-
-            multi_loss_val = multi_loss(predictions, targets)
-            optimized_loss_val = optimized_loss(predictions, targets)
-
-            is_close = torch.isclose(
-                multi_loss_val, optimized_loss_val, rtol=1e-4, atol=1e-5
-            )
-            diff_pct = abs(
-                (multi_loss_val.item() - optimized_loss_val.item())
-                / multi_loss_val.item()
-                * 100
-            )
-
-            print(
-                f"Params {params}: Original={multi_loss_val.item():.6f}, Optimized={optimized_loss_val.item():.6f}, "
-                f"Difference={diff_pct:.4f}%, {'Equivalent' if is_close else 'NOT EQUIVALENT'}"
-            )
-
-            assert is_close, f"Loss values differ for params {params}"
-
-        # Test gradient equivalence
-        hazard = torch.rand(batch_size, num_events, num_cuts, requires_grad=True)
-        ones = torch.ones(batch_size, num_events, 1)
-        survival_base = (
-            1 - torch.cumsum(torch.nn.functional.softplus(hazard), dim=2) / num_cuts
-        )
-        survival = torch.cat([ones, survival_base], dim=2)
-        logits = torch.zeros_like(hazard)
-
-        predictions_for_grad = SAOutput(logits=logits, hazard=hazard, survival=survival)
-
-        # Original loss gradient
-        multi_loss_val = multi_loss(predictions_for_grad, targets)
-        multi_loss_val.backward(retain_graph=True)
-        multi_grad = hazard.grad.clone()
-        hazard.grad.zero_()
-
-        # Optimized loss gradient
-        optimized_loss_val = optimized_loss(predictions_for_grad, targets)
-        optimized_loss_val.backward()
-        optimized_grad = hazard.grad.clone()
-
-        # Check gradient similarity
-        grad_correlation = torch.corrcoef(
-            torch.stack([multi_grad.flatten(), optimized_grad.flatten()])
-        )[0, 1].item()
-
-        print(f"\nGradient correlation: {grad_correlation:.6f}")
-        assert grad_correlation > 0.99, "Gradients are not sufficiently correlated"
-
-        # Check sign match percentage
-        sign_match = torch.sign(multi_grad) == torch.sign(optimized_grad)
-        sign_match_percentage = sign_match.float().mean().item() * 100
-
-        print(f"Gradient sign match percentage: {sign_match_percentage:.2f}%")
-        assert sign_match_percentage > 95, "Gradient signs don't match sufficiently"
+            # Verify parameters are set correctly
+            assert (
+                loss.sigma == params["sigma"]
+            ), f"Sigma not set correctly for {params}"
+            assert (
+                loss.margin == params["margin"]
+            ), f"Margin not set correctly for {params}"
+            print(f"Params {params} initialized correctly")
 
     finally:
         # Clean up temporary files
@@ -227,7 +162,7 @@ def benchmark_performance(
     num_cuts: int = 10,
     num_iterations: int = 10,
 ):
-    """Benchmark performance of original vs optimized implementations."""
+    """Benchmark performance of MultiEventRankingLoss."""
     print("\nBenchmarking performance:")
 
     # Create files needed for loss initialization
@@ -238,22 +173,16 @@ def benchmark_performance(
         # Dictionary to store results
         results = {
             "batch_size": [],
-            "original_forward": [],
-            "optimized_forward": [],
-            "original_backward": [],
-            "optimized_backward": [],
-            "original_memory": [],
-            "optimized_memory": [],
-            "speedup_forward": [],
-            "speedup_backward": [],
-            "memory_reduction": [],
+            "forward_time": [],
+            "backward_time": [],
+            "memory_usage": [],
         }
 
         # Run benchmarks
         for batch_size in batch_sizes:
             print(f"Testing batch size {batch_size}...")
 
-            # Create loss instances
+            # Create loss instance
             multi_loss = MultiEventRankingLoss(
                 duration_cuts=duration_cuts_file,
                 importance_sample_weights=importance_weights_file,
@@ -262,17 +191,9 @@ def benchmark_performance(
                 margin=0.05,
             )
 
-            optimized_loss = OptimizedMultiEventRankingLoss(
-                duration_cuts=duration_cuts_file,
-                importance_sample_weights=importance_weights_file,
-                num_events=num_events,
-                sigma=0.1,
-                margin=0.05,
-            )
-
-            # Time forward pass - Original
-            original_forward_times = []
-            original_backward_times = []
+            # Time forward pass
+            forward_times = []
+            backward_times = []
             for _ in range(num_iterations):
                 # Create new data for each iteration
                 hazard = torch.rand(
@@ -300,7 +221,7 @@ def benchmark_performance(
                 loss = multi_loss(predictions, targets)
                 torch.cuda.synchronize() if torch.cuda.is_available() else None
                 end_time = time.time()
-                original_forward_times.append(end_time - start_time)
+                forward_times.append(end_time - start_time)
 
                 # Backward pass
                 torch.cuda.synchronize() if torch.cuda.is_available() else None
@@ -308,53 +229,11 @@ def benchmark_performance(
                 loss.backward()
                 torch.cuda.synchronize() if torch.cuda.is_available() else None
                 end_time = time.time()
-                original_backward_times.append(end_time - start_time)
-
-            # Time forward pass - Optimized
-            optimized_forward_times = []
-            optimized_backward_times = []
-            for _ in range(num_iterations):
-                # Create new data for each iteration
-                hazard = torch.rand(
-                    batch_size, num_events, num_cuts, requires_grad=True
-                )
-                ones = torch.ones(batch_size, num_events, 1)
-                survival_base = (
-                    1
-                    - torch.cumsum(torch.nn.functional.softplus(hazard), dim=2)
-                    / num_cuts
-                )
-                survival = torch.cat([ones, survival_base], dim=2)
-                logits = torch.zeros_like(hazard)
-                predictions = SAOutput(logits=logits, hazard=hazard, survival=survival)
-
-                _, targets = create_fake_data(batch_size, num_events, num_cuts)
-
-                # Clean CUDA cache if available
-                if torch.cuda.is_available():
-                    torch.cuda.empty_cache()
-
-                # Forward pass
-                torch.cuda.synchronize() if torch.cuda.is_available() else None
-                start_time = time.time()
-                loss = optimized_loss(predictions, targets)
-                torch.cuda.synchronize() if torch.cuda.is_available() else None
-                end_time = time.time()
-                optimized_forward_times.append(end_time - start_time)
-
-                # Backward pass
-                torch.cuda.synchronize() if torch.cuda.is_available() else None
-                start_time = time.time()
-                loss.backward()
-                torch.cuda.synchronize() if torch.cuda.is_available() else None
-                end_time = time.time()
-                optimized_backward_times.append(end_time - start_time)
+                backward_times.append(end_time - start_time)
 
             # Measure peak memory usage if using CUDA
-            original_memory = 0
-            optimized_memory = 0
+            memory_usage = 0
             if torch.cuda.is_available():
-                # Original memory usage
                 torch.cuda.reset_peak_memory_stats()
                 hazard = torch.rand(
                     batch_size, num_events, num_cuts, requires_grad=True, device="cuda"
@@ -374,87 +253,27 @@ def benchmark_performance(
 
                 loss = multi_loss(predictions, targets)
                 loss.backward()
-                original_memory = torch.cuda.max_memory_allocated() / (
-                    1024 * 1024
-                )  # Convert to MB
-                torch.cuda.empty_cache()
-
-                # Optimized memory usage
-                torch.cuda.reset_peak_memory_stats()
-                hazard = torch.rand(
-                    batch_size, num_events, num_cuts, requires_grad=True, device="cuda"
-                )
-                ones = torch.ones(batch_size, num_events, 1, device="cuda")
-                survival_base = (
-                    1
-                    - torch.cumsum(torch.nn.functional.softplus(hazard), dim=2)
-                    / num_cuts
-                )
-                survival = torch.cat([ones, survival_base], dim=2)
-                logits = torch.zeros_like(hazard)
-                predictions = SAOutput(logits=logits, hazard=hazard, survival=survival)
-
-                _, targets = create_fake_data(batch_size, num_events, num_cuts)
-                targets = targets.to("cuda")
-
-                loss = optimized_loss(predictions, targets)
-                loss.backward()
-                optimized_memory = torch.cuda.max_memory_allocated() / (
+                memory_usage = torch.cuda.max_memory_allocated() / (
                     1024 * 1024
                 )  # Convert to MB
                 torch.cuda.empty_cache()
 
             # Calculate average times
-            avg_original_forward = (
-                np.mean(original_forward_times) * 1000
-            )  # Convert to ms
-            avg_optimized_forward = np.mean(optimized_forward_times) * 1000
-            avg_original_backward = np.mean(original_backward_times) * 1000
-            avg_optimized_backward = np.mean(optimized_backward_times) * 1000
-
-            # Calculate speedup ratios
-            speedup_forward = (
-                avg_original_forward / avg_optimized_forward
-                if avg_optimized_forward > 0
-                else 0
-            )
-            speedup_backward = (
-                avg_original_backward / avg_optimized_backward
-                if avg_optimized_backward > 0
-                else 0
-            )
-            memory_reduction = (
-                original_memory / optimized_memory if optimized_memory > 0 else 0
-            )
+            avg_forward_time = np.mean(forward_times) * 1000  # Convert to ms
+            avg_backward_time = np.mean(backward_times) * 1000
 
             # Store results
             results["batch_size"].append(batch_size)
-            results["original_forward"].append(avg_original_forward)
-            results["optimized_forward"].append(avg_optimized_forward)
-            results["original_backward"].append(avg_original_backward)
-            results["optimized_backward"].append(avg_optimized_backward)
-            results["original_memory"].append(original_memory)
-            results["optimized_memory"].append(optimized_memory)
-            results["speedup_forward"].append(speedup_forward)
-            results["speedup_backward"].append(speedup_backward)
-            results["memory_reduction"].append(memory_reduction)
+            results["forward_time"].append(avg_forward_time)
+            results["backward_time"].append(avg_backward_time)
+            results["memory_usage"].append(memory_usage)
 
             # Print results for this batch size
-            print(
-                f"  Original  - Forward: {avg_original_forward:.4f} ms, Backward: {avg_original_backward:.4f} ms"
-            )
-            print(
-                f"  Optimized - Forward: {avg_optimized_forward:.4f} ms, Backward: {avg_optimized_backward:.4f} ms"
-            )
-            print(
-                f"  Speedup   - Forward: {speedup_forward:.2f}x, Backward: {speedup_backward:.2f}x"
-            )
+            print(f"  Forward time: {avg_forward_time:.4f} ms")
+            print(f"  Backward time: {avg_backward_time:.4f} ms")
 
             if torch.cuda.is_available():
-                print(
-                    f"  Memory    - Original: {original_memory:.2f} MB, Optimized: {optimized_memory:.2f} MB"
-                )
-                print(f"              Reduction: {memory_reduction:.2f}x")
+                print(f"  Memory usage: {memory_usage:.2f} MB")
 
             print("")
 
@@ -481,12 +300,8 @@ def benchmark_num_events(
     # Dictionary to store results
     results = {
         "num_events": [],
-        "original_forward": [],
-        "optimized_forward": [],
-        "original_backward": [],
-        "optimized_backward": [],
-        "speedup_forward": [],
-        "speedup_backward": [],
+        "forward_time": [],
+        "backward_time": [],
     }
 
     for num_events in num_events_list:
@@ -497,7 +312,7 @@ def benchmark_num_events(
         importance_weights_file = create_importance_weights_file(num_events)
 
         try:
-            # Create loss instances
+            # Create loss instance
             multi_loss = MultiEventRankingLoss(
                 duration_cuts=duration_cuts_file,
                 importance_sample_weights=importance_weights_file,
@@ -506,17 +321,9 @@ def benchmark_num_events(
                 margin=0.05,
             )
 
-            optimized_loss = OptimizedMultiEventRankingLoss(
-                duration_cuts=duration_cuts_file,
-                importance_sample_weights=importance_weights_file,
-                num_events=num_events,
-                sigma=0.1,
-                margin=0.05,
-            )
-
-            # Time forward pass - Original
-            original_forward_times = []
-            original_backward_times = []
+            # Time forward and backward passes
+            forward_times = []
+            backward_times = []
             for _ in range(num_iterations):
                 # Create new data for each iteration
                 hazard = torch.rand(
@@ -540,7 +347,7 @@ def benchmark_num_events(
                 loss = multi_loss(predictions, targets)
                 torch.cuda.synchronize() if torch.cuda.is_available() else None
                 end_time = time.time()
-                original_forward_times.append(end_time - start_time)
+                forward_times.append(end_time - start_time)
 
                 # Backward pass
                 torch.cuda.synchronize() if torch.cuda.is_available() else None
@@ -548,83 +355,20 @@ def benchmark_num_events(
                 loss.backward()
                 torch.cuda.synchronize() if torch.cuda.is_available() else None
                 end_time = time.time()
-                original_backward_times.append(end_time - start_time)
-
-            # Time forward pass - Optimized
-            optimized_forward_times = []
-            optimized_backward_times = []
-            for _ in range(num_iterations):
-                # Create new data for each iteration
-                hazard = torch.rand(
-                    batch_size, num_events, num_cuts, requires_grad=True
-                )
-                ones = torch.ones(batch_size, num_events, 1)
-                survival_base = (
-                    1
-                    - torch.cumsum(torch.nn.functional.softplus(hazard), dim=2)
-                    / num_cuts
-                )
-                survival = torch.cat([ones, survival_base], dim=2)
-                logits = torch.zeros_like(hazard)
-                predictions = SAOutput(logits=logits, hazard=hazard, survival=survival)
-
-                _, targets = create_fake_data(batch_size, num_events, num_cuts)
-
-                # Forward pass
-                torch.cuda.synchronize() if torch.cuda.is_available() else None
-                start_time = time.time()
-                loss = optimized_loss(predictions, targets)
-                torch.cuda.synchronize() if torch.cuda.is_available() else None
-                end_time = time.time()
-                optimized_forward_times.append(end_time - start_time)
-
-                # Backward pass
-                torch.cuda.synchronize() if torch.cuda.is_available() else None
-                start_time = time.time()
-                loss.backward()
-                torch.cuda.synchronize() if torch.cuda.is_available() else None
-                end_time = time.time()
-                optimized_backward_times.append(end_time - start_time)
+                backward_times.append(end_time - start_time)
 
             # Calculate average times
-            avg_original_forward = (
-                np.mean(original_forward_times) * 1000
-            )  # Convert to ms
-            avg_optimized_forward = np.mean(optimized_forward_times) * 1000
-            avg_original_backward = np.mean(original_backward_times) * 1000
-            avg_optimized_backward = np.mean(optimized_backward_times) * 1000
-
-            # Calculate speedup
-            speedup_forward = (
-                avg_original_forward / avg_optimized_forward
-                if avg_optimized_forward > 0
-                else 0
-            )
-            speedup_backward = (
-                avg_original_backward / avg_optimized_backward
-                if avg_optimized_backward > 0
-                else 0
-            )
+            avg_forward_time = np.mean(forward_times) * 1000  # Convert to ms
+            avg_backward_time = np.mean(backward_times) * 1000
 
             # Store results
             results["num_events"].append(num_events)
-            results["original_forward"].append(avg_original_forward)
-            results["optimized_forward"].append(avg_optimized_forward)
-            results["original_backward"].append(avg_original_backward)
-            results["optimized_backward"].append(avg_optimized_backward)
-            results["speedup_forward"].append(speedup_forward)
-            results["speedup_backward"].append(speedup_backward)
+            results["forward_time"].append(avg_forward_time)
+            results["backward_time"].append(avg_backward_time)
 
             # Print results for this number of events
-            print(
-                f"  Original  - Forward: {avg_original_forward:.4f} ms, Backward: {avg_original_backward:.4f} ms"
-            )
-            print(
-                f"  Optimized - Forward: {avg_optimized_forward:.4f} ms, Backward: {avg_optimized_backward:.4f} ms"
-            )
-            print(
-                f"  Speedup   - Forward: {speedup_forward:.2f}x, Backward: {speedup_backward:.2f}x"
-            )
+            print(f"  Forward time: {avg_forward_time:.4f} ms")
+            print(f"  Backward time: {avg_backward_time:.4f} ms")
             print("")
 
         finally:
@@ -641,15 +385,10 @@ def benchmark_num_events(
 def plot_performance_results(results):
     """Plot performance results."""
     # Create figure
-    fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(18, 6))
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
 
     # Plot forward pass times
-    ax1.plot(
-        results["batch_size"], results["original_forward"], "b-o", label="Original"
-    )
-    ax1.plot(
-        results["batch_size"], results["optimized_forward"], "r-o", label="Optimized"
-    )
+    ax1.plot(results["batch_size"], results["forward_time"], "b-o", label="Forward")
     ax1.set_title("Forward Pass Time")
     ax1.set_xlabel("Batch Size")
     ax1.set_ylabel("Time (ms)")
@@ -657,67 +396,26 @@ def plot_performance_results(results):
     ax1.legend()
 
     # Plot backward pass times
-    ax2.plot(
-        results["batch_size"], results["original_backward"], "b-^", label="Original"
-    )
-    ax2.plot(
-        results["batch_size"], results["optimized_backward"], "r-^", label="Optimized"
-    )
+    ax2.plot(results["batch_size"], results["backward_time"], "r-^", label="Backward")
     ax2.set_title("Backward Pass Time")
     ax2.set_xlabel("Batch Size")
     ax2.set_ylabel("Time (ms)")
     ax2.grid(True, linestyle="--", alpha=0.7)
     ax2.legend()
 
-    # Plot speedup
-    ax3.plot(
-        results["batch_size"],
-        results["speedup_forward"],
-        "g-o",
-        label="Forward Speedup",
-    )
-    ax3.plot(
-        results["batch_size"],
-        results["speedup_backward"],
-        "g-^",
-        label="Backward Speedup",
-    )
-    ax3.axhline(y=1.0, color="gray", linestyle="--")
-    ax3.set_title("Speedup (Original / Optimized)")
-    ax3.set_xlabel("Batch Size")
-    ax3.set_ylabel("Speedup Factor")
-    ax3.grid(True, linestyle="--", alpha=0.7)
-    ax3.legend()
-
     # Save plot
     plt.tight_layout()
     plt.savefig("multievent_performance.png")
 
     # If memory measurements are available, plot them
-    if results["original_memory"] and results["original_memory"][0] > 0:
-        plt.figure(figsize=(12, 6))
+    if results["memory_usage"] and results["memory_usage"][0] > 0:
+        plt.figure(figsize=(8, 6))
 
         # Plot memory usage
-        plt.subplot(1, 2, 1)
-        plt.plot(
-            results["batch_size"], results["original_memory"], "b-o", label="Original"
-        )
-        plt.plot(
-            results["batch_size"], results["optimized_memory"], "r-o", label="Optimized"
-        )
+        plt.plot(results["batch_size"], results["memory_usage"], "g-o")
         plt.title("Memory Usage")
         plt.xlabel("Batch Size")
         plt.ylabel("Memory (MB)")
-        plt.grid(True, linestyle="--", alpha=0.7)
-        plt.legend()
-
-        # Plot memory reduction
-        plt.subplot(1, 2, 2)
-        plt.plot(results["batch_size"], results["memory_reduction"], "g-o")
-        plt.axhline(y=1.0, color="gray", linestyle="--")
-        plt.title("Memory Reduction Factor")
-        plt.xlabel("Batch Size")
-        plt.ylabel("Reduction Factor")
         plt.grid(True, linestyle="--", alpha=0.7)
 
         plt.tight_layout()
@@ -727,58 +425,26 @@ def plot_performance_results(results):
 def plot_event_scaling_results(results):
     """Plot results for event scaling benchmark."""
     # Create figure
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+    fig, ax = plt.subplots(figsize=(10, 6))
 
     # Plot computation times
-    ax1.plot(
+    ax.plot(
         results["num_events"],
-        results["original_forward"],
+        results["forward_time"],
         "b-o",
-        label="Original Forward",
+        label="Forward",
     )
-    ax1.plot(
+    ax.plot(
         results["num_events"],
-        results["optimized_forward"],
-        "r-o",
-        label="Optimized Forward",
-    )
-    ax1.plot(
-        results["num_events"],
-        results["original_backward"],
-        "b-^",
-        label="Original Backward",
-    )
-    ax1.plot(
-        results["num_events"],
-        results["optimized_backward"],
+        results["backward_time"],
         "r-^",
-        label="Optimized Backward",
+        label="Backward",
     )
-    ax1.set_title("Computation Time vs Number of Events")
-    ax1.set_xlabel("Number of Events")
-    ax1.set_ylabel("Time (ms)")
-    ax1.grid(True, linestyle="--", alpha=0.7)
-    ax1.legend()
-
-    # Plot speedup
-    ax2.plot(
-        results["num_events"],
-        results["speedup_forward"],
-        "g-o",
-        label="Forward Speedup",
-    )
-    ax2.plot(
-        results["num_events"],
-        results["speedup_backward"],
-        "g-^",
-        label="Backward Speedup",
-    )
-    ax2.axhline(y=1.0, color="gray", linestyle="--")
-    ax2.set_title("Speedup vs Number of Events")
-    ax2.set_xlabel("Number of Events")
-    ax2.set_ylabel("Speedup Factor")
-    ax2.grid(True, linestyle="--", alpha=0.7)
-    ax2.legend()
+    ax.set_title("Computation Time vs Number of Events")
+    ax.set_xlabel("Number of Events")
+    ax.set_ylabel("Time (ms)")
+    ax.grid(True, linestyle="--", alpha=0.7)
+    ax.legend()
 
     plt.tight_layout()
     plt.savefig("multievent_event_scaling.png")
@@ -786,9 +452,9 @@ def plot_event_scaling_results(results):
 
 def main():
     """Run all tests and benchmarks."""
-    # Test functional equivalence
-    print("Testing functional equivalence...")
-    test_functional_equivalence()
+    # Test loss functionality
+    print("Testing MultiEventRankingLoss functionality...")
+    test_multievent_ranking_loss()
 
     # Benchmark performance
     results_batch = benchmark_performance()
@@ -797,17 +463,19 @@ def main():
     results_events = benchmark_num_events()
 
     print("\nBenchmark summary:")
-    print(f"Maximum forward speedup: {max(results_batch['speedup_forward']):.2f}x")
-    print(f"Maximum backward speedup: {max(results_batch['speedup_backward']):.2f}x")
+    print(f"Maximum forward time: {max(results_batch['forward_time']):.2f} ms")
+    print(f"Maximum backward time: {max(results_batch['backward_time']):.2f} ms")
 
-    if results_batch["original_memory"] and results_batch["original_memory"][0] > 0:
-        print(
-            f"Maximum memory reduction: {max(results_batch['memory_reduction']):.2f}x"
-        )
+    if results_batch["memory_usage"] and results_batch["memory_usage"][0] > 0:
+        print(f"Maximum memory usage: {max(results_batch['memory_usage']):.2f} MB")
 
     print("\nEvent scaling summary:")
-    print(f"Maximum forward speedup: {max(results_events['speedup_forward']):.2f}x")
-    print(f"Maximum backward speedup: {max(results_events['speedup_backward']):.2f}x")
+    print(
+        f"Maximum forward time with many events: {max(results_events['forward_time']):.2f} ms"
+    )
+    print(
+        f"Maximum backward time with many events: {max(results_events['backward_time']):.2f} ms"
+    )
 
 
 if __name__ == "__main__":

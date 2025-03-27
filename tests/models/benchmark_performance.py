@@ -15,7 +15,7 @@ logging.basicConfig(level=logging.WARNING)
 
 from sat.models.nets import CauseSpecificNet, CauseSpecificNetCompRisk
 from sat.models.heads.survival import SurvivalTaskHead
-from sat.models.heads.config import SurvivalConfig
+from sat.models.heads import SurvivalConfig
 from sat.loss.survival.deephit import DeepHitLikelihoodLoss
 from sat.loss.ranking.sample import SampleRankingLoss
 

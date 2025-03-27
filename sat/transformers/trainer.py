@@ -33,6 +33,15 @@ logger = logging.get_logger(__name__)
 class TrainingArgumentsWithMPSSupport(TrainingArguments):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        # Add distributed_state attribute needed by newer versions of transformers
+        self.distributed_state = None
+        # Don't set local_process_index directly as it's a property in newer transformers
+        # Instead, we'll override the property getter
+
+    @property
+    def local_process_index(self):
+        # Return 0 as we're handling a single process
+        return 0
 
     @property
     def device(self) -> torch.device:
@@ -379,8 +388,41 @@ class SATTrainer(Trainer):
             with torch.no_grad():
                 outputs = model(**inputs)
 
-            # Get logits or complete SAOutput for survival models
-            if hasattr(outputs, "logits"):
+            # For survival models with SAOutput, return all necessary fields
+            if (
+                hasattr(outputs, "survival")
+                and hasattr(outputs, "hazard")
+                and hasattr(outputs, "risk")
+            ):
+                # Return all fields needed for survival analysis
+                logits = outputs.logits
+                hazard = outputs.hazard
+                risk = outputs.risk
+                survival = outputs.survival
+
+                # Include time_to_event and event if available
+                time_to_event = (
+                    outputs.time_to_event if hasattr(outputs, "time_to_event") else None
+                )
+                event = outputs.event if hasattr(outputs, "event") else None
+
+                # Process labels
+                labels = tuple(inputs.get(name) for name in self.label_names)
+                labels = torch.cat(labels, dim=0) if len(labels) > 0 else None
+
+                # Return all necessary fields for compute_metrics
+                return (
+                    outputs.loss,
+                    hazard,
+                    risk,
+                    survival,
+                    time_to_event,
+                    event,
+                    labels,
+                )
+
+            # Standard case for non-survival models
+            elif hasattr(outputs, "logits"):
                 logits = outputs.logits
             else:
                 logits = outputs
@@ -391,7 +433,45 @@ class SATTrainer(Trainer):
 
             return (outputs.loss, logits, labels)
 
-        # Default behavior for non-multi-event models
+        # For non-multi-event survival models, we still need to handle SAOutput specially
+        has_labels = all(inputs.get(k) is not None for k in self.label_names)
+        inputs = self._prepare_inputs(inputs)
+
+        if prediction_loss_only:
+            with torch.no_grad():
+                outputs = model(**inputs)
+                loss = outputs.loss
+            return (loss, None, None)
+
+        with torch.no_grad():
+            outputs = model(**inputs)
+
+        # Check if this is a survival model with SAOutput
+        if (
+            hasattr(outputs, "survival")
+            and hasattr(outputs, "hazard")
+            and hasattr(outputs, "risk")
+        ):
+            # Return all fields needed for survival analysis
+            logits = outputs.logits if hasattr(outputs, "logits") else None
+            hazard = outputs.hazard
+            risk = outputs.risk
+            survival = outputs.survival
+
+            # Include time_to_event and event if available
+            time_to_event = (
+                outputs.time_to_event if hasattr(outputs, "time_to_event") else None
+            )
+            event = outputs.event if hasattr(outputs, "event") else None
+
+            # Process labels
+            labels = tuple(inputs.get(name) for name in self.label_names)
+            labels = torch.cat(labels, dim=0) if len(labels) > 0 else None
+
+            # Return all necessary fields for compute_metrics
+            return (outputs.loss, hazard, risk, survival, time_to_event, event, labels)
+
+        # Fall back to default behavior for other models
         return super().prediction_step(model, inputs, prediction_loss_only, ignore_keys)
 
     def save_model(self, output_dir=None, _internal_call=False):
