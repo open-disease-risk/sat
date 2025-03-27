@@ -1,6 +1,6 @@
 # @package _global_
 dataset: metabric
-modelname: deephit
+modelname: deephit_ranknet
 
 defaults:
   - metabric/defaults
@@ -9,7 +9,7 @@ defaults:
   - override /tokenizers: ${data/load}
   - override /transformers: bert
   - override /tasks: survival
-  - override /tasks/losses: deephit
+  - override /tasks/losses: deephit_ranknet
   - override /tasks/losses/balancing: grad
   - override /trainer: ${data/load}/default
 

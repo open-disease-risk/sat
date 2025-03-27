@@ -1,17 +1,17 @@
 # @package _global_
-dataset: metabric
-modelname: deephit
+dataset: metabric_numeric
+modelname: deephit_soap
 
 defaults:
-  - metabric/defaults
-  - override /data/load: metabric
+  - metabric_numeric/defaults
+  - override /data/load: metabric_numeric
   - override /data/parse: ${data/load}
-  - override /tokenizers: ${data/load}
-  - override /transformers: bert
+  - override /tokenizers: metabric
+  - override /transformers: numeric_bert
   - override /tasks: survival
-  - override /tasks/losses: deephit
+  - override /tasks/losses: deephit_soap
   - override /tasks/losses/balancing: grad
-  - override /trainer: ${data/load}/default
+  - override /trainer: metabric/default
 
 
 survival_intermediate_size: 8
