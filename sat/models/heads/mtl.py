@@ -8,22 +8,55 @@ import torch
 
 from torch import nn
 from transformers import AutoModel
-from typing import Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
+from sat.loss.balancing import BalancingStrategy, LossBalancer
 from sat.models.nets import SimpleMLP
 from sat.utils import logging
 from .embeddings import TokenEmbedder, SentenceEmbedder
 
-from .config import (
-    SentenceEmbedding,
-    TokenEmbedding,
-    MTLConfig,
-)
-from .base import MTLTask
+from .base import BaseConfig, MTLTask, SentenceEmbedding, TokenEmbedding
 from .output import SAOutput
 from .survival import SurvivalTaskHead
+from .dsm import DSMTaskHead
 from .classification import EventClassificationTaskHead
 from .regression import EventDurationTaskHead
+from transformers import PretrainedConfig
+
+
+class MTLConfig(BaseConfig):
+    model_type = "sat-mtl-transformer"
+
+    def __init__(
+        self,
+        task_heads: List[PretrainedConfig] = None,
+        intermediate_size: int = 64,
+        num_hidden_layers: int = 0,
+        batch_norm: bool = True,
+        hidden_dropout_prob: float = 0.05,
+        bias: bool = True,
+        num_labels: int = 32,
+        sentence_emb: SentenceEmbedding = SentenceEmbedding.NONE,
+        token_emb: TokenEmbedding = TokenEmbedding.CAT,
+        select_hidden_layers: List[int] = None,
+        balance_strategy: Union[str, BalancingStrategy] = "fixed",
+        balance_params: Optional[Dict] = None,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.task_heads = task_heads
+        self.intermediate_size = intermediate_size
+        self.num_hidden_layers = num_hidden_layers
+        self.batch_norm = batch_norm
+        self.hidden_dropout_prob = hidden_dropout_prob
+        self.sentence_emb = sentence_emb
+        self.token_emb = token_emb
+        self.bias = bias
+        self.num_labels = num_labels
+        self.select_hidden_layers = select_hidden_layers
+        self.balance_strategy = balance_strategy
+        self.balance_params = balance_params or {}
+
 
 logger = logging.get_default_logger()
 
@@ -38,9 +71,12 @@ class MTLForSurvival(MTLTask):
         super().__init__(config)
 
         self.is_survival = False
+        self.is_dsm = False
         self.is_regression = False
         self.is_classification = False
         self.return_dict = config.return_dict
+
+        coeffs = []
 
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f"Using configuration {config}")
@@ -134,10 +170,18 @@ class MTLForSurvival(MTLTask):
         # Initialize task heads
         self.heads = nn.ModuleList()
         for i, task_head_config in enumerate(self.config.task_heads):
+            # Still collect initial coefficients for potential fixed weight balancing
+            coeffs.append(task_head_config.loss_weight)
+
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug(f"{i}-th task configuration: {task_head_config}")
+
             model = AutoModel.from_config(task_head_config)
-            if isinstance(model, SurvivalTaskHead):
+
+            if isinstance(model, DSMTaskHead):
+                logger.info("DSM task head initialized")
+                self.is_dsm = True
+            elif isinstance(model, SurvivalTaskHead):
                 logger.info("Survival task head initialized")
                 self.is_survival = True
             elif isinstance(model, EventClassificationTaskHead):
@@ -150,6 +194,21 @@ class MTLForSurvival(MTLTask):
                 raise ValueError(f"Task head {task_head_config} not supported!")
 
             self.heads.append(model)
+
+        # Create loss balancer
+        num_task_heads = len(self.heads)
+        self.loss_balancer = LossBalancer.create(
+            strategy=self.config.balance_strategy,
+            num_losses=num_task_heads,
+            coeffs=coeffs,  # Pass initial coefficients from task heads
+            **self.config.balance_params,
+        )
+        logger.info(
+            f"Using {self.config.balance_strategy} balancing strategy for MTL with {num_task_heads} tasks"
+        )
+
+        # Still register the initial coefficients for backward compatibility
+        self.register_buffer("coeffs", torch.tensor(coeffs).to(torch.float32))
 
         # Initialize weights when created as a standalone model
         if self.__class__.__name__ == "MTLForSurvival":
@@ -253,7 +312,7 @@ class MTLForSurvival(MTLTask):
         outputs = {}
         tte = None
         event = None
-        loss = 0.0
+        losses = []
         logits_tasks = []
 
         # Process all task heads
@@ -272,20 +331,49 @@ class MTLForSurvival(MTLTask):
 
             logits_tasks.append(outputs[i].logits)
             if labels is not None:
-                loss += outputs[i].loss * h.config.loss_weight
+                losses.append(outputs[i].loss)
 
             # Save outputs based on task head type
             if isinstance(h, SurvivalTaskHead):
+                sa_output = outputs[i]
+            elif isinstance(h, DSMTaskHead):
                 sa_output = outputs[i]
             elif isinstance(h, EventDurationTaskHead):
                 tte = outputs[i].predictions
             elif isinstance(h, EventClassificationTaskHead):
                 event = outputs[i].predictions
 
+        # Balance losses using the loss balancer
+        if labels is not None and losses:
+            # Get the current training iteration from state if available
+            iteration = getattr(self, "current_iteration", None)
+            if hasattr(self, "current_iteration"):
+                self.current_iteration += 1
+            else:
+                self.current_iteration = 0
+                iteration = 0
+
+            # Use the loss balancer to combine the losses
+            total_loss = self.loss_balancer(losses, iteration)
+
+            # Log balancing weights
+            if logger.isEnabledFor(logging.DEBUG):
+                weights = self.loss_balancer.get_weights()
+                logger.debug(f"Current loss weights: {weights}")
+        else:
+            # Fallback to using fixed weights if no labels or losses
+            total_loss = torch.tensor(0.0, device=sequence_output.device)
+
         # Create combined output
         if sa_output:
+            # Extract DSM-specific attributes if present
+            shape = getattr(sa_output, "shape", None)
+            scale = getattr(sa_output, "scale", None)
+            logits_g = getattr(sa_output, "logits_g", None)
+
+            # Create SAOutput with all relevant fields
             sa_output = SAOutput(
-                loss=loss,
+                loss=total_loss,
                 logits=logits_tasks,
                 hazard=sa_output.hazard,
                 risk=sa_output.risk,
@@ -294,10 +382,13 @@ class MTLForSurvival(MTLTask):
                 event=event,
                 hidden_states=sequence_output.hidden_states,
                 attentions=sequence_output.attentions,
+                shape=shape,
+                scale=scale,
+                logits_g=logits_g,
             )
         else:
             sa_output = SAOutput(
-                loss=loss,
+                loss=total_loss,
                 logits=logits_tasks,
                 hazard=None,
                 risk=None,
@@ -306,9 +397,28 @@ class MTLForSurvival(MTLTask):
                 event=event,
                 hidden_states=sequence_output.hidden_states,
                 attentions=sequence_output.attentions,
+                shape=None,
+                scale=None,
+                logits_g=None,
             )
 
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f"Return output {sa_output} from MTLForSurvival task head")
 
         return sa_output
+
+    def get_loss_weights(self):
+        """
+        Return the current loss weights for logging.
+
+        This method is called by the LossWeightLoggerCallback during training.
+
+        Returns:
+            List of current loss weights
+        """
+        if hasattr(self, "loss_balancer"):
+            return self.loss_balancer.get_weights()
+        elif hasattr(self, "coeffs"):
+            return self.coeffs.cpu().tolist()
+        else:
+            return None
