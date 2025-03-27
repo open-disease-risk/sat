@@ -28,6 +28,12 @@ observation_ranking_loss_sigma: 0.1
 listmle_epsilon: 1e-10
 listmle_temperature: 1.0
 
+# SurvRNC specific parameters
+survrnc_margin: 0.5
+survrnc_temperature: 0.1
+survrnc_hard_mining: True
+survrnc_mining_ratio: 0.3
+
 loss_balancing_scale_alpha: 0.9
 loss_balancing_scale_eps: 1.0e-8
 loss_balancing_grad_alpha: 0.9
