@@ -24,14 +24,16 @@ from transformers import (
     Trainer,
     TrainingArguments,
 )
+from transformers.integrations import TensorBoardCallback
 
 from sat.utils import config, logging, rand, tokenizing
 from sat.utils.output import write_output, log_metrics
 from sat.data import load, collator
 from sat.models import heads
-from sat.models.heads.config import TokenEmbedding
+from sat.models.heads import TokenEmbedding
 from sat.models.utils import get_device
 from sat.transformers.feature_extractor import SAFeatureExtractor
+from sat.transformers.callbacks import LossWeightLoggerCallback
 from sat.transformers import trainer as satrain
 
 logger = logging.get_default_logger()
@@ -187,7 +189,7 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
 
         preds_dict = {}
         idx = 1
-        if model.is_survival:
+        if model.is_survival or model.is_dsm:
             preds_dict["hazard"] = preds[1]
             preds_dict["risk"] = preds[2]
             preds_dict["survival"] = preds[3]
@@ -245,6 +247,15 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
         trainer = satrain.SATTrainer(**trainer_kwargs)
     else:
         trainer = Trainer(**trainer_kwargs)
+
+    # Replace the default TensorBoard callback with our custom one
+    for i, callback in enumerate(trainer.callback_handler.callbacks):
+        if isinstance(callback, TensorBoardCallback):
+            trainer.callback_handler.callbacks[i] = LossWeightLoggerCallback()
+            break
+        else:
+            # If no existing TensorBoardCallback was found, add yours
+            trainer.add_callback(LossWeightLoggerCallback())
 
     logger.info("Start training")
     result = trainer.train()
