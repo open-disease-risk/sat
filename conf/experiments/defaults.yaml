@@ -41,6 +41,10 @@ soap_num_pairs: null  # Auto-calculate based on batch size (n log n pairs)
 soap_sampling_strategy: "importance"  # uniform, importance, hard
 soap_adaptive_margin: true
 
+# RankNet specific parameters
+ranknet_sigma: 1.0  # Controls the steepness of the sigmoid
+ranknet_sampling_ratio: 0.3  # Ratio of pairs to sample (0.0-1.0)
+ranknet_adaptive_sampling: true  # Adaptively sample more from difficult regions
 
 loss_balancing_scale_alpha: 0.9
 loss_balancing_scale_eps: 1.0e-8

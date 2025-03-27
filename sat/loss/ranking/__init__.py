@@ -12,3 +12,6 @@ from .survrnc import SurvRNCLoss  # noqa
 from .soap import SOAPLoss  # noqa
 from .sample_soap import SampleSOAPLoss  # noqa
 from .event_soap import EventSOAPLoss  # noqa
+from .ranknet import RankNetLoss  # noqa
+from .sample_ranknet import SampleRankNetLoss  # noqa
+from .event_ranknet import EventRankNetLoss  # noqa
