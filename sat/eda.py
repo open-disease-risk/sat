@@ -26,6 +26,7 @@ import polars as pl
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import re
 from omegaconf import DictConfig
 from logdecorator import log_on_start, log_on_end, log_on_error
 from logging import DEBUG, ERROR
@@ -98,8 +99,147 @@ def extract_dataset_components(cfg: DictConfig) -> Tuple:
             return series.to_numpy()
         return np.array(series)
 
+    # Special case for HSA synthetic dataset
+    if "hsa_synthetic" in cfg.dataset.lower():
+        logger.info("Handling HSA synthetic dataset format")
+        # First check if we have the processed format with lists
+        if "events" in df.columns and "durations" in df.columns:
+            try:
+                pdf = df.to_pandas()
+                # Check if we have list values
+                if isinstance(pdf["events"].iloc[0], list):
+                    for event_idx in range(num_events):
+                        # Make sure we have valid indices and non-empty data
+                        if len(pdf) > 0 and len(pdf["events"].iloc[0]) > event_idx:
+                            event_indicators = np.array(
+                                [
+                                    (
+                                        float(row[event_idx])
+                                        if isinstance(row, list)
+                                        and len(row) > event_idx
+                                        else 0.0
+                                    )
+                                    for row in pdf["events"]
+                                ]
+                            )
+                            event_durations = np.array(
+                                [
+                                    (
+                                        float(row[event_idx])
+                                        if isinstance(row, list)
+                                        and len(row) > event_idx
+                                        else 0.0
+                                    )
+                                    for row in pdf["durations"]
+                                ]
+                            )
+
+                            # Only add if we have some events (not all zeros)
+                            if np.sum(event_indicators) > 0:
+                                durations.append(event_durations)
+                                events.append(event_indicators)
+                                event_types.append(f"Event_{event_idx+1}")
+
+                    logger.info(
+                        f"Extracted {len(event_types)} events from HSA list format"
+                    )
+                else:
+                    # Fallback to column-based format
+                    raise ValueError("Not a list format, falling back to column search")
+            except (IndexError, ValueError, TypeError) as e:
+                logger.warning(
+                    f"Could not process list-based format: {str(e)}, trying column-based format"
+                )
+                # Continue to the column-based approach
+
+        # Try to find duration1, duration2, event1, event2 pattern if lists didn't work
+        if len(durations) == 0:
+            duration_pattern = r"duration(\d+)"
+            event_pattern = r"event(\d+)"
+
+            duration_cols = sorted(
+                [col for col in df.columns if re.match(duration_pattern, col)]
+            )
+
+            event_cols = sorted(
+                [col for col in df.columns if re.match(event_pattern, col)]
+            )
+
+            if duration_cols and event_cols:
+                for dur_col, evt_col in zip(duration_cols, event_cols):
+                    evt_idx = re.match(event_pattern, evt_col).group(1)
+                    dur_array = get_numpy_array(df[dur_col])
+                    evt_array = get_numpy_array(df[evt_col])
+
+                    # Only add if we have some events (not all zeros)
+                    if np.sum(evt_array) > 0:
+                        durations.append(dur_array)
+                        events.append(evt_array)
+                        event_types.append(f"Event_{evt_idx}")
+
+                logger.info(f"Extracted {len(event_types)} events from column names")
+
+        # Make sure we have at least one event type
+        if len(durations) == 0 or len(events) == 0:
+            logger.warning(
+                "No events extracted from HSA synthetic dataset, trying original file fallback"
+            )
+
+            # Try to load the original CSV file directly as a fallback
+            try:
+                # Try different paths for finding the CSV
+                csv_paths = [
+                    "/Users/ddahlem/Documents/repos/open-disease-risk/sat/data/hsa-synthetic/simulated_data.csv",  # Direct path
+                    os.path.join(
+                        "data", "hsa-synthetic", "simulated_data.csv"
+                    ),  # Relative to working dir
+                ]
+
+                csv_path = None
+                for path in csv_paths:
+                    if os.path.exists(path):
+                        csv_path = path
+                        break
+
+                if csv_path:
+                    logger.info(f"Loading original CSV file from {csv_path}")
+                    raw_df = pd.read_csv(csv_path)
+
+                    # Check for duration1, duration2, event1, event2 columns
+                    if "duration1" in raw_df.columns and "event1" in raw_df.columns:
+                        dur1 = np.array(raw_df["duration1"])
+                        evt1 = np.array(raw_df["event1"])
+                        if np.sum(evt1) > 0:  # Only add if we have some events
+                            durations.append(dur1)
+                            events.append(evt1)
+                            event_types.append("Event_1")
+                            logger.info(
+                                f"Added Event_1 from original CSV with {np.sum(evt1)} events"
+                            )
+
+                    if "duration2" in raw_df.columns and "event2" in raw_df.columns:
+                        dur2 = np.array(raw_df["duration2"])
+                        evt2 = np.array(raw_df["event2"])
+                        if np.sum(evt2) > 0:  # Only add if we have some events
+                            durations.append(dur2)
+                            events.append(evt2)
+                            event_types.append("Event_2")
+                            logger.info(
+                                f"Added Event_2 from original CSV with {np.sum(evt2)} events"
+                            )
+            except Exception as e:
+                logger.warning(f"Failed to load original CSV file: {str(e)}")
+
+            # Final fallback if still no events
+            if len(durations) == 0 or len(events) == 0:
+                logger.warning("No events extracted, using final fallback approach")
+                # Create a fallback with at least one event type
+                if "duration1" in df.columns and "event1" in df.columns:
+                    durations.append(get_numpy_array(df["duration1"]))
+                    events.append(get_numpy_array(df["event1"]))
+                    event_types.append("Event_1")
     # Handle multi-event cases (with arrays/lists for durations and events)
-    if num_events > 1 and duration_col in df.columns:
+    elif num_events > 1 and duration_col in df.columns:
         # Check if we're dealing with list/array columns
         # Get first value to check
         first_dur_val = df[duration_col].item(0) if len(df) > 0 else None
@@ -406,43 +546,118 @@ def _run_eda(cfg: DictConfig) -> None:
 
     # Distribution analysis
     if cfg.analysis.run_distribution_analysis:
-        logger.info("Running time-to-event distribution analysis")
-        dist_results = analyze_distribution(
-            durations,
-            events,
-            event_types,
-            cfg.data.num_events,
-            output_dir,
-            distributions=cfg.analysis.get("distributions", None),
-            prefer_metric=cfg.analysis.get("prefer_metric", "bic"),
-            create_config=cfg.analysis.get("create_config", True),
-            dataset_name=cfg.dataset,
-        )
-        results["distribution"] = dist_results
+        # Check if we have any meaningful events to analyze
+        if (
+            len(durations) > 0
+            and len(events) > 0
+            and any(np.sum(e) > 0 for e in events)
+        ):
+            logger.info("Running time-to-event distribution analysis")
+            dist_results = analyze_distribution(
+                durations,
+                events,
+                event_types,
+                cfg.data.num_events,
+                output_dir,
+                distributions=cfg.analysis.get("distributions", None),
+                prefer_metric=cfg.analysis.get("prefer_metric", "bic"),
+                create_config=cfg.analysis.get("create_config", True),
+                dataset_name=cfg.dataset,
+            )
+            results["distribution"] = dist_results
+        else:
+            logger.warning("No events found for distribution analysis. Skipping.")
+            results["distribution"] = {"error": "No events found for analysis"}
 
     # Censoring analysis
     if cfg.analysis.run_censoring_analysis:
-        logger.info("Running censoring analysis")
-        cens_results = analyze_censoring(
-            durations,
-            events,
-            event_types,
-            covariates=covariates if cfg.analysis.get("use_covariates", True) else None,
-            output_dir=output_dir,
-        )
-        results["censoring"] = cens_results
+        # Check if we have any meaningful events to analyze
+        if (
+            len(durations) > 0
+            and len(events) > 0
+            and any(np.sum(e) > 0 for e in events)
+        ):
+            try:
+                filtered_covariates = None
+                if covariates is not None and cfg.analysis.get("use_covariates", True):
+                    # Clear problematic columns like arrays/lists that can't be processed
+                    valid_cols = []
+                    for col in covariates.columns:
+                        # Check the first non-null value
+                        first_val = (
+                            covariates[col].iloc[0] if len(covariates) > 0 else None
+                        )
+                        if isinstance(first_val, (list, np.ndarray)):
+                            logger.warning(
+                                f"Dropping column {col} from censoring analysis which contains arrays/lists"
+                            )
+                        else:
+                            valid_cols.append(col)
+
+                    if valid_cols:
+                        filtered_covariates = covariates[valid_cols]
+                    else:
+                        logger.warning(
+                            "No valid covariates found for censoring analysis"
+                        )
+
+                logger.info("Running censoring analysis")
+                cens_results = analyze_censoring(
+                    durations,
+                    events,
+                    event_types,
+                    covariates=filtered_covariates,
+                    output_dir=output_dir,
+                )
+                results["censoring"] = cens_results
+            except Exception as e:
+                logger.error(f"Error in censoring analysis: {str(e)}")
+                results["censoring"] = {"error": f"Analysis failed: {str(e)}"}
+        else:
+            logger.warning("No events found for censoring analysis. Skipping.")
+            results["censoring"] = {"error": "No events found for analysis"}
 
     # Covariate analysis
     if cfg.analysis.run_covariate_analysis and covariates is not None:
-        logger.info("Running covariate analysis")
-        cov_results = analyze_covariates_effects(
-            durations,
-            events,
-            event_types,
-            covariates_df=covariates,
-            output_dir=output_dir,
-        )
-        results["covariates"] = cov_results
+        # Check if we have any meaningful events to analyze
+        if (
+            len(durations) > 0
+            and len(events) > 0
+            and any(np.sum(e) > 0 for e in events)
+        ):
+            try:
+                # Clear problematic columns like arrays/lists that can't be processed
+                valid_cols = []
+                for col in covariates.columns:
+                    # Check the first non-null value
+                    first_val = covariates[col].iloc[0] if len(covariates) > 0 else None
+                    if isinstance(first_val, (list, np.ndarray)):
+                        logger.warning(
+                            f"Dropping column {col} which contains arrays/lists"
+                        )
+                    else:
+                        valid_cols.append(col)
+
+                if valid_cols:
+                    logger.info("Running covariate analysis with valid columns")
+                    filtered_covariates = covariates[valid_cols]
+                    cov_results = analyze_covariates_effects(
+                        durations,
+                        events,
+                        event_types,
+                        covariates_df=filtered_covariates,
+                        output_dir=output_dir,
+                    )
+                    results["covariates"] = cov_results
+                else:
+                    logger.warning("No valid covariates found for analysis. Skipping.")
+                    results["covariates"] = {"error": "No valid covariates found"}
+            except Exception as e:
+                logger.error(f"Error in covariate analysis: {str(e)}")
+                results["covariates"] = {"error": f"Analysis failed: {str(e)}"}
+        else:
+            logger.warning("No events found for covariate analysis. Skipping.")
+            results["covariates"] = {"error": "No events found for analysis"}
 
     # Save overall summary
     with open(os.path.join(output_dir, "eda_summary.json"), "w") as f:

@@ -74,6 +74,24 @@ def fit_distributions(
 
         times = durations[i]
 
+        # Skip if we have no data or all zeros
+        if len(times) == 0 or np.all(times == 0):
+            logger.warning(
+                f"No valid times for {event_key}, skipping distribution fitting"
+            )
+            continue
+
+        # Make sure we have at least some non-zero values to fit
+        non_zero_times = times[times > 0]
+        if len(non_zero_times) < 5:  # Require at least 5 non-zero values for fitting
+            logger.warning(
+                f"Too few non-zero times for {event_key}, skipping distribution fitting"
+            )
+            continue
+
+        # Use non-zero times for fitting
+        times = non_zero_times
+
         # Fit Weibull distribution if requested
         if "weibull" in distributions:
             logger.debug(f"Fitting Weibull distribution for {event_key}")
@@ -142,6 +160,11 @@ def plot_distribution_fits(
         times = durations[i]
 
         try:
+            # Skip if times array is empty or if all values are too small
+            if len(times) == 0 or max(times, default=0) < 0.001:
+                logger.warning(f"No valid times for {event_key}, skipping plot")
+                continue
+
             # Create survival curve plot
             plt.figure(figsize=(12, 10))
 
@@ -150,8 +173,12 @@ def plot_distribution_fits(
             kmf.fit(times, event_observed=np.ones(len(times)))
             kmf.plot(label="Kaplan-Meier", ci_show=True, color="k")
 
-            # Plot fitted distributions
-            time_points = np.linspace(0, max(times) * 1.1, 100)
+            # Plot fitted distributions - safely calculate max with a default value
+            if len(times) > 0:
+                max_time = max(times) * 1.1
+            else:
+                max_time = 100  # default to reasonable value if times is empty
+            time_points = np.linspace(0, max_time, 100)
 
             for dist_name, model in fitted_models[event_key].items():
                 survs = model.survival_function_at_times(time_points)
@@ -275,8 +302,12 @@ def plot_distribution_fits(
             # Histogram
             plt.hist(times, bins=30, density=True, alpha=0.5, label="Observed Data")
 
-            # Overlay density functions
-            x = np.linspace(0, max(times) * 1.1, 1000)
+            # Overlay density functions - safely calculate max with a default value
+            if len(times) > 0:
+                max_time = max(times) * 1.1
+            else:
+                max_time = 100  # default to reasonable value if times is empty
+            x = np.linspace(0, max_time, 1000)
 
             for dist_name, model in fitted_models[event_key].items():
                 if dist_name == "weibull":
@@ -450,10 +481,20 @@ def generate_recommendations(
     logger.info(f"Saved detailed summary to {summary_path}")
 
     try:
+        # Skip creating charts if no recommendations
+        if not recommendations:
+            logger.warning("No valid distribution recommendations to plot")
+            return recommendations
+
         # Create a bar chart of AIC/BIC scores
         plt.figure(figsize=(12, 6 * len(recommendations)))
 
         for i, (event_key, rec) in enumerate(recommendations.items()):
+            # Skip if we don't have valid data for this event
+            if not (aic_scores.get(event_key) and bic_scores.get(event_key)):
+                logger.warning(f"Missing scores for {event_key}, skipping in chart")
+                continue
+
             plt.subplot(len(recommendations), 1, i + 1)
 
             # Gather data for plotting
@@ -563,8 +604,14 @@ def generate_recommendations(
     if fitted_models is not None and durations is not None:
         for i, (event_key, models) in enumerate(fitted_models.items()):
             try:
-                if i < len(durations):
-                    time_points = np.linspace(0, max(durations[i]) * 1.1, 200)
+                if i < len(durations) and len(durations[i]) > 0:
+                    # Safety check for empty arrays
+                    if np.any(durations[i] > 0):
+                        max_time = max(durations[i]) * 1.1
+                    else:
+                        max_time = 100  # Default if all values are 0 or negative
+
+                    time_points = np.linspace(0, max_time, 200)
                     survival_data = {"time": time_points}
 
                     # Add empirical survival function (Kaplan-Meier)
