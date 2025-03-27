@@ -1,0 +1,27 @@
+# @package _global_
+dataset: hsa_synthetic
+modelname: dsm
+
+defaults:
+  - hsa_synthetic/defaults
+  - override /data/load: hsa_synthetic
+  - override /data/parse: ${data/load}
+  - override /data/transform: default
+  - override /tokenizers: hsa_synthetic
+  - override /transformers: numeric_bert
+  - override /tasks: dsm-survival
+  - override /trainer: hsa_synthetic/default
+
+
+# Task-specific parameters
+dsm_intermediate_size: 64
+dsm_num_hidden_layers: 1
+dsm_num_mixtures: 8
+dsm_distribution: weibull
+dsm_temp: 1000.0
+dsm_discount: 1.0
+dsm_bias: true
+dsm_batch_norm: true
+dsm_hidden_dropout_prob: 0.2
+dsm_elbo: true
+survival_loss_weight: 1.0
