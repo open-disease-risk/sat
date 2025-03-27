@@ -99,13 +99,21 @@ def test_survrnc_loss_computation():
     # Set survival probabilities that match the event pattern
     # For event 0: Sample 0 (t=2) and Sample 2 (t=4)
     # Survival should be: Sample 0 > Sample 2 (earlier event should have lower survival)
-    survival[0, 0, :] = torch.tensor([1.0, 0.9, 0.8, 0.7, 0.6, 0.5])  # Sample 0, event 0
-    survival[2, 0, :] = torch.tensor([1.0, 0.8, 0.6, 0.4, 0.2, 0.1])  # Sample 2, event 0
+    survival[0, 0, :] = torch.tensor(
+        [1.0, 0.9, 0.8, 0.7, 0.6, 0.5]
+    )  # Sample 0, event 0
+    survival[2, 0, :] = torch.tensor(
+        [1.0, 0.8, 0.6, 0.4, 0.2, 0.1]
+    )  # Sample 2, event 0
 
     # For event 1: Sample 1 (t=3) and Sample 3 (t=1)
     # Survival should be: Sample 3 > Sample 1 (earlier event should have lower survival)
-    survival[1, 1, :] = torch.tensor([1.0, 0.9, 0.8, 0.7, 0.6, 0.5])  # Sample 1, event 1
-    survival[3, 1, :] = torch.tensor([1.0, 0.8, 0.6, 0.4, 0.2, 0.1])  # Sample 3, event 1
+    survival[1, 1, :] = torch.tensor(
+        [1.0, 0.9, 0.8, 0.7, 0.6, 0.5]
+    )  # Sample 1, event 1
+    survival[3, 1, :] = torch.tensor(
+        [1.0, 0.8, 0.6, 0.4, 0.2, 0.1]
+    )  # Sample 3, event 1
 
     # Create predictions output
     predictions = SAOutput(

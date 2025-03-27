@@ -164,13 +164,21 @@ def test_survrnc_loss_with_mining_computation():
     # Set survival probabilities that match the event pattern
     # For event 0: Sample 0 (t=2) and Sample 2 (t=4)
     # Survival should be: Sample 0 > Sample 2 (earlier event should have lower survival)
-    survival[0, 0, :] = torch.tensor([1.0, 0.9, 0.8, 0.7, 0.6, 0.5])  # Sample 0, event 0
-    survival[2, 0, :] = torch.tensor([1.0, 0.8, 0.6, 0.4, 0.2, 0.1])  # Sample 2, event 0
+    survival[0, 0, :] = torch.tensor(
+        [1.0, 0.9, 0.8, 0.7, 0.6, 0.5]
+    )  # Sample 0, event 0
+    survival[2, 0, :] = torch.tensor(
+        [1.0, 0.8, 0.6, 0.4, 0.2, 0.1]
+    )  # Sample 2, event 0
 
     # For event 1: Sample 1 (t=3) and Sample 3 (t=1)
     # Survival should be: Sample 3 > Sample 1 (earlier event should have lower survival)
-    survival[1, 1, :] = torch.tensor([1.0, 0.9, 0.8, 0.7, 0.6, 0.5])  # Sample 1, event 1
-    survival[3, 1, :] = torch.tensor([1.0, 0.8, 0.6, 0.4, 0.2, 0.1])  # Sample 3, event 1
+    survival[1, 1, :] = torch.tensor(
+        [1.0, 0.9, 0.8, 0.7, 0.6, 0.5]
+    )  # Sample 1, event 1
+    survival[3, 1, :] = torch.tensor(
+        [1.0, 0.8, 0.6, 0.4, 0.2, 0.1]
+    )  # Sample 3, event 1
 
     # Create predictions output
     predictions = SAOutput(
@@ -250,6 +258,7 @@ def test_survrnc_mining_efficiency():
     """Test the efficiency of SurvRNCLoss with and without mining."""
     # Skip this test in CI environments where timing might be unstable
     import os
+
     if os.environ.get("CI", "false").lower() == "true":
         return
 
@@ -355,17 +364,19 @@ def test_survrnc_mining_efficiency():
         if standard_result.requires_grad and optimized_result.requires_grad:
             # Allow for some difference due to different implementation details
             assert abs(standard_result.item() - optimized_result.item()) < 0.5
-        
+
         # Make sure all losses are non-negative
         assert standard_result.item() >= 0
         assert optimized_result.item() >= 0
         assert mining_result.item() >= 0
-        
+
         # For very small batch sizes or in some environments, the mining version might not be faster
         # due to overhead or variability in timing, so we don't make a strict assertion here
         # Just print a warning if it's slower
         if mining_time > optimized_time:
-            print(f"Warning: Mining version is slower ({mining_time:.6f}s vs {optimized_time:.6f}s)")
+            print(
+                f"Warning: Mining version is slower ({mining_time:.6f}s vs {optimized_time:.6f}s)"
+            )
 
     finally:
         # Clean up temporary files

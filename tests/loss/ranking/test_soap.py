@@ -138,13 +138,21 @@ def test_sample_soap_loss_computation():
     # Set survival probabilities that match the event pattern
     # For event 0: Sample 0 (t=2) and Sample 2 (t=4)
     # Survival should be: Sample 0 > Sample 2 (earlier event should have lower survival)
-    survival[0, 0, :] = torch.tensor([1.0, 0.9, 0.8, 0.7, 0.6, 0.5])  # Sample 0, event 0
-    survival[2, 0, :] = torch.tensor([1.0, 0.8, 0.6, 0.4, 0.2, 0.1])  # Sample 2, event 0
+    survival[0, 0, :] = torch.tensor(
+        [1.0, 0.9, 0.8, 0.7, 0.6, 0.5]
+    )  # Sample 0, event 0
+    survival[2, 0, :] = torch.tensor(
+        [1.0, 0.8, 0.6, 0.4, 0.2, 0.1]
+    )  # Sample 2, event 0
 
     # For event 1: Sample 1 (t=3) and Sample 3 (t=1)
     # Survival should be: Sample 3 > Sample 1 (earlier event should have lower survival)
-    survival[1, 1, :] = torch.tensor([1.0, 0.9, 0.8, 0.7, 0.6, 0.5])  # Sample 1, event 1
-    survival[3, 1, :] = torch.tensor([1.0, 0.8, 0.6, 0.4, 0.2, 0.1])  # Sample 3, event 1
+    survival[1, 1, :] = torch.tensor(
+        [1.0, 0.9, 0.8, 0.7, 0.6, 0.5]
+    )  # Sample 1, event 1
+    survival[3, 1, :] = torch.tensor(
+        [1.0, 0.8, 0.6, 0.4, 0.2, 0.1]
+    )  # Sample 3, event 1
 
     # Create predictions output
     predictions = SAOutput(
@@ -301,42 +309,44 @@ def test_sampling_strategies():
 
     # Create references with diverse event patterns
     references = torch.zeros(batch_size, 4 * num_events)
-    
+
     # Create diverse events and durations
     events = torch.zeros(batch_size, num_events)
     durations = torch.zeros(batch_size, num_events)
-    
+
     # Fill with varied patterns
     for i in range(batch_size):
         event_idx = i % num_events
         events[i, event_idx] = 1
         durations[i, event_idx] = 1.0 + (i / batch_size) * 4.0
-    
+
     # Set a few samples with multiple events
     for i in range(0, batch_size, 5):
         if i + 1 < batch_size:
             events[i] = 1.0  # Both event types
             durations[i, 0] = 2.0
             durations[i, 1] = 4.0
-    
+
     # Populate references tensor
     references[:, num_events : 2 * num_events] = events
     references[:, 3 * num_events : 4 * num_events] = durations
-    
+
     # Create predictions
     survival = torch.ones(batch_size, num_events, num_time_bins + 1)
     for i in range(batch_size):
         for j in range(num_events):
             for t in range(num_time_bins + 1):
-                survival[i, j, t] = 1.0 - (t / num_time_bins) * (0.8 + 0.2 * (i / batch_size))
-    
+                survival[i, j, t] = 1.0 - (t / num_time_bins) * (
+                    0.8 + 0.2 * (i / batch_size)
+                )
+
     hazard = torch.zeros(batch_size, num_events, num_time_bins)
     predictions = SAOutput(survival=survival, hazard=hazard)
-    
+
     # Create temporary files
     duration_cuts = create_temporary_csv([0, 1, 2, 3, 4, 5])
     importance_weights = create_temporary_csv([1.0, 0.5, 0.5])
-    
+
     try:
         # Test each sampling strategy
         for strategy in ["uniform", "importance", "hard"]:
@@ -351,13 +361,13 @@ def test_sampling_strategies():
                 sampling_strategy=strategy,
                 adaptive_margin=False,
             )
-            
+
             # Compute loss
             result = loss.forward(predictions, references)
-            
+
             # Loss should be non-negative
             assert result.item() >= 0
-            
+
             # For importance strategy, also test adaptive margin
             if strategy == "importance":
                 adaptive_loss = SampleSOAPLoss(
@@ -370,10 +380,10 @@ def test_sampling_strategies():
                     sampling_strategy=strategy,
                     adaptive_margin=True,  # Enable adaptive margin
                 )
-                
+
                 adaptive_result = adaptive_loss.forward(predictions, references)
                 assert adaptive_result.item() >= 0
-    
+
     finally:
         # Clean up temporary files
         os.unlink(duration_cuts)
@@ -385,19 +395,19 @@ def test_pair_sampling_function():
     # Create sample data
     batch_size = 10
     num_events = 1
-    
+
     # Create event indicators and durations
     events = torch.zeros(batch_size, num_events)
     durations = torch.zeros(batch_size, num_events)
-    
+
     # Set up events and durations
     for i in range(batch_size):
         events[i, 0] = 1 if i < batch_size - 2 else 0  # Most have events
         durations[i, 0] = float(i)
-    
+
     # Create temporary files
     duration_cuts = create_temporary_csv([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-    
+
     try:
         # Test auto-calculation of pairs
         loss = SampleSOAPLoss(
@@ -408,33 +418,37 @@ def test_pair_sampling_function():
             num_pairs=None,  # Auto-calculate
             sampling_strategy="uniform",
         )
-        
+
         # Sample pairs with auto-calculation
         pairs = loss.sample_pairs(events, durations)
-        
+
         # Number of pairs should be approximately batch_size * log(batch_size)
         expected_pairs = int(batch_size * np.log(batch_size))
         # Allow for some variance in the implementation
-        assert 1 <= pairs.shape[0] <= max(batch_size * (batch_size - 1), expected_pairs * 2)
-        
+        assert (
+            1
+            <= pairs.shape[0]
+            <= max(batch_size * (batch_size - 1), expected_pairs * 2)
+        )
+
         # Test with fixed number of pairs
         fixed_num_pairs = 15
         loss.num_pairs = fixed_num_pairs
-        
+
         pairs = loss.sample_pairs(events, durations, max_pairs=None)
-        
+
         # Should have exactly fixed_num_pairs * batch_size pairs
         # But capped at batch_size * (batch_size - 1)
         expected = min(fixed_num_pairs * batch_size, batch_size * (batch_size - 1))
         assert pairs.shape[0] <= expected
-        
+
         # Verify pair indices are within bounds
         assert torch.all(pairs >= 0)
         assert torch.all(pairs < batch_size)
-        
+
         # Verify no self-comparisons
         assert not torch.any(pairs[:, 0] == pairs[:, 1])
-        
+
     finally:
         # Clean up
         os.unlink(duration_cuts)
