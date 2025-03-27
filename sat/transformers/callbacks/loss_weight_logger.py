@@ -33,14 +33,17 @@ class LossWeightLoggerCallback(TensorBoardCallback):
         if hasattr(model, "loss_fn") and hasattr(model.loss_fn, "get_loss_weights"):
             # Standard model with loss_fn directly attached
             loss_obj = model.loss_fn
-            logger.debug(f"Found loss_fn on model: {loss_obj}")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"Found loss_fn on model: {loss_obj}")
         elif hasattr(model, "loss") and hasattr(model.loss, "get_loss_weights"):
             # Model with loss directly attached (like SurvivalTaskHead)
             loss_obj = model.loss
-            logger.debug(f"Found loss on model: {loss_obj}")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"Found loss on model: {loss_obj}")
         elif hasattr(model, "heads") and len(getattr(model, "heads", [])) > 0:
             # MTLForSurvival model with multiple task heads
-            logger.debug(f"Model has {len(model.heads)} task heads")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"Model has {len(model.heads)} task heads")
             # Check if any head has a loss with get_loss_weights
             metrics = {}
             for i, head in enumerate(model.heads):
@@ -52,13 +55,16 @@ class LossWeightLoggerCallback(TensorBoardCallback):
                                 metrics[f"{prefix}/head_{i}_weight_{j}"] = (
                                     w.item() if hasattr(w, "item") else w
                                 )
-                            logger.debug(f"Logged weights for head {i}: {weights}")
+                            if logger.isEnabledFor(logging.DEBUG):
+                                logger.debug(f"Logged weights for head {i}: {weights}")
                     except Exception as e:
-                        logger.warning(
-                            f"Failed to log loss weights for head {i}: {str(e)}"
-                        )
+                        if logger.isEnabledFor(logging.DEBUG):
+                            logger.warning(
+                                f"Failed to log loss weights for head {i}: {str(e)}"
+                            )
                 else:
-                    logger.debug(f"Head {i} has no suitable loss function")
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug(f"Head {i} has no suitable loss function")
 
             if metrics:
                 if self.tb_writer is not None:
@@ -66,7 +72,8 @@ class LossWeightLoggerCallback(TensorBoardCallback):
                         self.tb_writer.add_scalar(k, v, state.global_step)
             return
         else:
-            logger.debug("No suitable loss function found on model")
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug("No suitable loss function found on model")
             return
 
     def on_evaluate(self, args, state, control, model=None, **kwargs):
