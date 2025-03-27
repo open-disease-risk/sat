@@ -41,7 +41,9 @@ class SurvivalEvaluationModule(EvaluationModule):
             required_keys = ["hazard", "risk", "survival"]
             for key in required_keys:
                 if key not in predictions:
-                    raise ValueError(f"Missing required key in predictions: {key}")
+                    raise ValueError(
+                        f"Missing required key in predictions: {key}. We have {predictions.keys()}"
+                    )
 
             # Ensure predictions have the right format
             hazard_pred = predictions["hazard"]
@@ -83,7 +85,7 @@ class SurvivalEvaluationModule(EvaluationModule):
 
         except Exception as e:
             logger.error(f"Error in survival_predictions: {e}")
-            if debug_enabled:
+            if logger.isEnabledFor(logging.DEBUG):
                 logger.debug(f"Got predictions: {predictions}")
             # Return empty array if we encounter any exception
             return np.array([])
