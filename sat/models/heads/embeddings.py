@@ -8,7 +8,7 @@ from torch import nn
 from typing import List, Optional, Tuple
 
 from sat.utils import logging
-from .config import TokenEmbedding, SentenceEmbedding
+from .base import TokenEmbedding, SentenceEmbedding
 
 logger = logging.get_default_logger()
 

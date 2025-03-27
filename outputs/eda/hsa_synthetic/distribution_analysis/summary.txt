@@ -1,0 +1,29 @@
+Distribution Analysis Summary
+===========================
+
+Event Type: event_0
+Recommended Distribution: weibull
+AIC Best: weibull (Score: 18696.55)
+BIC Best: weibull (Score: 18707.20)
+Note: Both AIC and BIC favor weibull.
+
+Event Type: event_1
+Recommended Distribution: weibull
+AIC Best: weibull (Score: 17912.38)
+BIC Best: weibull (Score: 17922.95)
+Note: Both AIC and BIC favor weibull.
+
+Overall Recommendation for DSM
+-----------------------------
+Recommended Distribution: weibull
+(This distribution was recommended for 2 out of 2 event types)
+
+Configuration Snippet for DSM
+----------------------------
+Add this to your DSM experiment configuration file:
+
+dsm_distribution: weibull
+dsm_num_mixtures: 4  # Adjust based on complexity
+dsm_temp: 1000.0
+dsm_discount: 1.0
+dsm_elbo: true

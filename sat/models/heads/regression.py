@@ -12,9 +12,35 @@ from sat.models.nets import CauseSpecificNet, CauseSpecificNetCompRisk, SimpleML
 from sat.utils import logging
 import logging as py_logging
 
-from .config import EventDurationTaskConfig
-from .base import RegressionTask
+from .base import BaseConfig, RegressionTask
 from .output import TaskOutput
+
+
+class EventDurationTaskConfig(BaseConfig):
+    model_type = "sat-transformer-event-duration"
+
+    def __init__(
+        self,
+        num_inputs: int = 32,
+        intermediate_size: int = 64,
+        num_hidden_layers: int = 0,
+        indiv_intermediate_size: int = 64,
+        indiv_num_hidden_layers: int = 0,
+        batch_norm: bool = True,
+        hidden_dropout_prob: float = 0.05,
+        bias: bool = True,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.num_inputs = num_inputs
+        self.intermediate_size = intermediate_size
+        self.num_hidden_layers = num_hidden_layers
+        self.indiv_intermediate_size = indiv_intermediate_size
+        self.indiv_num_hidden_layers = indiv_num_hidden_layers
+        self.batch_norm = batch_norm
+        self.hidden_dropout_prob = hidden_dropout_prob
+        self.bias = bias
+
 
 logger = logging.get_default_logger()
 

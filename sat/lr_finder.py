@@ -27,7 +27,7 @@ from sat.utils import config, logging, rand, tokenizing
 from sat.utils.lr_finder import find_optimal_lr
 from sat.data import load, collator
 from sat.models import heads
-from sat.models.heads.config import TokenEmbedding
+from sat.models.heads import TokenEmbedding
 from sat.models.utils import get_device
 from sat.transformers.feature_extractor import SAFeatureExtractor
 from sat.transformers import trainer as satrain

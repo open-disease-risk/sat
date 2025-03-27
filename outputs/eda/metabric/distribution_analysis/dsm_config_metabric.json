@@ -1,0 +1,11 @@
+{
+  "dsm_distribution": "weibull",
+  "dsm_num_mixtures": 4,
+  "dsm_temp": 1000.0,
+  "dsm_discount": 1.0,
+  "dsm_elbo": true,
+  "dsm_bias": true,
+  "dsm_batch_norm": true,
+  "dsm_hidden_dropout_prob": 0.1,
+  "analysis_timestamp": "2025-03-27_21-37-33"
+}

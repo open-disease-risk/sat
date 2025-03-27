@@ -10,8 +10,15 @@ import torch
 import numpy as np
 
 
+# Add standard logging levels for convenient access
+DEBUG = logging.DEBUG
+INFO = logging.INFO
+WARNING = logging.WARNING
+ERROR = logging.ERROR
+CRITICAL = logging.CRITICAL
+
+
 def get_default_logger(prefix="sat") -> logging.Logger:
-    return logging.getLogger(prefix)
     """
     Get the default logger instance with the given prefix.
 
@@ -30,16 +37,18 @@ def get_default_logger(prefix="sat") -> logging.Logger:
     return logger
 
 
-# Add standard logging levels for convenient access
-DEBUG = logging.DEBUG
-INFO = logging.INFO
-WARNING = logging.WARNING
-ERROR = logging.ERROR
-CRITICAL = logging.CRITICAL
+def set_verbosity(level=INFO):
+    """
+    Set the verbosity level for the default logger.
 
+    Args:
+        level: Logging level constant (e.g., logging.DEBUG, logging.INFO)
+    """
+    logger = get_default_logger()
+    logger.setLevel(level)
 
-def get_default_logger(prefix="sat") -> logging.Logger:
-    return logging.getLogger(prefix)
+    # Also set the root logger
+    logging.getLogger().setLevel(level)
 
 
 def log_gpu_utilization():
@@ -72,6 +81,13 @@ class NpEncoder(json.JSONEncoder):
             return int(obj)
         if isinstance(obj, np.floating):
             return float(obj)
+        if isinstance(obj, np.bool_):
+            return bool(obj)
         if isinstance(obj, np.ndarray):
             return obj.tolist()
+        if hasattr(obj, "item"):
+            try:
+                return obj.item()
+            except ValueError:
+                return str(obj)
         return super(NpEncoder, self).default(obj)

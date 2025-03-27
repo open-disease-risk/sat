@@ -113,148 +113,262 @@ relevant scripts to perform finetuning.
 above example, you could execute any other finetuning task without needing to
 execute steps 1.-3.. 
 
-Survival Analysis Loss Functions
+Composable Loss Framework
 ============================
 
-SAT supports several loss functions for survival analysis:
+SAT features a comprehensive, composable loss framework that allows flexible combination of multiple loss functions with advanced balancing strategies.
 
-### Standard Survival Loss Functions
-- **Negative Log-Likelihood PCHazard**: The standard negative log-likelihood for piece-wise constant hazard models
-- **DeepHit Loss**: A comprehensive loss function combining likelihood, ranking, and calibration components for competing risks
-- **Survival Focal Loss**: Loss function that down-weights easily predicted survival outcomes to focus on harder cases, with support for multi-focal parameters
+### Core Components
 
-For detailed information about all available loss functions and their usage, see [docs/loss.md](docs/loss.md).
+1. **Base Loss Functions**: Individual loss functions for survival analysis, ranking, classification, and more
+2. **MetaLoss**: A flexible container that combines multiple loss functions with dynamic weighting
+3. **Loss Balancing Strategies**: Methods to adjust weights between loss components (fixed, scale, gradient, uncertainty, adaptive)
+4. **Multi-level Balancing**: Support for balancing both within task heads and between task heads in multi-task learning
 
-### DeepHit Loss Function
-The DeepHit loss is based on the paper "DeepHit: A Deep Learning Approach to Survival Analysis with Competing Risks" by Lee et al. (2018). It consists of three components:
+### Key Loss Functions
 
-1. **Likelihood Loss**: Maximizes the probability of observing the actual event times
-2. **Ranking Loss**: Ensures proper ordering of survival probabilities
-3. **Calibration Loss** (optional): Enforces agreement between predicted and empirical probabilities
+#### Survival Loss Functions
+- **NLLPCHazard**: Negative log-likelihood loss for piece-wise constant hazard models
+- **DeepHit Loss**: Combines likelihood, ranking, and calibration components for competing risks
+- **Survival Focal Loss**: Down-weights easily predicted examples to focus on harder cases
 
-Configuration example:
+#### Ranking Loss Functions
+- **SampleRankingLoss**: Ensures proper ordering of different samples within the same event type
+- **MultiEventRankingLoss**: Ranks different event types for the same sample in competing risks
+- **ListMLE Losses**: Efficient list-based ranking losses that scale better than pairwise approaches
+
+#### Auxiliary Loss Functions
+- **Brier Score Loss**: Measures calibration of probability predictions
+- **Quantile Regression Loss**: Optimizes specific quantiles of the survival distribution
+
+### Example Loss Recipe
+
+For competing risks with imbalanced event types:
+
 ```yaml
-task:
-  transformer:
-    sat-transformer:
-      _target_: sat.loss.DeepHitLoss
-      duration_cuts: ${data.label_transform.save_dir}/duration_cuts.csv
-      num_events: ${data.num_events}
-      alpha: 0.5  # Weight for likelihood component
-      beta: 0.5   # Weight for ranking component
-      gamma: 0.0  # Weight for calibration component (optional)
-      sigma: 0.1  # Scaling factor for ranking loss
+_target_: sat.loss.MetaLoss
+losses:
+  - _target_: sat.loss.survival.SurvivalFocalLoss
+    gamma: [2.0, 3.0]  # Different focus per event type
+    num_events: ${data.num_events}
+    
+  - _target_: sat.loss.ranking.SampleRankingLoss
+    sigma: 0.1
+    num_events: ${data.num_events}
+    
+  - _target_: sat.loss.ranking.MultiEventRankingLoss
+    sigma: 0.1
+    num_events: ${data.num_events}
+
+balance_strategy: "uncertainty"  # Learn optimal weights
 ```
 
-Loss Balancing Framework
+For detailed information about all available loss functions, mathematical formulations, pros and cons, and recipes for combining them, see the comprehensive documentation in [docs/loss.md](docs/loss.md).
+
+See [docs/loss_weight_logging.md](docs/loss_weight_logging.md) for information on monitoring loss weights during training, and [docs/loss_optimization.md](docs/loss_optimization.md) for details on our optimized loss implementations.
+
+Multi-Task Learning Integration
 ============================
 
-SAT supports a flexible loss balancing framework for multi-objective training, especially useful for survival analysis which often requires balancing multiple loss components (likelihood, ranking, calibration, etc.).
+The SAT framework provides comprehensive support for multi-task learning, allowing models to simultaneously optimize for multiple objectives. This is particularly valuable in survival analysis where different aspects like likelihood, ranking, and calibration all contribute to model performance.
 
-### Balancing Strategies
+### Multi-level Loss Balancing
 
-The framework offers five different balancing strategies:
+The framework integrates loss balancing at two distinct levels:
+
+1. **Within Task Heads**: Each individual task head (survival, classification, regression) can use `MetaLoss` to combine multiple loss functions with configurable weighting.
+
+2. **Between Task Heads**: The `MTLForSurvival` class balances losses from different task heads, allowing competition and cooperation between tasks.
+
+This creates a hierarchical loss structure:
+
+```
+MTLForSurvival
+├── Survival Head
+│   └── MetaLoss
+│       ├── NLLPCHazard
+│       ├── SampleRankingLoss
+│       └── BrierScore
+├── Classification Head
+│   └── CrossEntropyLoss
+└── Regression Head
+    └── MSELoss
+```
+
+### Available Balancing Strategies
+
+Five different balancing strategies are supported at both levels:
 
 1. **Fixed Weighting** (`fixed`): Standard approach using predefined coefficients
    - Simple and predictable
    - Requires manual tuning of weights
    
 2. **Scale Normalization** (`scale`): Dynamically normalizes losses based on their magnitudes
-   - Automatically adapts to different loss scales
    - Prevents losses with larger scales from dominating
-   - Uses exponential moving average (EMA) to track loss scales
+   - Uses exponential moving average (EMA) tracking
    
 3. **Gradient Normalization** (`grad`): Balances losses based on gradient magnitudes
-   - Focuses on the rate of improvement rather than absolute values
-   - Useful when losses have different optimization characteristics
+   - Focuses on model optimization dynamics
+   - Adapts to different loss optimization characteristics
    
-4. **Homoscedastic Uncertainty Weighting** (`uncertainty`): Learns uncertainty parameters
-   - Automatically learns optimal weighting based on loss variance
-   - Based on principled probabilistic approach
-   - Adapts during training through gradient descent
+4. **Homoscedastic Uncertainty Weighting** (`uncertainty`): Learns optimal weights
+   - Automatically learns importances through principled approach
+   - Adapts during training via gradient descent
    
-5. **Adaptive Weighting** (`adaptive`): Adjusts weights based on loss improvement trends
-   - Gives more weight to tasks that are improving more slowly
+5. **Adaptive Weighting** (`adaptive`): Adjusts weights based on improvement rates
+   - Gives more weight to tasks that are improving slowly
    - Encourages balanced optimization across objectives
-   - Detects when a loss component has stalled
 
-### Usage in Configurations
-
-Loss balancing can be configured in the YAML configuration files:
+### Configuration Example
 
 ```yaml
-# Example of MetaLoss with adaptive balancing
-sat-transformer:
-  _target_: sat.loss.MetaLoss
-  losses:
-    - _target_: sat.loss.SATNLLPCHazardLoss
-      importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
-      num_events: ${data.num_events}
-    - _target_: sat.loss.SampleEventRankingLoss
-      duration_cuts: ${data.label_transform.save_dir}/duration_cuts.csv
-      num_events: ${data.num_events}
-  # Initial coefficients
-  coeffs:
-    - 1.0  # NLL weight
-    - 0.5  # Ranking weight
-  # Use adaptive balancing strategy
-  balance_strategy: adaptive
-  balance_params:
-    alpha: 0.9
-    window_size: 100
-    adaptation_rate: 0.005
+# MTL survival model with automatic balancing between heads
+model:
+  _target_: sat.models.heads.MTLForSurvival
+  
+  # Configure the survival head
+  survival_head:
+    loss:
+      _target_: sat.loss.MetaLoss
+      losses:
+        - _target_: sat.loss.survival.NLLPCHazard
+          # ...
+        - _target_: sat.loss.ranking.SampleRankingLoss
+          # ...
+      balance_strategy: "scale"
+  
+  # Configure the classification head
+  classification_head:
+    loss:
+      _target_: sat.loss.classification.CrossEntropyLoss
+      # ...
+  
+  # Balance between the task heads
+  mtl_balance_strategy: "uncertainty"
+  mtl_balance_params:
+    init_sigma: 1.0
 ```
 
-Predefined configurations can be found in `conf/tasks/losses/balancing.yaml` and can be included using Hydra's composition:
+### Monitoring Weight Evolution
+
+To monitor loss balancing during training, use the `LossWeightLoggerCallback`:
 
 ```yaml
-# Reference a predefined balancing strategy
-balance_strategy: ${losses.balancing.uncertainty.balance_strategy}
-balance_params: ${losses.balancing.uncertainty.balance_params}
+callbacks:
+  - _target_: sat.transformers.callbacks.LossWeightLoggerCallback
+    log_freq: 1
+    prefix: "loss_weights"
+    log_eval: true
+    log_train: true
 ```
 
-### Common Use Cases
+This logs weights to TensorBoard, enabling visualization of balancing dynamics.
 
-1. **Handling unstable losses**: Use `scale` normalization to prevent sudden loss spikes from destabilizing training
-2. **Multi-task learning**: Use `adaptive` or `uncertainty` to balance different tasks automatically
-3. **Complex multi-component losses**: Use `grad` normalization when combining losses with different gradient characteristics
-4. **Fine-tuning sensitivity**: Use `fixed` weighting with manually tuned coefficients for precise control
+For detailed documentation on loss balancing and multi-task learning integration, see:
+- [docs/loss.md](docs/loss.md) - Comprehensive overview of the loss framework
+- [docs/loss_weight_logging.md](docs/loss_weight_logging.md) - Guide to monitoring loss weights
+- [docs/loss_optimization.md](docs/loss_optimization.md) - Details on optimized implementations
 
-### Implementation Details
+Exploratory Data Analysis (EDA) Framework
+============================
 
-The balancing framework is implemented through:
+SAT includes a comprehensive Exploratory Data Analysis (EDA) framework designed specifically for survival analysis datasets. This framework helps understand dataset characteristics, determine appropriate model configurations, and identify potential biases.
 
-- **Base `Loss` class**: All loss functions inherit balancing capabilities
-- **`LossBalancer` hierarchy**: Each strategy is implemented as a separate balancer class
-- **`MetaLoss` integration**: Full support for balancing multiple loss components
+### Key Features
 
-For examples of complex multi-component losses with different balancing strategies, see `conf/tasks/losses/balanced_multi_loss.yaml`.
+The EDA framework provides three main types of analysis:
 
-### Monitoring Loss Weights with TensorBoard
+1. **Distribution Analysis**
+   - Fits parametric distributions (Weibull, LogNormal, LogLogistic) to event times
+   - Evaluates goodness-of-fit using AIC/BIC metrics
+   - Automatically generates DSM model configurations based on distribution analysis
+   - Visualizes distribution fits against empirical data
 
-You can monitor the evolution of loss weights during training by enabling loss weight logging:
+2. **Censoring Analysis**
+   - Quantifies censoring patterns and rates
+   - Tests for informative censoring that could bias model training
+   - Analyzes competing risks interactions when multiple event types are present
+   - Creates visualizations of censoring patterns over time
 
-1. Add the `loss_weight_logger` callback to your experiment configuration:
+3. **Covariate Analysis**
+   - Analyzes feature distributions and their relationship to survival outcomes
+   - Identifies potentially important risk factors using various statistical methods
+   - Generates feature importance rankings through survival-specific methods
+   - Creates stratified survival curves based on key covariates
 
-```yaml
-defaults:
-  - callbacks@callbacks: default
-  - callbacks@callbacks: loss_weight_logger
-```
+### Usage
 
-2. Launch TensorBoard after training:
+Run the EDA framework on a dataset:
 
 ```bash
-tensorboard --logdir logs/your-experiment-dir
+python -m sat.eda dataset=metabric
 ```
 
-3. Navigate to the "Scalars" section to visualize:
-   - `loss_weights/train/weight_X`: Training loss weights over time
-   - `loss_weights/eval/weight_X`: Evaluation loss weights over time
+Customize the analysis:
 
-This allows you to observe how different balancing strategies behave and identify potential issues like weight oscillation or domination by a single loss component.
+```bash
+python -m sat.eda dataset=seer analysis.run_distribution_analysis=true analysis.run_censoring_analysis=true analysis.run_covariate_analysis=true
+```
 
-See [docs/loss_weight_logging.md](docs/loss_weight_logging.md) for detailed information on interpreting the weight logs and [docs/loss_optimization.md](docs/loss_optimization.md) for an overview of our multi-level approach to loss optimization.
+Export CSV files for external visualization tools (enabled by default):
+
+```bash
+python -m sat.eda dataset=metabric performance.export_csv=true
+```
+
+Disable CSV export if only visualizations are needed:
+
+```bash
+python -m sat.eda dataset=metabric performance.export_csv=false
+```
+
+### Configuration
+
+The EDA framework uses Hydra configuration in `conf/eda.yaml`. Key configuration options:
+
+```yaml
+# Control which analyses to run
+analysis:
+  run_distribution_analysis: true
+  run_censoring_analysis: true
+  run_covariate_analysis: true
+  
+  # Distribution analysis settings
+  distributions:
+    - weibull
+    - lognormal
+    - loglogistic
+  prefer_metric: bic
+  
+  # Censoring analysis settings
+  censoring:
+    alpha: 0.05
+    plot_survival_curves: true
+    
+  # Covariate analysis settings
+  covariates:
+    top_n_features: 10
+    importance_methods:
+      - cox_ph
+      - mutual_information
+```
+
+### Output
+
+The EDA framework generates:
+
+1. **Visualizations**: Plots for distribution fits, survival curves, feature importances, etc.
+2. **JSON Reports**: Structured summaries of all analyses with statistics and recommendations
+3. **Model Configurations**: Based on analysis results, generates optimal configuration files for DSM and other models
+
+All outputs are saved to the configured output directory (`outputs/eda/{dataset}` by default).
+
+For detailed information about the EDA framework, see [docs/eda.md](docs/eda.md).
+
+**Note:** If you encounter an error about "cannot import name 'trapz' from 'scipy.integrate'", this is a compatibility issue between newer versions of scipy and lifelines. The framework includes an automatic fix for this issue, but you can also install specific compatible versions:
+```
+pip install lifelines==0.27.8 scipy==1.10.1
+```
 
 To-Dos
 ============================

@@ -1,0 +1,44 @@
+{
+  "distributions": {
+    "n_samples": 1904,
+    "n_features": 2,
+    "feature_stats": {
+      "count": {
+        "x": 1904,
+        "split": 1904
+      },
+      "unique": {
+        "x": 1894,
+        "split": 3
+      },
+      "top": {
+        "x": "x4_0 x5_3 x6_5 x7_6 x0_8.0 x1_0.0 x2_9.0 x3_8.0 x8_0.0",
+        "split": "train"
+      },
+      "freq": {
+        "x": 2,
+        "split": 1142
+      }
+    },
+    "correlations": {}
+  },
+  "Event": {
+    "feature_importance": {
+      "n_samples": 1904,
+      "n_features": 2,
+      "feature_importance": {
+        "categorical_logrank": {
+          "split": 1.3991590939156315
+        },
+        "combined": {
+          "split": 1.3991590939156315
+        }
+      }
+    },
+    "risk_factors": {
+      "risk_factors": {},
+      "protective_factors": {},
+      "risk_scores": {}
+    }
+  }
+}

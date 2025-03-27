@@ -11,10 +11,40 @@ import torch.nn.functional as F
 from sat.models.nets import CauseSpecificNet, CauseSpecificNetCompRisk
 from sat.utils import logging
 
-from .config import SurvivalConfig
-from .base import SurvivalTask
+from .base import BaseConfig, SurvivalTask
 from .output import SAOutput
 from .utils import pad_col
+
+
+class SurvivalConfig(BaseConfig):
+    model_type = "sat-transformer"
+
+    def __init__(
+        self,
+        num_inputs: int = 32,
+        intermediate_size: int = 64,
+        num_hidden_layers: int = 0,
+        indiv_intermediate_size: int = 64,
+        indiv_num_hidden_layers: int = 0,
+        batch_norm: bool = True,
+        hidden_dropout_prob: float = 0.05,
+        bias: bool = True,
+        max_time=400,
+        duration_cuts=[],
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.num_inputs = num_inputs
+        self.intermediate_size = intermediate_size
+        self.num_hidden_layers = num_hidden_layers
+        self.indiv_intermediate_size = indiv_intermediate_size
+        self.indiv_num_hidden_layers = indiv_num_hidden_layers
+        self.batch_norm = batch_norm
+        self.hidden_dropout_prob = hidden_dropout_prob
+        self.bias = bias
+        self.max_time = max_time
+        self.duration_cuts = duration_cuts
+
 
 logger = logging.get_default_logger()
 

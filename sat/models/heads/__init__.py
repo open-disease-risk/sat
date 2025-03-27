@@ -10,18 +10,22 @@ __status__ = "Development"
 # Base classes and utilities
 from .output import SAOutput, TaskOutput
 
-# Configuration classes
-from .config import (
+# Base and config classes
+from .base import (
     BaseConfig,
-    SurvivalConfig,
-    EventClassificationTaskConfig,
-    EventDurationTaskConfig,
-    MTLConfig,
+    SentenceEmbedding,
+    TokenEmbedding,
     SatBertConfig,
 )
+from .survival import SurvivalConfig
+from .dsm import DSMConfig
+from .classification import EventClassificationTaskConfig
+from .regression import EventDurationTaskConfig
+from .mtl import MTLConfig
 
 # Task heads
 from .survival import SurvivalTaskHead
+from .dsm import DSMTaskHead
 from .classification import EventClassificationTaskHead
 from .regression import EventDurationTaskHead
 from .mtl import MTLForSurvival
@@ -30,17 +34,19 @@ __all__ = [
     # Output classes
     "SAOutput",
     "TaskOutput",
-    # Configuration classes
+    # Base and Configuration classes
     "BaseConfig",
     "TokenEmbedding",
     "SentenceEmbedding",
     "SurvivalConfig",
+    "DSMConfig",
     "EventClassificationTaskConfig",
     "EventDurationTaskConfig",
     "MTLConfig",
     "SatBertConfig",
     # Task heads
     "SurvivalTaskHead",
+    "DSMTaskHead",
     "EventClassificationTaskHead",
     "EventDurationTaskHead",
     "MTLForSurvival",

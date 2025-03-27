@@ -1,0 +1,141 @@
+{
+  "Event_1": {
+    "n_total": 5000,
+    "n_events": 1520,
+    "n_censored": 3480,
+    "censoring_rate": 69.6,
+    "median_follow_up": 574.2571974083571,
+    "max_follow_up": 574.2571974083571,
+    "cox_model": {
+      "coef": {},
+      "exp(coef)": {},
+      "se(coef)": {},
+      "coef lower 95%": {},
+      "coef upper 95%": {},
+      "exp(coef) lower 95%": {},
+      "exp(coef) upper 95%": {},
+      "cmp to": {},
+      "z": {},
+      "p": {},
+      "-log2(p)": {}
+    },
+    "informative_censoring": false,
+    "n_samples": 5000,
+    "bias_tests": {
+      "x": {
+        "censoring_by_category": {
+          "total_count": {
+            "x_1 x_2 x_3 x_4 x_5 x_6 x_7 x_8 x_9 x_10 x_11 x_12 x_13 x_14 x_15": 5000
+          },
+          "censored_count": {
+            "x_1 x_2 x_3 x_4 x_5 x_6 x_7 x_8 x_9 x_10 x_11 x_12 x_13 x_14 x_15": 3480
+          },
+          "censoring_rate": {
+            "x_1 x_2 x_3 x_4 x_5 x_6 x_7 x_8 x_9 x_10 x_11 x_12 x_13 x_14 x_15": 69.6
+          }
+        },
+        "chi2": null,
+        "p_value": null,
+        "significant": false,
+        "error": "Insufficient data for chi2 test"
+      },
+      "split": {
+        "censoring_by_category": {
+          "total_count": {
+            "test": 1001,
+            "train": 3499,
+            "valid": 500
+          },
+          "censored_count": {
+            "test": 699,
+            "train": 2434,
+            "valid": 347
+          },
+          "censoring_rate": {
+            "test": 69.83016983016984,
+            "train": 69.56273220920262,
+            "valid": 69.39999999999999
+          }
+        },
+        "chi2": 0.036813203640684286,
+        "p_value": 0.9817617650715782,
+        "significant": false
+      }
+    }
+  },
+  "Event_2": {
+    "n_total": 5000,
+    "n_events": 1461,
+    "n_censored": 3539,
+    "censoring_rate": 70.78,
+    "median_follow_up": 574.2571974083571,
+    "max_follow_up": 574.2571974083571,
+    "cox_model": {
+      "coef": {},
+      "exp(coef)": {},
+      "se(coef)": {},
+      "coef lower 95%": {},
+      "coef upper 95%": {},
+      "exp(coef) lower 95%": {},
+      "exp(coef) upper 95%": {},
+      "cmp to": {},
+      "z": {},
+      "p": {},
+      "-log2(p)": {}
+    },
+    "informative_censoring": false,
+    "n_samples": 5000,
+    "bias_tests": {
+      "x": {
+        "censoring_by_category": {
+          "total_count": {
+            "x_1 x_2 x_3 x_4 x_5 x_6 x_7 x_8 x_9 x_10 x_11 x_12 x_13 x_14 x_15": 5000
+          },
+          "censored_count": {
+            "x_1 x_2 x_3 x_4 x_5 x_6 x_7 x_8 x_9 x_10 x_11 x_12 x_13 x_14 x_15": 3539
+          },
+          "censoring_rate": {
+            "x_1 x_2 x_3 x_4 x_5 x_6 x_7 x_8 x_9 x_10 x_11 x_12 x_13 x_14 x_15": 70.78
+          }
+        },
+        "chi2": null,
+        "p_value": null,
+        "significant": false,
+        "error": "Insufficient data for chi2 test"
+      },
+      "split": {
+        "censoring_by_category": {
+          "total_count": {
+            "test": 1001,
+            "train": 3499,
+            "valid": 500
+          },
+          "censored_count": {
+            "test": 713,
+            "train": 2462,
+            "valid": 364
+          },
+          "censoring_rate": {
+            "test": 71.22877122877122,
+            "train": 70.362960845956,
+            "valid": 72.8
+          }
+        },
+        "chi2": 1.3781841516775928,
+        "p_value": 0.5020316688915899,
+        "significant": false
+      }
+    }
+  },
+  "competing_risks": {
+    "num_events": 2,
+    "event_counts": {
+      "Event_1": 1520,
+      "Event_2": 1461
+    },
+    "event_rates": {
+      "Event_1": 30.4,
+      "Event_2": 29.220000000000002
+    }
+  }
+}

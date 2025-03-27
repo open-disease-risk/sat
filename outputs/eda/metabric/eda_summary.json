@@ -1,0 +1,105 @@
+{
+  "distribution": {
+    "event": {
+      "recommended_distribution": "weibull",
+      "aic_best": "weibull",
+      "aic_score": 12158.952626006365,
+      "bic_best": "weibull",
+      "bic_score": 12168.964204044873,
+      "note": "Both AIC and BIC favor weibull."
+    }
+  },
+  "censoring": {
+    "Event": {
+      "n_total": 1904,
+      "n_events": 1103,
+      "n_censored": 801,
+      "censoring_rate": 42.069327731092436,
+      "median_follow_up": 114.9000015258789,
+      "max_follow_up": 355.20001220703125,
+      "cox_model": {
+        "coef": {},
+        "exp(coef)": {},
+        "se(coef)": {},
+        "coef lower 95%": {},
+        "coef upper 95%": {},
+        "exp(coef) lower 95%": {},
+        "exp(coef) upper 95%": {},
+        "cmp to": {},
+        "z": {},
+        "p": {},
+        "-log2(p)": {}
+      },
+      "informative_censoring": false,
+      "n_samples": 1904,
+      "bias_tests": {
+        "split": {
+          "censoring_by_category": {
+            "total_count": {
+              "test": 572,
+              "train": 1142,
+              "valid": 190
+            },
+            "censored_count": {
+              "test": 247,
+              "train": 489,
+              "valid": 65
+            },
+            "censoring_rate": {
+              "test": 43.18181818181818,
+              "train": 42.819614711033275,
+              "valid": 34.21052631578947
+            }
+          },
+          "chi2": 5.369215226049672,
+          "p_value": 0.06824796835688406,
+          "significant": false
+        }
+      }
+    }
+  },
+  "covariates": {
+    "distributions": {
+      "n_samples": 1904,
+      "n_features": 2,
+      "feature_stats": {
+        "count": {
+          "x": 1904,
+          "split": 1904
+        },
+        "unique": {
+          "x": 1894,
+          "split": 3
+        },
+        "top": {
+          "x": "x4_0 x5_3 x6_5 x7_6 x0_8.0 x1_0.0 x2_9.0 x3_8.0 x8_0.0",
+          "split": "train"
+        },
+        "freq": {
+          "x": 2,
+          "split": 1142
+        }
+      },
+      "correlations": {}
+    },
+    "Event": {
+      "feature_importance": {
+        "n_samples": 1904,
+        "n_features": 2,
+        "feature_importance": {
+          "categorical_logrank": {
+            "split": 1.3991590939156315
+          },
+          "combined": {
+            "split": 1.3991590939156315
+          }
+        }
+      },
+      "risk_factors": {
+        "risk_factors": {},
+        "protective_factors": {},
+        "risk_scores": {}
+      }
+    }
+  }
+}

@@ -7,7 +7,7 @@ import numpy as np
 
 from typing import Dict, Any
 
-from sat.models.heads.config import TokenEmbedding
+from sat.models.heads import TokenEmbedding
 from sat.utils import logging
 
 logger = logging.get_default_logger()
