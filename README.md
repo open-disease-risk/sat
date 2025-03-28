@@ -138,7 +138,6 @@ SAT features a comprehensive, composable loss framework that allows flexible com
 - **ListMLE Losses**: Efficient list-based ranking losses that scale better than pairwise approaches
 
 #### Auxiliary Loss Functions
-- **Brier Score Loss**: Measures calibration of probability predictions
 - **Quantile Regression Loss**: Optimizes specific quantiles of the survival distribution
 
 ### Example Loss Recipe
@@ -187,8 +186,7 @@ MTLForSurvival
 ├── Survival Head
 │   └── MetaLoss
 │       ├── NLLPCHazard
-│       ├── SampleRankingLoss
-│       └── BrierScore
+│       └── SampleRankingLoss
 ├── Classification Head
 │   └── CrossEntropyLoss
 └── Regression Head
@@ -251,23 +249,13 @@ model:
 
 ### Monitoring Weight Evolution
 
-To monitor loss balancing during training, use the `LossWeightLoggerCallback`:
-
-```yaml
-callbacks:
-  - _target_: sat.transformers.callbacks.LossWeightLoggerCallback
-    log_freq: 1
-    prefix: "loss_weights"
-    log_eval: true
-    log_train: true
-```
-
-This logs weights to TensorBoard, enabling visualization of balancing dynamics.
+Loss weights are automatically logged to TensorBoard during training, enabling visualization of balancing dynamics without any additional configuration.
 
 For detailed documentation on loss balancing and multi-task learning integration, see:
 - [docs/loss.md](docs/loss.md) - Comprehensive overview of the loss framework
 - [docs/loss_weight_logging.md](docs/loss_weight_logging.md) - Guide to monitoring loss weights
 - [docs/loss_optimization.md](docs/loss_optimization.md) - Details on optimized implementations
+- [docs/performance_comparison.md](docs/performance_comparison.md) - Benchmark results and performance optimization recommendations
 
 Exploratory Data Analysis (EDA) Framework
 ============================

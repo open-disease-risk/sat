@@ -1,44 +1,14 @@
 # Loss Weight Logging
 
-This document explains how to use and interpret the loss weight logging feature for multi-objective training.
+This document explains how to interpret the loss weight logging feature for multi-objective training.
 
 ## Overview
 
 When training models with multiple loss components, it's important to understand how the weighting between these components evolves over time. The loss weight logging feature visualizes these weights in TensorBoard, allowing you to monitor and debug the balancing behavior.
 
-## Enabling Loss Weight Logging
+## Automatic Logging
 
-To enable loss weight logging, include the `loss_weight_logger.yaml` configuration in your callback list:
-
-```yaml
-# In your experiment configuration
-callbacks:
-  - _target_: transformers.EarlyStoppingCallback
-    early_stopping_patience: 10
-  - _target_: sat.transformers.callbacks.LossWeightLoggerCallback
-    log_freq: 1
-    prefix: "loss_weights"
-    log_eval: true
-    log_train: true
-```
-
-Alternatively, you can simply include the `loss_weight_logger` config group:
-
-```yaml
-# In your experiment configuration
-defaults:
-  - callbacks@callbacks: default
-  - callbacks@callbacks: loss_weight_logger
-```
-
-## Configuration Options
-
-The `LossWeightLoggerCallback` supports the following options:
-
-- `log_freq`: Logging frequency (every N evaluation steps)
-- `prefix`: Prefix for the logged metrics in TensorBoard
-- `log_eval`: Whether to log during evaluation (default: true)
-- `log_train`: Whether to log during training (default: true)
+Loss weights are automatically logged to TensorBoard during training. The `LossWeightLoggerCallback` is added by default in the training pipeline and requires no manual configuration.
 
 ## Visualizing Loss Weights
 
@@ -51,9 +21,10 @@ After training, you can visualize the loss weights in TensorBoard:
 
 2. Navigate to the "Scalars" tab
 
-3. Look for metrics with the prefix `loss_weights/`:
-   - `loss_weights/train/weight_0`, `loss_weights/train/weight_1`, etc. for training
-   - `loss_weights/eval/weight_0`, `loss_weights/eval/weight_1`, etc. for evaluation
+3. Look for metrics with the following patterns:
+   - `train/weight_0`, `train/weight_1`, etc. for training
+   - `eval/weight_0`, `eval/weight_1`, etc. for evaluation
+   - For multi-task learning models: `train/head_0_weight_0`, `train/head_1_weight_0`, etc.
 
 ## Interpreting Loss Weights
 
@@ -85,7 +56,7 @@ If you notice issues with your multi-objective training, check the loss weight l
 ## Implementation Details
 
 The callback works by:
-1. Checking if the model's loss function implements `get_loss_weights()`
+1. Automatically detecting if the model's loss function implements `get_loss_weights()`
 2. Retrieving the current weights during training/evaluation steps
 3. Logging these weights to TensorBoard with appropriate prefixes
 
