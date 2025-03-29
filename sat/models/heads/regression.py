@@ -3,46 +3,32 @@
 __authors__ = ["Dominik Dahlem", "Mahed Abroshan"]
 __status__ = "Development"
 
-import hydra
+from dataclasses import dataclass, field
+from typing import Any, Dict
 
+import hydra
 import torch
 from torch import nn
 
 from sat.models.nets import CauseSpecificNet, CauseSpecificNetCompRisk, SimpleMLP
 from sat.utils import logging
-import logging as py_logging
 
 from .base import BaseConfig, RegressionTask
 from .output import TaskOutput
 
-
-class EventDurationTaskConfig(BaseConfig):
-    model_type = "sat-transformer-event-duration"
-
-    def __init__(
-        self,
-        num_inputs: int = 32,
-        intermediate_size: int = 64,
-        num_hidden_layers: int = 0,
-        indiv_intermediate_size: int = 64,
-        indiv_num_hidden_layers: int = 0,
-        batch_norm: bool = True,
-        hidden_dropout_prob: float = 0.05,
-        bias: bool = True,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        self.num_inputs = num_inputs
-        self.intermediate_size = intermediate_size
-        self.num_hidden_layers = num_hidden_layers
-        self.indiv_intermediate_size = indiv_intermediate_size
-        self.indiv_num_hidden_layers = indiv_num_hidden_layers
-        self.batch_norm = batch_norm
-        self.hidden_dropout_prob = hidden_dropout_prob
-        self.bias = bias
-
-
 logger = logging.get_default_logger()
+
+
+@dataclass
+class EventDurationTaskConfig(BaseConfig):
+    """Configuration for event duration regression task head"""
+
+    model_type: str = "regression"
+    num_labels: int = 1
+    num_events: int = 1
+    indiv_intermediate_size: int = 32
+    indiv_num_hidden_layers: int = 1
+    loss: Dict[str, Any] = field(default_factory=dict)
 
 
 class EventDurationTaskHead(RegressionTask):

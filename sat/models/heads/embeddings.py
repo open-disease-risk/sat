@@ -3,14 +3,32 @@
 __authors__ = ["Dominik Dahlem", "Mahed Abroshan"]
 __status__ = "Development"
 
-import torch
-from torch import nn
+from enum import Enum
 from typing import List, Optional, Tuple
 
+import torch
+from torch import nn
+
 from sat.utils import logging
-from .base import TokenEmbedding, SentenceEmbedding
 
 logger = logging.get_default_logger()
+
+
+class TokenEmbedding(Enum):
+    """Determine what to do with the hidden states of the encoder layers."""
+
+    SUM = 2
+    AVG = 3
+    CAT = 4
+    BERT = 5
+
+
+class SentenceEmbedding(Enum):
+    """Determine what to do to get sentence embeddings."""
+
+    NONE = 1
+    MAX = 2
+    AVG = 3
 
 
 class TokenEmbedder(nn.Module):

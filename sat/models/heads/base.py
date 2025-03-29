@@ -5,11 +5,10 @@ __status__ = "Development"
 
 import abc
 import json
-import torch
+from typing import Any, Dict
 
-from enum import Enum
+import torch
 from torch import nn
-from typing import Dict, Any
 from transformers import PretrainedConfig
 from transformers.modeling_utils import PreTrainedModel
 from transformers.models.bert.configuration_bert import BertConfig
@@ -17,23 +16,6 @@ from transformers.models.bert.configuration_bert import BertConfig
 from sat.utils import logging
 
 logger = logging.get_default_logger()
-
-
-class TokenEmbedding(Enum):
-    """Determine what to do with the hidden states of the encoder layers."""
-
-    SUM = 2
-    AVG = 3
-    CAT = 4
-    BERT = 5
-
-
-class SentenceEmbedding(Enum):
-    """Determine what to do to get sentence embeddings."""
-
-    NONE = 1
-    MAX = 2
-    AVG = 3
 
 
 class BaseConfig(abc.ABC, PretrainedConfig):
@@ -81,13 +63,6 @@ class BaseConfig(abc.ABC, PretrainedConfig):
             )
             + "\n"
         )
-
-
-class SatBertConfig(BertConfig):
-    model_type = "sat-bert"
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
 
 class BaseTask(PreTrainedModel):

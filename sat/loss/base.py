@@ -189,6 +189,10 @@ class RankingLoss(Loss):
 
         # Calculate left and right boundary indices
         t0Index = torch.sum(indexSmaller, dim=2) - 1  # (n x e)
+
+        # Fix negative indices (for durations smaller than all cuts)
+        t0Index = torch.clamp(t0Index, min=0)
+
         t0Index = t0Index.unsqueeze(1).repeat(1, e, 1)  # (n x e x e)
         t1Index = t0Index + 1  # (n x e x e)
 

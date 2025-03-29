@@ -24,18 +24,14 @@ import json
 import pandas as pd
 import polars as pl
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 import re
 from omegaconf import DictConfig
 from logdecorator import log_on_start, log_on_end, log_on_error
 from logging import DEBUG, ERROR
-from pathlib import Path
-from typing import Dict, List, Tuple, Union, Optional
+from typing import Dict, List, Tuple, Optional
 
+from sat.analysis import distribution_fitting, censoring
 from sat.utils import logging, rand
-from sat.data import load
-from sat.analysis import distribution_fitting, censoring, covariates
 
 logger = logging.get_default_logger()
 

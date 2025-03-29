@@ -52,14 +52,17 @@ def create_fake_data(
 
     # For competing risks test, make some samples have multiple events
     for i in range(0, batch_size, 5):
-        if i + 1 < batch_size:
+        if i + 1 < batch_size and num_events >= 2:
             # Set both events to 1 for this sample
             targets[i, num_events : 2 * num_events] = 1.0
             # Set different durations for each event
             targets[i, 3 * num_events] = i % num_cuts + 1  # First event duration
-            targets[i, 3 * num_events + 1] = (
-                i + 3
-            ) % num_cuts + 1  # Second event duration
+
+            # Only set second event duration if we have at least 2 events
+            if num_events >= 2:
+                targets[i, 3 * num_events + 1] = (
+                    i + 3
+                ) % num_cuts + 1  # Second event duration
 
     # Create fake predictions
     predictions = SAOutput(logits=logits, hazard=hazard, survival=survival)

@@ -3,38 +3,31 @@
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
-import hydra
 import json
-import mlflow
 import os
-import torch
-
-import pandas as pd
-
-from logdecorator import log_on_start, log_on_end, log_on_error
 from logging import DEBUG, ERROR
-from omegaconf import DictConfig
 from pathlib import Path
 
+import hydra
+import mlflow
+import pandas as pd
+import torch
 from datasets import load_from_disk
-
+from logdecorator import log_on_end, log_on_error, log_on_start
+from omegaconf import DictConfig
 from tokenizers.processors import TemplateProcessing
-from transformers import (
-    PreTrainedTokenizerFast,
-    Trainer,
-    TrainingArguments,
-)
+from transformers import PreTrainedTokenizerFast, Trainer, TrainingArguments
 from transformers.integrations import TensorBoardCallback
 
-from sat.utils import config, logging, rand, tokenizing
-from sat.utils.output import write_output, log_metrics
-from sat.data import load, collator
+from sat.data import collator, load
 from sat.models import heads
-from sat.models.heads import TokenEmbedding
+from sat.models.heads.embeddings import TokenEmbedding
 from sat.models.utils import get_device
-from sat.transformers.feature_extractor import SAFeatureExtractor
-from sat.transformers.callbacks import LossWeightLoggerCallback
 from sat.transformers import trainer as satrain
+from sat.transformers.callbacks import LossWeightLoggerCallback
+from sat.transformers.feature_extractor import SAFeatureExtractor
+from sat.utils import config, logging, rand, tokenizing
+from sat.utils.output import log_metrics, write_output
 
 logger = logging.get_default_logger()
 

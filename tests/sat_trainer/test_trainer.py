@@ -20,29 +20,20 @@ class TestTrainer(unittest.TestCase):
         self.test_output_dir = "./test-trainer-output"
         os.makedirs(self.test_output_dir, exist_ok=True)
 
-        # Create a simple PyTorch model instead of a MagicMock
-        # This is needed because newer transformers versions have stricter checks
-        class SimpleModel(torch.nn.Module):
-            def __init__(self):
-                super().__init__()
-                self.linear = torch.nn.Linear(5, 2)
+        # Create a simple mock model
+        self.mock_model = MagicMock()
+        self.mock_model.train.return_value = None
+        self.mock_model.eval.return_value = None
 
-            def forward(self, input_ids=None, labels=None, **kwargs):
-                logits = self.linear(input_ids)
-                loss = None
-                if labels is not None:
-                    loss = torch.nn.functional.mse_loss(logits, labels)
+        # Mock model parameters for optimizer
+        mock_param = torch.nn.Parameter(torch.randn(5, 5))
+        self.mock_model.parameters.return_value = [mock_param]
 
-                # Create a ModelOutput-like structure with properties for loss and logits
-                class Output:
-                    pass
-
-                output = Output()
-                output.loss = loss if loss is not None else torch.tensor(0.5)
-                output.logits = logits
-                return output
-
-        self.mock_model = SimpleModel()
+        # Mock loss and output
+        mock_output = MagicMock()
+        mock_output.loss = torch.tensor(0.5)
+        mock_output.logits = torch.tensor([[0.1, 0.2], [0.3, 0.4]])
+        self.mock_model.return_value = mock_output
 
         # Create simple datasets
         self.train_dataset = TensorDataset(torch.randn(10, 5), torch.randn(10, 2))
@@ -76,6 +67,7 @@ class TestTrainer(unittest.TestCase):
             train_dataset=self.train_dataset,
             eval_dataset=self.eval_dataset,
             data_collator=self.mock_collator,
+            metrics={},
             callbacks=[],
         )
 
@@ -129,22 +121,14 @@ class TestTrainer(unittest.TestCase):
         self.trainer.accelerator.get_progress_bar.return_value = mock_progress_bar
         mock_progress_bar.__iter__.return_value = mock_train_loader
 
-        # Spy on model.train() to check if it was called
-        original_train = self.mock_model.train
-        train_called = [False]
-
-        def train_spy(*args, **kwargs):
-            train_called[0] = True
-            return original_train(*args, **kwargs)
-
-        self.mock_model.train = train_spy
-
         try:
             # Run training
             self.trainer.train()
 
             # Assertions
-            self.assertTrue(train_called[0], "train() was not called")
+            self.assertTrue(
+                self.mock_model.train.call_count >= 1, "train() was not called"
+            )
             self.trainer.accelerator.prepare.assert_called_once()
             mock_scheduler_fn.assert_called_once()
             self.trainer.accelerator.backward.assert_called()
@@ -152,9 +136,8 @@ class TestTrainer(unittest.TestCase):
             mock_scheduler.step.assert_called()
             mock_optimizer.zero_grad.assert_called_with(set_to_none=True)
         finally:
-            # Restore the original accelerator and model.train
+            # Restore the original accelerator
             self.trainer.accelerator = original_accelerator
-            self.mock_model.train = original_train
 
     def test_evaluate(self):
         """Test the evaluate method."""
@@ -175,23 +158,6 @@ class TestTrainer(unittest.TestCase):
         self.trainer.accelerator.get_progress_bar.return_value = mock_progress_bar
         mock_progress_bar.__iter__.return_value = mock_eval_dataloader
 
-        # Spy on model.eval() and model.train() to check if they were called
-        original_eval = self.mock_model.eval
-        original_train = self.mock_model.train
-        eval_called = [False]
-        train_called = [False]
-
-        def eval_spy(*args, **kwargs):
-            eval_called[0] = True
-            return original_eval(*args, **kwargs)
-
-        def train_spy(*args, **kwargs):
-            train_called[0] = True
-            return original_train(*args, **kwargs)
-
-        self.mock_model.eval = eval_spy
-        self.mock_model.train = train_spy
-
         # Mock the find_batch_size function
         try:
             with patch("sat.transformers.trainer.find_batch_size", return_value=2):
@@ -199,18 +165,18 @@ class TestTrainer(unittest.TestCase):
                 result = self.trainer.evaluate(mock_eval_dataloader)
 
                 # Assertions
-                self.assertTrue(eval_called[0], "eval() was not called")
-                self.assertTrue(train_called[0], "train() was not called")
+                self.mock_model.eval.assert_called_once()
+                self.mock_model.train.assert_called_once()
                 self.trainer.accelerator.gather_for_metrics.assert_called()
                 self.trainer.accelerator.log.assert_called_once()
-                self.assertIsInstance(
-                    result, dict
-                )  # Modern trainer returns a dict, not a float
+                self.assertIsInstance(result, float)
+
+                # Reset model mocks for the next test
+                self.mock_model.eval.reset_mock()
+                self.mock_model.train.reset_mock()
         finally:
-            # Restore the original methods
+            # Restore the original accelerator
             self.trainer.accelerator = original_accelerator
-            self.mock_model.eval = original_eval
-            self.mock_model.train = original_train
 
     def test_predict(self):
         """Test the predict method."""
@@ -236,44 +202,23 @@ class TestTrainer(unittest.TestCase):
         mock_gathered_tensor = mock_logits  # Simulate the gather operation
         self.trainer.accelerator.gather_for_metrics.return_value = mock_gathered_tensor
 
-        # Spy on model.eval() to check if it was called
-        original_eval = self.mock_model.eval
-        eval_called = [False]
-
-        def eval_spy(*args, **kwargs):
-            eval_called[0] = True
-            return original_eval(*args, **kwargs)
-
-        self.mock_model.eval = eval_spy
-
         # Run prediction
         try:
             with patch(
                 "numpy.concatenate", return_value=np.array([[0.1, 0.2], [0.3, 0.4]])
             ):
-                # Use a specific PredictionOutput class to handle the modern Trainer output
-                class PredictionOutput:
-                    def __init__(self, predictions, label_ids, metrics):
-                        self.predictions = predictions
-                        self.label_ids = label_ids
-                        self.metrics = metrics
+                predictions = self.trainer.predict(self.predict_dataset)
 
-                with patch("transformers.trainer.PredictionOutput", PredictionOutput):
-                    predictions = self.trainer.predict(self.predict_dataset)
-
-                    # Assertions
-                    self.assertTrue(eval_called[0], "eval() was not called")
-                    self.trainer.accelerator.gather_for_metrics.assert_called()
-
-                    # In newer versions, predict returns a PredictionOutput
-                    self.assertTrue(
-                        hasattr(predictions, "predictions"),
-                        "Predictions object missing predictions attribute",
-                    )
+                # Assertions
+                self.mock_model.eval.assert_called_once()
+                self.trainer.accelerator.gather_for_metrics.assert_called()
+                self.assertIsInstance(predictions, np.ndarray)
+                self.assertEqual(
+                    predictions.shape, (2, 2)
+                )  # Should match our mocked return
         finally:
-            # Restore the original accelerator and model method
+            # Restore the original accelerator
             self.trainer.accelerator = original_accelerator
-            self.mock_model.eval = original_eval
 
     def test_save_model(self):
         """Test the save_model method."""

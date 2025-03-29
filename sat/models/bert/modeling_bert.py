@@ -8,13 +8,13 @@ corresponding numeric value is multiplied into the embedded vector.
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
+from typing import List, Optional, Tuple, Union
+
 import einops
 import torch
 import transformers.models.bert.modeling_bert as hf_bert
-
 from torch import nn
 from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions
-from typing import List, Optional, Tuple, Union
 
 from sat.models.bert.configuration_bert import NumericBertConfig
 

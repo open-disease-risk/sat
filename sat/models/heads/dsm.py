@@ -15,9 +15,9 @@ from sat.models.parameter_nets import (
 )
 from sat.utils import logging
 
-from .survival import SurvivalConfig
 from .base import SurvivalTask
 from .output import SAOutput  # Using SAOutput directly instead of a custom DSMOutput
+from .survival import SurvivalConfig
 from .utils import pad_col  # For padding hazard with zeros at the start
 
 logger = logging.get_default_logger()
