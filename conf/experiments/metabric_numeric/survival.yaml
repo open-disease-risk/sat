@@ -11,7 +11,7 @@ defaults:
   - override /tasks: survival
   - override /trainer: metabric/default
 
-survival_intermediate_size: 4
+survival_intermediate_size: 24
 survival_batch_norm: false
 survival_hidden_dropout_prob: false
 survival_bias: true
