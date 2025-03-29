@@ -14,8 +14,7 @@ import os
 logging.basicConfig(level=logging.WARNING)
 
 from sat.models.nets import CauseSpecificNet, CauseSpecificNetCompRisk
-from sat.models.heads.survival import SurvivalTaskHead
-from sat.models.heads import SurvivalConfig
+from sat.models.heads.survival import SurvivalTaskHead, SurvivalConfig
 from sat.loss.survival.deephit import DeepHitLikelihoodLoss
 from sat.loss.ranking.sample import SampleRankingLoss
 
@@ -197,7 +196,7 @@ def test_likelihood_loss_performance(survival_data):
 
 
 def test_ranking_loss_performance(survival_data):
-    """Test the performance of the DeepHitRankingLoss"""
+    """Test the performance of the SampleRankingLoss"""
     # Get data
     output = survival_data["output"]
     references = survival_data["references"]
@@ -216,7 +215,7 @@ def test_ranking_loss_performance(survival_data):
 
     try:
         # Create loss
-        loss_fn = DeepHitRankingLoss(
+        loss_fn = SampleRankingLoss(
             num_events=num_events, duration_cuts=cuts_file, sigma=0.1
         )
 
@@ -252,8 +251,8 @@ def test_ranking_loss_performance(survival_data):
                 print(f"Backward pass error: {e}")
         backward_time = (time.time() - start_time) / num_trials
 
-        print(f"\nDeepHitRankingLoss forward time: {forward_time:.6f} seconds")
-        print(f"DeepHitRankingLoss forward+backward time: {backward_time:.6f} seconds")
+        print(f"\nSampleRankingLoss forward time: {forward_time:.6f} seconds")
+        print(f"SampleRankingLoss forward+backward time: {backward_time:.6f} seconds")
     finally:
         # Clean up temp file
         if os.path.exists(cuts_file):

@@ -5,7 +5,6 @@ __status__ = "Development"
 
 import hydra
 import torch
-
 import torch.nn.functional as F
 
 from sat.models.nets import CauseSpecificNet, CauseSpecificNetCompRisk

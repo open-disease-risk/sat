@@ -3,34 +3,27 @@
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
-import hydra
 import json
 import os
-import torch
-import matplotlib.pyplot as plt
+from logging import DEBUG, ERROR
 from pathlib import Path
 
-from logdecorator import log_on_start, log_on_end, log_on_error
-from logging import DEBUG, ERROR
-from omegaconf import DictConfig, OmegaConf
-
+import hydra
+import torch
 from datasets import load_from_disk
-
+from logdecorator import log_on_end, log_on_error, log_on_start
+from omegaconf import DictConfig, OmegaConf
 from tokenizers.processors import TemplateProcessing
-from transformers import (
-    PreTrainedTokenizerFast,
-    Trainer,
-    TrainingArguments,
-)
+from transformers import PreTrainedTokenizerFast, Trainer, TrainingArguments
 
+from sat.data import collator, load
+from sat.models import heads
+from sat.models.heads.embeddings import TokenEmbedding
+from sat.models.utils import get_device
+from sat.transformers import trainer as satrain
+from sat.transformers.feature_extractor import SAFeatureExtractor
 from sat.utils import config, logging, rand, tokenizing
 from sat.utils.lr_finder import find_optimal_lr
-from sat.data import load, collator
-from sat.models import heads
-from sat.models.heads import TokenEmbedding
-from sat.models.utils import get_device
-from sat.transformers.feature_extractor import SAFeatureExtractor
-from sat.transformers import trainer as satrain
 
 logger = logging.get_default_logger()
 

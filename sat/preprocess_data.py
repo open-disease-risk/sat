@@ -3,25 +3,20 @@
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
-import hydra
 import json
-import os
-import sys
-
-from logdecorator import log_on_start, log_on_end, log_on_error
 from logging import DEBUG, ERROR
-from omegaconf import DictConfig
 from pathlib import Path
 
+import hydra
+from logdecorator import log_on_end, log_on_error, log_on_start
+from omegaconf import DictConfig
 from tokenizers.processors import TemplateProcessing
-from transformers import (
-    PreTrainedTokenizerFast,
-)
+from transformers import PreTrainedTokenizerFast
 
-from sat.utils import config, logging, rand
 from sat.data import load
-from sat.models.tasks.config import TokenEmbedding
+from sat.models.heads.embeddings import TokenEmbedding
 from sat.transformers.feature_extractor import SAFeatureExtractor
+from sat.utils import config, logging, rand
 
 logger = logging.get_default_logger()
 

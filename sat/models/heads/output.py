@@ -3,15 +3,13 @@
 __authors__ = ["Dominik Dahlem", "Mahed Abroshan"]
 __status__ = "Development"
 
-import torch
-
 from dataclasses import dataclass
-
-from transformers.utils import ModelOutput
 from typing import Optional, Tuple
 
-from sat.utils import logging
+import torch
+from transformers.utils import ModelOutput
 
+from sat.utils import logging
 
 logger = logging.get_default_logger()
 

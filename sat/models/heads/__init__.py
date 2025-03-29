@@ -7,46 +7,45 @@ and event prediction tasks.
 __authors__ = ["Dominik Dahlem", "Mahed Abroshan"]
 __status__ = "Development"
 
-# Base classes and utilities
-from .output import SAOutput, TaskOutput
-
-# Base and config classes
-from .base import (
-    BaseConfig,
-    SentenceEmbedding,
-    TokenEmbedding,
-    SatBertConfig,
-)
-from .survival import SurvivalConfig
-from .dsm import DSMConfig
-from .classification import EventClassificationTaskConfig
-from .regression import EventDurationTaskConfig
-from .mtl import MTLConfig
+# Import SatBertConfig from transformers
+from transformers.models.bert.configuration_bert import BertConfig
 
 # Task heads
-from .survival import SurvivalTaskHead
-from .dsm import DSMTaskHead
-from .classification import EventClassificationTaskHead
-from .regression import EventDurationTaskHead
-from .mtl import MTLForSurvival
+from .base import BaseConfig
+from .classification import EventClassificationTaskConfig, EventClassificationTaskHead
+from .embeddings import SentenceEmbedding, TokenEmbedding
+from .mtl import MTLConfig, MTLForSurvival
+
+# Base classes and utilities
+from .output import SAOutput, TaskOutput
+from .regression import EventDurationTaskConfig, EventDurationTaskHead
+from .survival import SurvivalConfig, SurvivalTaskHead
+
+
+# Create SatBertConfig class
+class SatBertConfig(BertConfig):
+    model_type = "sat-bert"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
 
 __all__ = [
     # Output classes
     "SAOutput",
     "TaskOutput",
-    # Base and Configuration classes
-    "BaseConfig",
+    # Embedding enums
     "TokenEmbedding",
     "SentenceEmbedding",
+    # Configuration classes
+    "BaseConfig",
     "SurvivalConfig",
-    "DSMConfig",
     "EventClassificationTaskConfig",
     "EventDurationTaskConfig",
     "MTLConfig",
     "SatBertConfig",
     # Task heads
     "SurvivalTaskHead",
-    "DSMTaskHead",
     "EventClassificationTaskHead",
     "EventDurationTaskHead",
     "MTLForSurvival",

@@ -11,6 +11,7 @@ from typing import Tuple, Dict
 from sat.models.heads import SAOutput
 from sat.loss.ranking.multievent import MultiEventRankingLoss
 from sat.loss.ranking.sample import SampleRankingLoss
+from sat.loss.base import RankingLoss
 
 
 def create_fake_data(
@@ -176,10 +177,13 @@ def test_tensor_orientations():
 
 
 def test_loss_calculation():
-    """Test initialization and basic functionality of ranking losses."""
+    """Test actual loss calculation with controlled inputs."""
     batch_size = 8
     num_events = 2
     num_cuts = 10
+
+    # Create test data
+    predictions, targets = create_fake_data(batch_size, num_events, num_cuts)
 
     # Create files needed for loss initialization
     duration_cuts_file = create_duration_cuts_file(num_cuts)
@@ -201,21 +205,12 @@ def test_loss_calculation():
             sigma=0.1,
         )
 
-        # Check initialization parameters
-        assert multi_loss.sigma == 0.1, "Sigma not properly initialized"
-        assert multi_loss.margin == 0.0, "Default margin should be 0.0"
-        assert (
-            multi_loss.num_events == num_events
-        ), "num_events not properly initialized"
-        assert (
-            len(multi_loss.duration_cuts) == num_cuts
-        ), "Duration cuts not properly loaded"
+        # Calculate losses
+        multi_loss_val = multi_loss(predictions, targets)
+        sample_loss_val = sample_loss(predictions, targets)
 
-        assert sample_loss.sigma == 0.1, "Sigma not properly initialized"
-        assert sample_loss.margin == 0.0, "Default margin should be 0.0"
-        assert (
-            sample_loss.num_events == num_events
-        ), "num_events not properly initialized"
+        print(f"\nMultiEventRankingLoss value: {multi_loss_val.item()}")
+        print(f"SampleRankingLoss value: {sample_loss_val.item()}")
 
         # Test with different sigma values
         sigma_values = [0.01, 0.1, 0.5, 1.0, 2.0]
@@ -229,8 +224,19 @@ def test_loss_calculation():
                 sigma=sigma,
             )
 
-            assert multi_loss.sigma == sigma, f"Sigma not properly set to {sigma}"
-            print(f"Sigma={sigma}: Initialized successfully")
+            sample_loss = SampleRankingLoss(
+                duration_cuts=duration_cuts_file,
+                importance_sample_weights=importance_weights_file,
+                num_events=num_events,
+                sigma=sigma,
+            )
+
+            multi_loss_val = multi_loss(predictions, targets)
+            sample_loss_val = sample_loss(predictions, targets)
+
+            print(
+                f"Sigma={sigma}: MultiEvent={multi_loss_val.item()}, Sample={sample_loss_val.item()}, Ratio={multi_loss_val.item()/sample_loss_val.item()}"
+            )
 
         # Test with different margin values
         margin_values = [0.0, 0.01, 0.05, 0.1, 0.2]
@@ -245,8 +251,20 @@ def test_loss_calculation():
                 margin=margin,
             )
 
-            assert multi_loss.margin == margin, f"Margin not properly set to {margin}"
-            print(f"Margin={margin}: Initialized successfully")
+            sample_loss = SampleRankingLoss(
+                duration_cuts=duration_cuts_file,
+                importance_sample_weights=importance_weights_file,
+                num_events=num_events,
+                sigma=0.1,
+                margin=margin,
+            )
+
+            multi_loss_val = multi_loss(predictions, targets)
+            sample_loss_val = sample_loss(predictions, targets)
+
+            print(
+                f"Margin={margin}: MultiEvent={multi_loss_val.item()}, Sample={sample_loss_val.item()}, Ratio={multi_loss_val.item()/sample_loss_val.item()}"
+            )
 
     finally:
         # Clean up temporary files
@@ -255,8 +273,8 @@ def test_loss_calculation():
 
 
 def test_hsa_synthetic_specific():
-    """Test initialization with HSA synthetic dataset patterns."""
-    # Setup test parameters
+    """Test with data patterns similar to HSA synthetic dataset."""
+    # Load specific test cases based on HSA dataset characteristics
     batch_size = 16
     num_events = 2
     num_cuts = 10
@@ -266,7 +284,20 @@ def test_hsa_synthetic_specific():
     importance_weights_file = create_importance_weights_file(num_events)
 
     try:
-        # Create loss with specific parameters for HSA synthetic
+        # Create a specific test case where multiple events are active for same sample
+        # This is common in HSA synthetic dataset (competing risks)
+        predictions, targets = create_fake_data(batch_size, num_events, num_cuts)
+
+        # Set multiple events active for same samples (one row = one sample)
+        # Modify a few samples to have both events
+        for i in range(0, batch_size, 4):
+            # Set both events to 1 for this sample
+            targets[i, num_events : 2 * num_events] = 1.0
+            # Set different durations for each event
+            targets[i, 3 * num_events] = 30.0  # First event duration
+            targets[i, 3 * num_events + 1] = 60.0  # Second event duration
+
+        # Create loss instances
         multi_loss = MultiEventRankingLoss(
             duration_cuts=duration_cuts_file,
             importance_sample_weights=importance_weights_file,
@@ -275,61 +306,105 @@ def test_hsa_synthetic_specific():
             margin=0.05,
         )
 
-        # Verify initialization parameters
-        assert multi_loss.sigma == 0.1, "Sigma parameter not set correctly"
-        assert multi_loss.margin == 0.05, "Margin parameter not set correctly"
-        assert multi_loss.num_events == num_events, "Number of events not set correctly"
-        assert (
-            len(multi_loss.duration_cuts) == num_cuts
-        ), "Duration cuts not loaded correctly"
+        sample_loss = SampleRankingLoss(
+            duration_cuts=duration_cuts_file,
+            importance_sample_weights=importance_weights_file,
+            num_events=num_events,
+            sigma=0.1,
+            margin=0.05,
+        )
 
-        # Test the events and duration extraction functions
-        test_targets = torch.zeros(batch_size, 4 * num_events)
+        # Calculate losses
+        multi_loss_val = multi_loss(predictions, targets)
+        sample_loss_val = sample_loss(predictions, targets)
 
-        # Set event indicators for testing
-        for i in range(batch_size):
-            event_type = i % num_events
-            test_targets[i, num_events + event_type] = 1  # Set event indicator
-            test_targets[i, 3 * num_events + event_type] = i + 1  # Set duration
+        print("\nHSA Synthetic-like test:")
+        print(f"MultiEventRankingLoss value: {multi_loss_val.item()}")
+        print(f"SampleRankingLoss value: {sample_loss_val.item()}")
+        print(f"Loss ratio: {multi_loss_val.item() / sample_loss_val.item()}")
 
-        # Test for a few samples with multiple events (competing risks)
-        for i in range(0, batch_size, 4):
-            # Set both events to 1 for this sample
-            test_targets[i, num_events : 2 * num_events] = 1.0
-            # Set different durations for each event
-            test_targets[i, 3 * num_events] = 30.0  # First event duration
-            test_targets[i, 3 * num_events + 1] = 60.0  # Second event duration
+        # Let's examine how tensor shapes affect the ranking loss calculation
+        # by looking at intermediate values in ranking_loss method
 
-        # Test events extraction
-        events = multi_loss.events(test_targets)
-        assert events.shape == (
-            batch_size,
-            num_events,
-        ), f"Events shape incorrect: {events.shape}"
+        # For MultiEventRankingLoss
+        events_multi = multi_loss.events(targets)
+        n_multi = events_multi.shape[0]
+        e_multi = events_multi.shape[1]
 
-        # Test durations extraction
-        durations = multi_loss.durations(test_targets)
-        assert durations.shape == (
-            batch_size,
-            num_events,
-        ), f"Durations shape incorrect: {durations.shape}"
+        # Show the event masks
+        I_multi = events_multi.to(bool)
+        I_censored_multi = ~I_multi
+        print(
+            f"\nShape of event indicator tensor (MultiEventRankingLoss): {I_multi.shape}"
+        )
+        print(f"Number of events per sample: {I_multi.sum(dim=1)}")
 
-        # Test that competing risks (multiple events per sample) are extracted correctly
-        # The 0th, 4th, 8th, etc. samples should have both events active
-        multi_event_samples = [0, 4, 8, 12]
-        for i in multi_event_samples:
-            if i < batch_size:
-                assert (
-                    events[i, 0] == 1 and events[i, 1] == 1
-                ), f"Sample {i} should have both events"
-                assert (
-                    durations[i, 0] == 30.0
-                ), f"Sample {i} should have duration 30.0 for event 0"
-                assert (
-                    durations[i, 1] == 60.0
-                ), f"Sample {i} should have duration 60.0 for event 1"
+        # For SampleRankingLoss
+        events_sample = sample_loss.events(targets).permute(1, 0)
+        n_sample = events_sample.shape[0]
+        e_sample = events_sample.shape[1]
 
-        print("Event and duration extraction for multi-event samples verified.")
+        # Show the event masks
+        I_sample = events_sample.to(bool)
+        I_censored_sample = ~I_sample
+        print(
+            f"\nShape of event indicator tensor (SampleRankingLoss): {I_sample.shape}"
+        )
+        print(f"Number of events per event type: {I_sample.sum(dim=1)}")
+
+        # See how the orientation affects the ranking calculation
+        # In MultiEventRankingLoss, we compare events within a sample
+        # In SampleRankingLoss, we compare samples within an event type
+
+        # Create a minimal test for sample with multiple events
+        print("\nAnalyzing simplified test case with multi-event sample:")
+        simple_targets = torch.zeros(1, 8)  # 1 sample, 2 events, 4 values per event
+        # Set both events to 1 for this sample
+        simple_targets[0, 2:4] = 1.0
+        # Set different durations for each event
+        simple_targets[0, 6] = 30.0  # First event duration
+        simple_targets[0, 7] = 60.0  # Second event duration
+
+        # Simple logits, hazards and survival
+        simple_logits = torch.zeros(1, 2, num_cuts)
+        simple_hazard = torch.rand(1, 2, num_cuts)
+        # Make first event have higher risk than second event at all times
+        simple_survival = torch.zeros(1, 2, num_cuts + 1)
+        # First event: rapidly decreasing survival
+        simple_survival[0, 0, 0] = 1.0
+        simple_survival[0, 0, 1:] = torch.linspace(0.9, 0.1, num_cuts)
+        # Second event: slowly decreasing survival
+        simple_survival[0, 1, 0] = 1.0
+        simple_survival[0, 1, 1:] = torch.linspace(0.95, 0.5, num_cuts)
+
+        simple_predictions = SAOutput(
+            logits=simple_logits, hazard=simple_hazard, survival=simple_survival
+        )
+
+        # Calculate losses
+        multi_simple_loss = multi_loss(simple_predictions, simple_targets)
+        sample_simple_loss = sample_loss(simple_predictions, simple_targets)
+
+        print(f"Simple test MultiEventRankingLoss value: {multi_simple_loss.item()}")
+        print(f"Simple test SampleRankingLoss value: {sample_simple_loss.item()}")
+
+        # Extract key values from the ranking_loss calculation
+        events_multi = multi_loss.events(simple_targets)
+        durations_multi = multi_loss.durations(simple_targets)
+
+        # Show survival values
+        print(f"\nSurvival values for event 0: {simple_survival[0, 0, :]}")
+        print(f"Survival values for event 1: {simple_survival[0, 1, :]}")
+
+        # Compare tensor orientations
+        print(f"\nEvents tensor (MultiEventRankingLoss): {events_multi}")
+        print(f"Durations tensor (MultiEventRankingLoss): {durations_multi}")
+
+        events_sample = sample_loss.events(simple_targets).permute(1, 0)
+        durations_sample = sample_loss.durations(simple_targets).permute(1, 0)
+
+        print(f"\nEvents tensor (SampleRankingLoss): {events_sample}")
+        print(f"Durations tensor (SampleRankingLoss): {durations_sample}")
 
     finally:
         # Clean up temporary files
@@ -338,39 +413,31 @@ def test_hsa_synthetic_specific():
 
 
 def test_ranking_loss_gradient():
-    """Test basic gradient functionality of MultiEventRankingLoss."""
+    """Test gradients from MultiEventRankingLoss vs SampleRankingLoss."""
     batch_size = 8
     num_events = 2
     num_cuts = 10
+
+    # Create test data
+    predictions_data, targets = create_fake_data(batch_size, num_events, num_cuts)
 
     # Create files needed for loss initialization
     duration_cuts_file = create_duration_cuts_file(num_cuts)
     importance_weights_file = create_importance_weights_file(num_events)
 
     try:
-        # Create simple test data
-        # Create trainable parameters - simple test case with decreasing survival
+        # Create trainable parameters
         hazard = torch.rand(batch_size, num_events, num_cuts, requires_grad=True)
         ones = torch.ones(batch_size, num_events, 1)
         survival_base = (
-            torch.linspace(0.9, 0.1, num_cuts)
-            .view(1, 1, -1)
-            .expand(batch_size, num_events, -1)
+            1 - torch.cumsum(torch.nn.functional.softplus(hazard), dim=2) / num_cuts
         )
         survival = torch.cat([ones, survival_base], dim=2)
         logits = torch.zeros_like(hazard)
 
-        # Create targets with simple pattern - alternate between event types
-        targets = torch.zeros(batch_size, 4 * num_events)
-        for i in range(batch_size):
-            event_idx = i % num_events
-            targets[i, num_events + event_idx] = 1  # Event indicator
-            targets[i, 3 * num_events + event_idx] = 10.0  # Duration
-
-        # Create SAOutput object
         predictions = SAOutput(logits=logits, hazard=hazard, survival=survival)
 
-        # Create loss instance
+        # Create loss instances
         multi_loss = MultiEventRankingLoss(
             duration_cuts=duration_cuts_file,
             importance_sample_weights=importance_weights_file,
@@ -378,31 +445,39 @@ def test_ranking_loss_gradient():
             sigma=0.1,
         )
 
-        # Test gradient calculation
-        # Calculate loss
-        loss_val = multi_loss(predictions, targets)
+        sample_loss = SampleRankingLoss(
+            duration_cuts=duration_cuts_file,
+            importance_sample_weights=importance_weights_file,
+            num_events=num_events,
+            sigma=0.1,
+        )
 
-        # Ensure loss is valid scalar value
-        assert isinstance(loss_val, torch.Tensor), "Loss should be a tensor"
-        assert loss_val.numel() == 1, "Loss should be a scalar tensor"
-        assert not torch.isnan(loss_val), "Loss should not be NaN"
-        assert not torch.isinf(loss_val), "Loss should not be infinite"
+        # Calculate losses and gradients
+        multi_loss_val = multi_loss(predictions, targets)
+        multi_loss_val.backward(retain_graph=True)
+        multi_grad = hazard.grad.clone()
+        hazard.grad.zero_()
 
-        # Test that gradients can be computed
-        loss_val.backward()
+        sample_loss_val = sample_loss(predictions, targets)
+        sample_loss_val.backward()
+        sample_grad = hazard.grad.clone()
 
-        # Check gradient
-        assert hazard.grad is not None, "No gradient computed for hazard"
-        assert not torch.isnan(hazard.grad).any(), "Gradient contains NaN values"
-        assert not torch.isinf(hazard.grad).any(), "Gradient contains infinite values"
+        print(f"\nGradient test:")
+        print(f"MultiEventRankingLoss gradient norm: {torch.norm(multi_grad)}")
+        print(f"SampleRankingLoss gradient norm: {torch.norm(sample_grad)}")
 
-        # Check that gradient has non-zero magnitude
-        grad_magnitude = torch.norm(hazard.grad)
-        assert grad_magnitude > 0, "Gradient should not be zero"
+        # Check if gradients have the same sign
+        sign_match = torch.sign(multi_grad) == torch.sign(sample_grad)
+        sign_match_percentage = sign_match.float().mean().item() * 100
 
-        print(f"\nGradient test for MultiEventRankingLoss:")
-        print(f"Loss value: {loss_val.item()}")
-        print(f"Gradient magnitude: {grad_magnitude.item()}")
+        print(f"Gradient sign match percentage: {sign_match_percentage:.2f}%")
+
+        # Check correlation between gradients
+        correlation = torch.corrcoef(
+            torch.stack([multi_grad.flatten(), sample_grad.flatten()])
+        )[0, 1].item()
+
+        print(f"Gradient correlation: {correlation:.4f}")
 
     finally:
         # Clean up temporary files

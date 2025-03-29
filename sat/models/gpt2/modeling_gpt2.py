@@ -8,24 +8,20 @@ corresponding numeric value is multiplied into the embedded vector.
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
-import einops
-import math
-import os
 import warnings
 from dataclasses import dataclass
 from typing import Optional, Tuple, Union
 
+import einops
 import torch
-import torch.nn.functional as F
 import torch.utils.checkpoint
-from torch import nn
-
 import transformers.models.gpt2.modeling_gpt2 as hf_gpt2
+from torch import nn
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
 
-from .configuration_gpt2 import NumericGPT2Config
-
 from sat.utils import logging
+
+from .configuration_gpt2 import NumericGPT2Config
 
 logger = logging.get_default_logger()
 

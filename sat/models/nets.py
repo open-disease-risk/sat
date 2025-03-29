@@ -5,7 +5,6 @@ __status__ = "Development"
 
 import torch
 import torchtuples as tt
-
 from torch import nn
 
 from sat.utils import logging

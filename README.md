@@ -138,7 +138,6 @@ SAT features a comprehensive, composable loss framework that allows flexible com
 - **ListMLE Losses**: Efficient list-based ranking losses that scale better than pairwise approaches
 
 #### Auxiliary Loss Functions
-- **Brier Score Loss**: Measures calibration of probability predictions
 - **Quantile Regression Loss**: Optimizes specific quantiles of the survival distribution
 
 ### Example Loss Recipe
@@ -187,8 +186,7 @@ MTLForSurvival
 ├── Survival Head
 │   └── MetaLoss
 │       ├── NLLPCHazard
-│       ├── SampleRankingLoss
-│       └── BrierScore
+│       └── SampleRankingLoss
 ├── Classification Head
 │   └── CrossEntropyLoss
 └── Regression Head
@@ -251,23 +249,13 @@ model:
 
 ### Monitoring Weight Evolution
 
-To monitor loss balancing during training, use the `LossWeightLoggerCallback`:
-
-```yaml
-callbacks:
-  - _target_: sat.transformers.callbacks.LossWeightLoggerCallback
-    log_freq: 1
-    prefix: "loss_weights"
-    log_eval: true
-    log_train: true
-```
-
-This logs weights to TensorBoard, enabling visualization of balancing dynamics.
+Loss weights are automatically logged to TensorBoard during training, enabling visualization of balancing dynamics without any additional configuration.
 
 For detailed documentation on loss balancing and multi-task learning integration, see:
 - [docs/loss.md](docs/loss.md) - Comprehensive overview of the loss framework
 - [docs/loss_weight_logging.md](docs/loss_weight_logging.md) - Guide to monitoring loss weights
 - [docs/loss_optimization.md](docs/loss_optimization.md) - Details on optimized implementations
+- [docs/performance_comparison.md](docs/performance_comparison.md) - Benchmark results and performance optimization recommendations
 
 Exploratory Data Analysis (EDA) Framework
 ============================
@@ -369,6 +357,103 @@ For detailed information about the EDA framework, see [docs/eda.md](docs/eda.md)
 ```
 pip install lifelines==0.27.8 scipy==1.10.1
 ```
+
+Model Evaluation Framework
+============================
+
+SAT provides robust frameworks for evaluating survival models through confidence interval estimation and cross-validation.
+
+### Confidence Interval Estimation (CI)
+
+The CI framework allows you to systematically evaluate model performance across multiple replications with statistical confidence.
+
+**Key Features:**
+- Runs the model pipeline multiple times with different random seeds
+- Computes confidence intervals for key metrics (Brier score and C-index)
+- Automatically terminates runs when sufficient statistical confidence is achieved
+- Supports early stopping based on a predefined number of replications
+
+**Statistical Methodology:**
+
+The framework uses a rigorous approach to determine when sufficient statistical confidence has been achieved. It implements the following statistical test for each metric:
+
+1. For each metric (Brier score and C-index), the framework tracks:
+   - Sample mean (x̄)
+   - Sample variance (S²)
+   - Number of replications (n)
+
+2. It computes the confidence interval half-length using the t-distribution:
+   
+   δ(n, α) = t(n-1, 1-α/2) × √(S²/n)
+
+   Where:
+   - t(n-1, 1-α/2) is the critical value of the t-distribution with n-1 degrees of freedom
+   - α is the significance level (e.g., 0.05 for 95% confidence)
+
+3. The framework checks if the relative error is within the desired precision:
+   
+   δ(n, α) / |x̄| ≤ γ'
+   
+   Where:
+   - γ' is the adjusted relative error: γ' = γ/(1+γ)
+   - γ is the desired precision/error margin
+
+When this condition is met for both metrics, the framework concludes that sufficient statistical confidence has been achieved and terminates the replications (unless the minimum number of replications hasn't been reached yet).
+
+**Usage:**
+```bash
+python -m sat.ci experiments=metabric/survival alpha=0.05 error=0.1 n=10
+```
+
+**Configuration Options:**
+- `alpha`: Significance level for confidence intervals (default: 0.05)
+- `error`: Desired precision/error margin (default: 0.1)
+- `n`: Minimum number of replications to run (default: 10)
+- `less_than_n`: Maximum number of replications to run (default: 10)
+- `use_val`: Whether to use validation metrics instead of test metrics (default: false)
+
+**Output:**
+The CI framework generates a `metrics-pipeline-ci.json` file containing:
+- Number of replications performed
+- Mean, variance, and standard deviation for Brier score
+- Mean, variance, and standard deviation for C-index (IPCW)
+
+### K-Fold Cross-Validation (CV)
+
+The CV framework implements k-fold cross-validation to assess model performance and robustness.
+
+**Key Features:**
+- Supports configurable k-fold cross-validation (default: 5-fold)
+- Option to reuse existing data splits for reproducibility
+- Automatically runs the full pipeline (data preparation, tokenizer training, label transformation, and fine-tuning) for each fold
+- Computes aggregate statistics across all folds
+
+**Statistical Consideration:**
+It's important to note that in k-fold cross-validation, the validation sets are not independent samples because:
+1. Each data point appears in exactly one validation fold
+2. Training sets overlap significantly (each shares (k-2)/k of the data with other training sets)
+3. This overlap creates dependencies between performance measurements on different folds
+
+As a result, the variance and standard deviation reported across folds should not be directly interpreted as the variance of the performance estimate, and should not be used to construct confidence intervals as if the measurements were independent. These statistics are still useful for understanding the stability of the model across different data splits, but they require careful interpretation.
+
+For more statistically rigorous variance estimation, consider using nested cross-validation or the CI framework with multiple independent training/test splits.
+
+**Usage:**
+```bash
+python -m sat.cv experiments=metabric/survival cv.kfold=5 cv_kfold_reuse=false
+```
+
+**Configuration Options:**
+- `cv.kfold`: Number of folds for cross-validation (default: 5)
+- `cv_kfold_reuse`: Whether to reuse existing data splits (default: true)
+
+**Output:**
+The CV framework generates a `metrics-pipeline-cv.json` file containing:
+- Number of folds evaluated
+- Mean, variance, and standard deviation for Brier score across folds
+- Mean, variance, and standard deviation for C-index (IPCW) across folds
+
+Both frameworks integrate with MLflow for experiment tracking when `run_id` is provided.
 
 To-Dos
 ============================
