@@ -40,6 +40,8 @@ scikit-survival = "^0.24.0"
 lifelines = "0.27.8"
 scipy = "1.10.1"
 seaborn = "^0.13.2"
+optuna = ">=2.10.0,<3.0.0"
+hydra-optuna-sweeper = "^1.2.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "8.3.5"
@@ -75,6 +77,10 @@ exclude = '''
 [tool.pytest.ini_options]
 log_cli = true
 log_cli_level = "DEBUG"
+
+[tool.poetry.scripts]
+optimize = "sat.optuna_optimize:optimize"
+visualize_optuna = "sat.optuna_visualize:main"
 
 [build-system]
 requires = ["poetry-core"]

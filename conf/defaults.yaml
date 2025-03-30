@@ -13,7 +13,6 @@ defaults:
   - tasks: null
   - trainer: null
   - callbacks: default
-  - sweep: null
   - hydra: default
   - experiments: null
 
