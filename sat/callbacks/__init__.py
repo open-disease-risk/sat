@@ -3,6 +3,6 @@
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
-from .loss_weight_logger import LossWeightLoggerCallback
+from .transformers import LossWeightLoggerCallback
 
 __all__ = ["LossWeightLoggerCallback"]
