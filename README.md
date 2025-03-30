@@ -455,6 +455,108 @@ The CV framework generates a `metrics-pipeline-cv.json` file containing:
 
 Both frameworks integrate with MLflow for experiment tracking when `run_id` is provided.
 
+Hyperparameter Tuning with Optuna
+============================
+
+SAT provides robust hyperparameter tuning capabilities using Optuna integrated with Hydra. This allows you to efficiently search for optimal hyperparameters while maintaining the Hydra configuration system.
+
+### Key Features
+
+- **Efficient Search**: Uses Optuna's TPE (Tree-structured Parzen Estimator) sampler for efficient hyperparameter search
+- **Pruning Support**: Automatically terminates poor-performing trials early to save computational resources
+- **Study Persistence**: Stores optimization history in SQLite database for resilience to interruptions
+- **Hydra Integration**: Leverages Hydra's configuration system for clean, modular parameter definitions
+- **Visualization**: Generate optimization history and parameter importance plots
+
+### Usage
+
+Run hyperparameter tuning for a specific model configuration:
+
+```bash
+# Basic usage - specify both the experiment and sweep configuration
+python -m sat.optuna_optimize experiments=metabric/survival sweep=metabric/survival
+
+# Specify number of trials
+python -m sat.optuna_optimize experiments=metabric/survival sweep=metabric/survival hydra.sweeper.n_trials=50
+
+# Run with existing study (don't overwrite)
+python -m sat.optuna_optimize experiments=metabric/survival sweep=metabric/survival optuna.study_overwrite=false
+
+# Enable multirun for parallel trial execution
+python -m sat.optuna_optimize experiments=metabric/survival sweep=metabric/survival --multirun
+```
+
+Note: All results, including the optimization database, will be stored in the `/data/optuna/` directory. Each experiment will create a subdirectory based on the study name.
+
+### Available Search Spaces
+
+Pre-configured search spaces are available for:
+
+- **Survival Models**: `sweep=metabric/survival`
+- **DeepHit Models**: `sweep=metabric/deephit`
+
+### Creating Custom Search Spaces
+
+To define a custom parameter search space, create a new configuration in `conf/sweep/<dataset>/`:
+
+```yaml
+# @package _global_
+
+# This file defines the parameter search space for Optuna
+
+# Study settings
+hydra:
+  sweeper:
+    study_name: custom_optimization
+    storage: sqlite:///${optuna_db}/custom_optimization.db
+    
+    # Define parameter search spaces
+    params:
+      learning_rate:
+        type: float
+        low: 1e-5
+        high: 1e-3
+        log: true
+      
+      # Add other parameters to tune
+      # ...
+
+# Optimization settings
+optuna:
+  metric: test_your_metric  # Metric to optimize
+  direction: minimize  # or maximize
+  study_overwrite: true  # Set to false to resume existing study
+  
+  # Optional pruning configuration
+  pruner:
+    type: median  # Options: median, percentile, threshold, hyperband, none
+    n_startup_trials: 5  # Number of trials before pruning starts
+    n_warmup_steps: 20  # Number of steps per trial before pruning starts
+    interval_steps: 5  # Interval between pruning checks
+```
+
+For detailed documentation on parameter space configuration, see the [Optuna documentation](https://optuna.readthedocs.io/).
+
+### Visualizing Results
+
+After running optimization, you can visualize the results:
+
+```bash
+# Basic usage
+python -m sat.optuna_visualize --db data/optuna/metabric_survival.db --study metabric_survival_opt
+
+# Specify custom output directory
+python -m sat.optuna_visualize --db data/optuna/metabric_deephit.db --study metabric_deephit_opt --output ./viz_results
+```
+
+This generates:
+- Optimization history plots
+- Parameter importance analysis
+- Slice plots for top parameters
+- Contour plots showing parameter interactions
+- Summary statistics and best parameters
+- CSV file with all trial data
+
 To-Dos
 ============================
 > See Issues
