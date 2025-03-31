@@ -7,8 +7,3 @@ defaults:
   - sweep: ???  # Used for hyperparameter sweep configuration
   - override hydra/sweeper: optuna
   - override hydra/sweeper/sampler: tpe
-
-# Custom settings for optimization
-optuna:
-  study_overwrite: true  # Set to false to resume existing study
-  metric: "test_ipcw_avg"  # Metric to monitor for pruning
