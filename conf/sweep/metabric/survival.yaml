@@ -22,8 +22,8 @@ hydra:
       swapping_prob: 0.5
       constraints_func: null
       seed: ${seed}
-    storage: sqlite:///data/model-hub/metabric/survival/studies.db
-    study_name: metabric_survival
+    storage: sqlite:///${modelhub}/${dataset}/${modelname}/studies.db
+    study_name: ${dataset}_${modelname}
 optuna:
   metric: [test_ipcw_avg, test_brier_avg]
   metric_direction: [maximize, minimize]
