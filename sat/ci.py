@@ -5,7 +5,6 @@ __status__ = "Development"
 
 import hydra
 import json
-import mlflow
 import os
 import sys
 
@@ -66,9 +65,16 @@ def _ci(cfg: DictConfig) -> None:
     with open(f"{outDir}/metrics-pipeline-ci.json", "w") as fp:
         json.dump(ci_results, fp, indent=4)
 
+    # Save detailed CI metrics if needed
     if cfg.run_id != "":
-        with mlflow.start_run() as run:
-            log_metrics_from_replications(ci_results, "ci")
+        # Convert metrics to a prefixed format
+        prefixed_metrics = log_metrics_from_replications(ci_results, "ci")
+
+        # Save detailed metrics to a separate JSON file
+        with open(f"{outDir}/ci_detailed_metrics.json", "w") as fp:
+            json.dump(prefixed_metrics, fp, indent=4)
+
+        logger.info(f"Saved detailed CI metrics to {outDir}/ci_detailed_metrics.json")
 
 
 @log_on_start(DEBUG, "Start the ci pipeline...", logger=logger)

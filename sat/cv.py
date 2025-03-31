@@ -5,7 +5,6 @@ __status__ = "Development"
 
 import hydra
 import json
-import mlflow
 
 import pandas as pd
 
@@ -91,9 +90,22 @@ def _cv(cfg: DictConfig) -> None:
     with open(f"{outDir}/metrics-pipeline-cv.json", "w") as fp:
         json.dump(cv_results, fp, indent=4)
 
+    # Save additional metrics for replications if needed
     if cfg.run_id != "":
-        with mlflow.start_run() as run:
-            log_metrics_from_replications(cv_results, "cv")
+        # Convert metrics to a format suitable for JSON output
+        prefixed_metrics = {}
+        for k, v in cv_results.items():
+            if isinstance(v, dict):
+                for subk, subv in v.items():
+                    prefixed_metrics[f"cv_{k}_{subk}"] = subv
+            else:
+                prefixed_metrics[f"cv_{k}"] = v
+
+        # Save detailed metrics to a separate JSON file
+        with open(f"{outDir}/cv_detailed_metrics.json", "w") as fp:
+            json.dump(prefixed_metrics, fp, indent=4)
+
+        logger.info(f"Saved detailed CV metrics to {outDir}/cv_detailed_metrics.json")
 
 
 @log_on_start(DEBUG, "Start the cv pipeline...", logger=logger)

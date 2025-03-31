@@ -9,7 +9,6 @@ from logging import DEBUG, ERROR
 from pathlib import Path
 
 import hydra
-import mlflow
 import pandas as pd
 import torch
 from datasets import load_from_disk
@@ -334,14 +333,22 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
     with Path(f"{trainer.args.output_dir}/finetune-seed.json").open("w") as f:
         json.dump({"seed": cfg.seed}, f, ensure_ascii=False, indent=4)
 
+    # Save metrics to JSON files
     if cfg.run_id != "" and not "multiple_replications" in cfg:
-        with mlflow.start_run() as run:
-            val_metrics = {
-                k.replace("test_", "validation_"): v
-                for k, v in valid_output.metrics.items()
-            }
-            log_metrics(metrics=val_metrics)
-            log_metrics(metrics=output.metrics)
+        val_metrics = {
+            k.replace("test_", "validation_"): v
+            for k, v in valid_output.metrics.items()
+        }
+
+        # Save validation metrics to JSON
+        with Path(f"{trainer.args.output_dir}/validation_metrics.json").open("w") as f:
+            json.dump(val_metrics, f, ensure_ascii=False, indent=4)
+
+        # Save test metrics to JSON
+        with Path(f"{trainer.args.output_dir}/test_metrics.json").open("w") as f:
+            json.dump(output.metrics, f, ensure_ascii=False, indent=4)
+
+        logger.info(f"Saved metrics to {trainer.args.output_dir}")
 
     return valid_output.metrics, output.metrics
 
