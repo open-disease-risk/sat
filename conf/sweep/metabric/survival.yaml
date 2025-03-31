@@ -1,7 +1,7 @@
 # @package _global_
 hydra:
   sweeper:
-    direction: maximize
+    direction: [maximize, minimize]
     n_jobs: 1
     n_trials: 50
     params:
@@ -15,20 +15,18 @@ hydra:
       token_emb: choice(2, 3, 4, 5)
       sentence_emb: choice(1, 2, 3)
     sampler:
-      consider_endpoints: false
-      consider_magic_clip: true
-      consider_prior: true
-      multivariate: false
-      n_ei_candidates: 24
-      n_startup_trials: 10
-      prior_weight: 1.0
+      _target_: optuna.samplers.NSGAIISampler
+      population_size: 20
+      mutation_prob: null
+      crossover_prob: 0.9
+      swapping_prob: 0.5
+      constraints_func: null
       seed: ${seed}
-      warn_independent_sampling: true
     storage: sqlite:///data/model-hub/metabric/survival/studies.db
     study_name: metabric_survival
 optuna:
-  metric: test_ipcw_avg
-  metric_direction: maximize
+  metric: [test_ipcw_avg, test_brier_avg]
+  metric_direction: [maximize, minimize]
   pruner:
     _target_: optuna.pruners.MedianPruner
     interval_steps: 5

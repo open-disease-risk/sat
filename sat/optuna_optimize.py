@@ -19,8 +19,14 @@ logger = logging.get_default_logger()
 
 
 @rand.seed
-def objective(cfg: DictConfig) -> float:
-    """Run a single Optuna trial and return the objective value."""
+def objective(cfg: DictConfig) -> float or tuple:
+    """Run a single Optuna trial and return the objective value(s).
+
+    For single-objective optimization, returns a float.
+    For multi-objective optimization, returns a tuple of float values.
+    The multi-objective optimization is handled by an appropriate sampler
+    like NSGAIISampler which must be configured in the Hydra configuration.
+    """
     # Try to find the trial number in the config, or generate a new one if not found
     trial_number = None
 
@@ -72,55 +78,47 @@ def objective(cfg: DictConfig) -> float:
         f"Running objective function for trial #{trial_number} with output directory: {trial_dir}"
     )
 
-    # Just log all config attributes that look like Optuna parameters
-    logger.info("Looking for parameters in the configuration root:")
-    for param_name in [
-        "learning_rate",
-        "weight_decay",
-        "num_layers",
-        "hidden_size",
-        "intermediate_size",
-        "num_heads",
-        "batch_size",
-        "activation",
-    ]:
-        if hasattr(cfg, param_name):
-            logger.info(f"Found {param_name} = {getattr(cfg, param_name)}")
-        else:
-            logger.info(f"Parameter {param_name} not found in configuration root")
-
     # Save the trial configuration
     try:
         with open(trial_dir / "trial_config.yaml", "w") as f:
             f.write(OmegaConf.to_yaml(cfg))
         logger.info(f"Saved trial configuration to {trial_dir / 'trial_config.yaml'}")
-
-        # # Debug: Log all parameters that might be from Optuna
-        # logger.info("Checking for Optuna parameters in configuration:")
-        # if "params" in cfg:
-        #     logger.info(f"Found params section: {OmegaConf.to_yaml(cfg.params)}")
-        # if "hydra" in cfg and "sweeper" in cfg.hydra and "params" in cfg.hydra.sweeper:
-        #     logger.info(f"Found hydra.sweeper.params: {OmegaConf.to_yaml(cfg.hydra.sweeper.params)}")
-        # # Also check for trial_params or any other likely keys
-        # if "trial_params" in cfg:
-        #     logger.info(f"Found trial_params: {OmegaConf.to_yaml(cfg.trial_params)}")
-
-        # # Recursively search for any parameter values that might look like they're from trials
-        # def find_optuna_params(config, path=""):
-        #     for key, value in config.items() if hasattr(config, "items") else []:
-        #         current_path = f"{path}.{key}" if path else key
-        #         if isinstance(value, (int, float, str, bool)) and any(p in str(key).lower() for p in ["layer", "hidden", "dim", "rate", "decay", "head"]):
-        #             logger.info(f"Potential Optuna parameter: {current_path} = {value}")
-        #         elif hasattr(value, "items") or hasattr(value, "__iter__") and not isinstance(value, str):
-        #             find_optuna_params(value, current_path)
-
-        # find_optuna_params(cfg)
-
     except Exception as e:
         logger.error(f"Error saving trial configuration: {e}")
 
-    # Get the metric to optimize from config
-    metric_name = cfg.optuna.metric
+    # Get the metrics to optimize from config
+    # Handle both single metric (string) and multiple metrics (list) cases
+    metric_names = cfg.optuna.metric
+    metric_directions = (
+        cfg.optuna.metric_direction if hasattr(cfg.optuna, "metric_direction") else None
+    )
+
+    # Convert single metric to list for consistent handling
+    if isinstance(metric_names, str):
+        metric_names = [metric_names]
+        # Default to using eval_metric_greater_is_better for direction if not specified
+        if metric_directions is None:
+            metric_directions = [
+                "maximize" if cfg.tasks.eval_metric_greater_is_better else "minimize"
+            ]
+
+    # Ensure metric_directions is a list
+    if metric_directions is None:
+        # Default all metrics to maximize if not specified
+        metric_directions = ["maximize"] * len(metric_names)
+    elif isinstance(metric_directions, str):
+        metric_directions = [metric_directions]
+
+    # Validate we have the same number of metrics and directions
+    if len(metric_names) != len(metric_directions):
+        logger.error(
+            f"Number of metrics ({len(metric_names)}) doesn't match number of directions ({len(metric_directions)})"
+        )
+        # Default to bad values based on directions
+        return [
+            float("-inf") if direction == "maximize" else float("inf")
+            for direction in metric_directions
+        ]
 
     try:
         # Run the finetune function with the current configuration
@@ -129,27 +127,55 @@ def objective(cfg: DictConfig) -> float:
         print(val_metrics)
         logger.info(f"Trial #{trial_number}: Training completed")
 
-        # Find the metric value
-        metric_value = val_metrics.get(metric_name)
+        # Find the metric values
+        metric_values = []
+        missing_metrics = []
 
-        if metric_value is None:
+        for idx, metric_name in enumerate(metric_names):
+            # Check if metric exists in validation or test metrics
+            if metric_name in val_metrics:
+                metric_values.append(val_metrics.get(metric_name))
+            elif metric_name in test_metrics:
+                metric_values.append(test_metrics.get(metric_name))
+            else:
+                missing_metrics.append(metric_name)
+                # Add a bad value based on direction
+                direction = metric_directions[idx]
+                metric_values.append(
+                    float("-inf") if direction == "maximize" else float("inf")
+                )
+
+        if missing_metrics:
             logger.error(
-                f"Trial #{trial_number}: Metric {metric_name} not found in results. Available metrics: "
+                f"Trial #{trial_number}: Metrics {missing_metrics} not found in results. Available metrics: "
                 f"val={list(val_metrics.keys())}, test={list(test_metrics.keys())}"
             )
-            # Return a default bad value
-            return (
-                float("-inf")
-                if cfg.tasks.eval_metric_greater_is_better
-                else float("inf")
-            )
 
-        # Log the result with trial number
-        logger.info(
-            f"Trial #{trial_number} completed with {metric_name} = {metric_value}"
+        # Log the results with trial number
+        metrics_str = ", ".join(
+            [f"{name}={value}" for name, value in zip(metric_names, metric_values)]
         )
+        logger.info(f"Trial #{trial_number} completed with {metrics_str}")
 
-        return metric_value
+        # Log all metrics for clarity
+        metrics_dict = dict(zip(metric_names, metric_values))
+        logger.info(f"Trial #{trial_number} metrics: {metrics_dict}")
+
+        # Store trial information for monitoring
+        with open(trial_dir / "metrics.json", "w") as f:
+            import json
+
+            json.dump(metrics_dict, f, indent=2)
+
+        # For multi-objective optimization, return a tuple of values
+        # For single-objective, return a float
+        if len(metric_values) > 1:
+            logger.info(
+                f"Multi-objective optimization: returning tuple of {len(metric_values)} values"
+            )
+            return tuple(metric_values)
+        else:
+            return float(metric_values[0])
 
     except Exception as e:
         # Log the error with trial number
@@ -160,10 +186,25 @@ def objective(cfg: DictConfig) -> float:
 
         logger.error(f"Trial #{trial_number} stack trace: {traceback.format_exc()}")
 
-        # Return a default bad value based on direction
-        return (
-            float("-inf") if cfg.tasks.eval_metric_greater_is_better else float("inf")
-        )
+        # Return appropriate bad values based on the optimization direction
+        # For multi-objective, return a tuple of bad values
+        if isinstance(metric_directions, list) and len(metric_directions) > 1:
+            bad_values = [
+                float("-inf") if d == "maximize" else float("inf")
+                for d in metric_directions
+            ]
+            logger.info(
+                f"Returning bad values for multi-objective optimization: {bad_values}"
+            )
+            return tuple(bad_values)
+        else:
+            # Single objective case
+            direction = (
+                metric_directions[0]
+                if isinstance(metric_directions, list)
+                else "maximize"
+            )
+            return float("-inf") if direction == "maximize" else float("inf")
 
 
 @log_on_start(DEBUG, "Starting Optuna optimization...", logger=logger)
