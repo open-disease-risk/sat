@@ -3,6 +3,7 @@
 import argparse
 import json
 import os
+import yaml
 from pathlib import Path
 
 import optuna
@@ -61,7 +62,7 @@ def format_best_params(best_trial, out_format="json"):
     if out_format == "json":
         return json.dumps(params, indent=2)
     elif out_format == "yaml":
-        return OmegaConf.create(params).to_yaml()
+        return yaml.dump(params, default_flow_style=False)
     elif out_format == "cli":
         return " ".join([f"{k}={v}" for k, v in params.items()])
     else:
@@ -107,7 +108,7 @@ def save_best_params(best_trial, output_dir, out_format="json"):
 
     if out_format in ["yaml", "all"]:
         with open(f"{output_dir}/best_params.yaml", "w") as f:
-            f.write(OmegaConf.create(trial_info).to_yaml())
+            yaml.dump(trial_info, f, default_flow_style=False)
             logger.info(f"Saved best parameters to {output_dir}/best_params.yaml")
 
     if out_format in ["cli", "all"]:
@@ -169,7 +170,7 @@ def main():
         if args.format == "json":
             print(json.dumps(best_trial.params, indent=2))
         elif args.format == "yaml":
-            print(OmegaConf.create(best_trial.params).to_yaml())
+            print(yaml.dump(best_trial.params, default_flow_style=False))
         elif args.format == "cli":
             print(" ".join([f"{k}={v}" for k, v in best_trial.params.items()]))
         else:
