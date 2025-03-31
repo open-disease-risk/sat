@@ -1,0 +1,9 @@
+# @package _global_
+task: optuna_sweep
+
+defaults:
+  - _self_
+  - defaults
+  - sweep: ???  # Used for hyperparameter sweep configuration
+  - override hydra/sweeper: optuna
+  - override hydra/sweeper/sampler: nsgaii

@@ -14,7 +14,7 @@ repository = "https://github.com/sat/sat.git"
 keywords = ["survival", "transformer"]
 
 [tool.poetry.dependencies]
-python = ">=3.10,<3.12"
+python = ">=3.11,<3.12"
 hydra-core = "^1.3.2"
 hydra-colorlog = "^1.2.0"
 transformers = "4.50.0"
@@ -34,12 +34,14 @@ numba = "0.61.0"
 numpy = "<2.2"
 einops = "0.8.1"
 torchtuples = "^0.2.2"
-mlflow = "^2.20.3"
 accelerate = "^1.4.0"
 scikit-survival = "^0.24.0"
 lifelines = "0.27.8"
 scipy = "1.10.1"
 seaborn = "^0.13.2"
+hydra-optuna-sweeper = { git = "https://github.com/dahlem/hydra", subdirectory = "plugins/hydra_optuna_sweeper" }
+plotly = "^6.0.1"
+ipython = "^9.0.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "8.3.5"
@@ -75,6 +77,10 @@ exclude = '''
 [tool.pytest.ini_options]
 log_cli = true
 log_cli_level = "DEBUG"
+
+[tool.poetry.scripts]
+optimize = "sat.optuna_optimize:optimize"
+visualize_optuna = "sat.optuna_visualize:main"
 
 [build-system]
 requires = ["poetry-core"]

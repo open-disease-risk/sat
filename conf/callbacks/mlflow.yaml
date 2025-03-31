@@ -1,3 +1,0 @@
-- _target_: transformers.EarlyStoppingCallback
-  early_stopping_patience: 5
-- _target_: transformers.integrations.MLflowCallback

@@ -4,7 +4,6 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 import json
-import mlflow
 import numbers
 import torch
 
@@ -134,14 +133,40 @@ def write_interpolation(cfg, predictions, ids, output_dir, is_survival):
                 interp_df.to_csv(Path(f"{output_dir}/interpolations.csv"), index=False)
 
 
-def log_metrics(metrics):
-    if mlflow.active_run():
-        for k, v in metrics.items():
-            if isinstance(v, numbers.Number):
-                mlflow.log_metric(k, v)
+def log_metrics(metrics, file_path=None):
+    """
+    Save metrics to a JSON file.
+
+    Args:
+        metrics: Dictionary of metrics to save
+        file_path: Path to save the metrics JSON file
+    """
+    if file_path:
+        # Filter to include only numeric values
+        numeric_metrics = {
+            k: v for k, v in metrics.items() if isinstance(v, numbers.Number)
+        }
+
+        # Write to file
+        with open(file_path, "w") as f:
+            json.dump(numeric_metrics, f, indent=4)
+
+        logger.info(f"Saved metrics to {file_path}")
+
+    return metrics
 
 
 def log_metrics_from_replications(metrics, prefix):
+    """
+    Convert nested metrics dictionary to a flat dictionary with prefixed keys.
+
+    Args:
+        metrics: Dictionary of metrics, potentially nested
+        prefix: Prefix to add to all metric keys
+
+    Returns:
+        Flattened metrics dictionary with prefixed keys
+    """
     new_dict = {}
     for k, v in metrics.items():
         if isinstance(v, numbers.Number):
@@ -152,7 +177,5 @@ def log_metrics_from_replications(metrics, prefix):
                     new_dict[f"{prefix}_{k}_{k_n}"] = v_n
         else:
             pass  # ignore
-
-    log_metrics(new_dict)
 
     return new_dict

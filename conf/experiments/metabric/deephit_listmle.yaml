@@ -14,7 +14,17 @@ defaults:
   - override /trainer: ${data/load}/default
 
 
-survival_intermediate_size: 8
+# Parameters tuned using /sweep/metabric/deephit_listmle.yaml
+learning_rate: 0.002758800828733316
+token_emb: 2
+sentence_emb: 3
+transformer_hidden_size: 32
+transformer_intermediate_size: 64
+transformer_num_attention_heads: 2
+transformer_num_hidden_layers: 1
+weight_decay: 0.00003083560322781262
+survival_intermediate_size: 24
+
 survival_batch_norm: false
 survival_hidden_dropout_prob: false
 survival_bias: true
