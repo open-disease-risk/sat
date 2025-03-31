@@ -24,6 +24,22 @@ def objective(cfg: DictConfig) -> float:
     # Try to find the trial number in the config, or generate a new one if not found
     trial_number = None
 
+    # Log all override parameters from Optuna
+    import sys
+
+    logger.info("Command line arguments:")
+    logger.info(f"  {' '.join(sys.argv)}")
+
+    # Extract parameters from sys.argv that might be from Optuna
+    optuna_params = {}
+    for arg in sys.argv:
+        if "=" in arg and not arg.startswith("-"):
+            key, value = arg.split("=", 1)
+            optuna_params[key] = value
+
+    if optuna_params:
+        logger.info(f"Detected Optuna parameters from command line: {optuna_params}")
+
     # Check places in the config where trial number might be stored
     if hasattr(cfg, "trial_number"):  # First check the direct trial_number
         trial_number = cfg.trial_number
@@ -56,11 +72,50 @@ def objective(cfg: DictConfig) -> float:
         f"Running objective function for trial #{trial_number} with output directory: {trial_dir}"
     )
 
+    # Just log all config attributes that look like Optuna parameters
+    logger.info("Looking for parameters in the configuration root:")
+    for param_name in [
+        "learning_rate",
+        "weight_decay",
+        "num_layers",
+        "hidden_size",
+        "intermediate_size",
+        "num_heads",
+        "batch_size",
+        "activation",
+    ]:
+        if hasattr(cfg, param_name):
+            logger.info(f"Found {param_name} = {getattr(cfg, param_name)}")
+        else:
+            logger.info(f"Parameter {param_name} not found in configuration root")
+
     # Save the trial configuration
     try:
         with open(trial_dir / "trial_config.yaml", "w") as f:
             f.write(OmegaConf.to_yaml(cfg))
         logger.info(f"Saved trial configuration to {trial_dir / 'trial_config.yaml'}")
+
+        # # Debug: Log all parameters that might be from Optuna
+        # logger.info("Checking for Optuna parameters in configuration:")
+        # if "params" in cfg:
+        #     logger.info(f"Found params section: {OmegaConf.to_yaml(cfg.params)}")
+        # if "hydra" in cfg and "sweeper" in cfg.hydra and "params" in cfg.hydra.sweeper:
+        #     logger.info(f"Found hydra.sweeper.params: {OmegaConf.to_yaml(cfg.hydra.sweeper.params)}")
+        # # Also check for trial_params or any other likely keys
+        # if "trial_params" in cfg:
+        #     logger.info(f"Found trial_params: {OmegaConf.to_yaml(cfg.trial_params)}")
+
+        # # Recursively search for any parameter values that might look like they're from trials
+        # def find_optuna_params(config, path=""):
+        #     for key, value in config.items() if hasattr(config, "items") else []:
+        #         current_path = f"{path}.{key}" if path else key
+        #         if isinstance(value, (int, float, str, bool)) and any(p in str(key).lower() for p in ["layer", "hidden", "dim", "rate", "decay", "head"]):
+        #             logger.info(f"Potential Optuna parameter: {current_path} = {value}")
+        #         elif hasattr(value, "items") or hasattr(value, "__iter__") and not isinstance(value, str):
+        #             find_optuna_params(value, current_path)
+
+        # find_optuna_params(cfg)
+
     except Exception as e:
         logger.error(f"Error saving trial configuration: {e}")
 
@@ -125,6 +180,31 @@ def objective(cfg: DictConfig) -> float:
 )
 def optimize(cfg: DictConfig) -> None:
     """Run Optuna hyperparameter optimization."""
+    # Log the full configuration for debugging
+    logger.info("Full configuration received by optimize function:")
+    logger.info(OmegaConf.to_yaml(cfg))
+
+    # Check for Optuna sweep parameters
+    logger.info("Checking for Optuna sweep parameters in the config:")
+
+    # Check main Hydra sweeper config
+    if "hydra" in cfg and "sweeper" in cfg.hydra:
+        logger.info("Hydra sweeper configuration:")
+        logger.info(OmegaConf.to_yaml(cfg.hydra.sweeper))
+
+        if "params" in cfg.hydra.sweeper:
+            logger.info("Found Hydra sweeper params:")
+            logger.info(OmegaConf.to_yaml(cfg.hydra.sweeper.params))
+
+    # # Look for common parameter values directly in root
+    # logger.info("Checking for common parameters in config root:")
+    # for param_name in ["learning_rate", "weight_decay", "num_layers", "hidden_size",
+    #                    "intermediate_size", "num_heads", "batch_size", "activation"]:
+    #     if hasattr(cfg, param_name):
+    #         logger.info(f"Found {param_name} = {getattr(cfg, param_name)}")
+    #     else:
+    #         logger.info(f"Parameter {param_name} not found")
+
     # Look for trial information in configuration
     trial_info = {}
 
@@ -151,6 +231,12 @@ def optimize(cfg: DictConfig) -> None:
         logger.info(f"Found trial information: {trial_info}")
     else:
         logger.info("No trial information found in configuration")
+
+    # Check for any command line arguments that might be Optuna params
+    import sys
+
+    logger.info("Command line arguments:")
+    logger.info(f"  {' '.join(sys.argv)}")
 
     return objective(cfg)
 

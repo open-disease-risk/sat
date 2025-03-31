@@ -34,14 +34,12 @@ numba = "0.61.0"
 numpy = "<2.2"
 einops = "0.8.1"
 torchtuples = "^0.2.2"
-mlflow = "^2.20.3"
 accelerate = "^1.4.0"
 scikit-survival = "^0.24.0"
 lifelines = "0.27.8"
 scipy = "1.10.1"
 seaborn = "^0.13.2"
-optuna = ">=2.10.0,<3.0.0"
-hydra-optuna-sweeper = "^1.2.0"
+hydra-optuna-sweeper = { git = "https://github.com/dahlem/hydra", subdirectory = "plugins/hydra_optuna_sweeper" }
 
 [tool.poetry.group.dev.dependencies]
 pytest = "8.3.5"

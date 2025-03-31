@@ -24,7 +24,7 @@ hydra:
       prior_weight: 1.0
       seed: ${seed}
       warn_independent_sampling: true
-    storage: null
+    storage: sqlite:///data/model-hub/metabric/survival/studies.db
     study_name: metabric_survival
 optuna:
   metric: test_ipcw_avg

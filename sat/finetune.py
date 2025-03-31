@@ -252,7 +252,7 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
 
             # Get trial from config
             trial = cfg.optuna_trial if hasattr(cfg, "optuna_trial") else None
-            
+
             # Get pruner from config if available
             pruner = None
             if hasattr(cfg.optuna, "pruner"):
@@ -261,8 +261,10 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
                     pruner = instantiate(cfg.optuna.pruner)
                     logger.info(f"Using pruner: {type(pruner).__name__}")
                 except Exception as e:
-                    logger.warning(f"Could not instantiate pruner: {e}, using default MedianPruner")
-            
+                    logger.warning(
+                        f"Could not instantiate pruner: {e}, using default MedianPruner"
+                    )
+
             # If we have a trial object but no pruner was configured, apply the pruner
             if trial is not None and pruner is not None:
                 # Apply pruner to the trial's study if possible
@@ -272,15 +274,13 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
                         trial.study.pruner = pruner
                 except Exception as e:
                     logger.warning(f"Could not set pruner on study: {e}")
-            
+
             # Create a pruning callback
             # For Transformers Trainer, we use TorchPruningCallback
             from optuna.integration import TorchPruningCallback
 
             # Create a pruning callback
-            pruning_callback = TorchPruningCallback(
-                trial=trial, monitor=monitor
-            )
+            pruning_callback = TorchPruningCallback(trial=trial, monitor=monitor)
 
             # Add to existing callbacks
             callbacks.append(pruning_callback)
