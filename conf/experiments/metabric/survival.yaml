@@ -11,6 +11,7 @@ defaults:
   - override /tasks: survival
   - override /trainer: ${data/load}/default
 
+# Parameters tuned using /sweep/metabric/survival.yaml
 learning_rate: 0.0005687237444024079
 token_emb: 2
 sentence_emb: 2
