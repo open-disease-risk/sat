@@ -11,7 +11,16 @@ defaults:
   - override /tasks: survival
   - override /trainer: ${data/load}/default
 
-survival_intermediate_size: 8
+learning_rate: 0.0005687237444024079
+token_emb: 2
+sentence_emb: 2
+transformer_hidden_size: 32
+transformer_intermediate_size: 96
+transformer_num_attention_heads: 4
+transformer_num_hidden_layers: 1
+weight_decay: 0.05001268392745459
+survival_intermediate_size: 16
+
 survival_batch_norm: false
 survival_hidden_dropout_prob: false
 survival_bias: true
