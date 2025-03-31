@@ -79,12 +79,12 @@ def create_pareto_front_plot(study, output_dir, interactive=True):
             # Create interactive visualizations with plotly
             if len(study.directions) == 2:
                 # For a 2D Pareto front, we need to specify target functions
-                target_names = [f"Objective {i+1}" for i in range(len(study.directions))]
-                
+                target_names = [
+                    f"Objective {i+1}" for i in range(len(study.directions))
+                ]
+
                 fig = optuna.visualization.plot_pareto_front(
-                    study,
-                    target_names=target_names,
-                    include_dominated_trials=True
+                    study, target_names=target_names, include_dominated_trials=True
                 )
                 output_file = os.path.join(output_dir, "pareto_front.html")
                 fig.write_html(output_file)
@@ -95,7 +95,7 @@ def create_pareto_front_plot(study, output_dir, interactive=True):
                 if len(params) >= 2:
                     # Create contour plots with pairs of parameters
                     for i in range(len(params) - 1):
-                        for j in range(i+1, len(params)):
+                        for j in range(i + 1, len(params)):
                             try:
                                 param_pair = [params[i], params[j]]
                                 # For first objective
@@ -103,37 +103,51 @@ def create_pareto_front_plot(study, output_dir, interactive=True):
                                     study,
                                     params=param_pair,
                                     target=lambda t: t.values[0] if t.values else None,
-                                    target_name=target_names[0]
+                                    target_name=target_names[0],
                                 )
-                                contour_file = os.path.join(output_dir, f"contour_plot_{params[i]}_{params[j]}_obj1.html")
+                                contour_file = os.path.join(
+                                    output_dir,
+                                    f"contour_plot_{params[i]}_{params[j]}_obj1.html",
+                                )
                                 contour_fig.write_html(contour_file)
-                                logger.info(f"Saved contour plot for {params[i]} vs {params[j]} (obj 1) to {contour_file}")
-                                
+                                logger.info(
+                                    f"Saved contour plot for {params[i]} vs {params[j]} (obj 1) to {contour_file}"
+                                )
+
                                 # For second objective
                                 contour_fig = optuna.visualization.plot_contour(
                                     study,
                                     params=param_pair,
                                     target=lambda t: t.values[1] if t.values else None,
-                                    target_name=target_names[1]
+                                    target_name=target_names[1],
                                 )
-                                contour_file = os.path.join(output_dir, f"contour_plot_{params[i]}_{params[j]}_obj2.html")
+                                contour_file = os.path.join(
+                                    output_dir,
+                                    f"contour_plot_{params[i]}_{params[j]}_obj2.html",
+                                )
                                 contour_fig.write_html(contour_file)
-                                logger.info(f"Saved contour plot for {params[i]} vs {params[j]} (obj 2) to {contour_file}")
+                                logger.info(
+                                    f"Saved contour plot for {params[i]} vs {params[j]} (obj 2) to {contour_file}"
+                                )
                             except Exception as e:
-                                logger.warning(f"Could not create contour plot for {params[i]} vs {params[j]}: {e}")
+                                logger.warning(
+                                    f"Could not create contour plot for {params[i]} vs {params[j]}: {e}"
+                                )
                 else:
-                    logger.warning("Not enough parameters for contour plots (need at least 2)")
+                    logger.warning(
+                        "Not enough parameters for contour plots (need at least 2)"
+                    )
 
                 return output_file
 
             elif len(study.directions) == 3:
                 # For a 3D Pareto front, we need to specify target functions
-                target_names = [f"Objective {i+1}" for i in range(len(study.directions))]
-                
+                target_names = [
+                    f"Objective {i+1}" for i in range(len(study.directions))
+                ]
+
                 fig = optuna.visualization.plot_pareto_front(
-                    study,
-                    target_names=target_names,
-                    include_dominated_trials=True
+                    study, target_names=target_names, include_dominated_trials=True
                 )
                 output_file = os.path.join(output_dir, "pareto_front_3d.html")
                 fig.write_html(output_file)
@@ -146,9 +160,13 @@ def create_pareto_front_plot(study, output_dir, interactive=True):
                     for j in range(i + 1, len(study.directions)):
                         try:
                             # Define target functions for projection
-                            target_i = lambda t: t.values[i] if t.values and len(t.values) > i else None
-                            target_j = lambda t: t.values[j] if t.values and len(t.values) > j else None
-                            
+                            target_i = lambda t: (
+                                t.values[i] if t.values and len(t.values) > i else None
+                            )
+                            target_j = lambda t: (
+                                t.values[j] if t.values and len(t.values) > j else None
+                            )
+
                             # Create 2D projection of Pareto front
                             fig = optuna.visualization.plot_pareto_front(
                                 study,
@@ -162,7 +180,9 @@ def create_pareto_front_plot(study, output_dir, interactive=True):
                             fig.write_html(output_file)
                             logger.info(f"Saved pairwise Pareto front to {output_file}")
                         except Exception as e:
-                            logger.error(f"Error creating pairwise plot for objectives {i+1} and {j+1}: {e}")
+                            logger.error(
+                                f"Error creating pairwise plot for objectives {i+1} and {j+1}: {e}"
+                            )
 
                 return os.path.join(output_dir, "pareto_front_1_vs_2.html")
         else:
@@ -552,20 +572,31 @@ def create_parameter_importance_plot(study, output_dir, interactive=True):
                 for i in range(len(study.directions)):
                     try:
                         # Create a proper target function for this objective
-                        target_func = lambda t, idx=i: t.values[idx] if t.values and len(t.values) > idx else None
-                        
+                        target_func = lambda t, idx=i: (
+                            t.values[idx] if t.values and len(t.values) > idx else None
+                        )
+
                         # Check if we have enough trials with values
-                        valid_values = [t.values[i] for t in study.trials if t.values and len(t.values) > i]
+                        valid_values = [
+                            t.values[i]
+                            for t in study.trials
+                            if t.values and len(t.values) > i
+                        ]
                         if len(valid_values) < 2:
-                            logger.warning(f"Not enough trials with values for objective {i+1}")
+                            logger.warning(
+                                f"Not enough trials with values for objective {i+1}"
+                            )
                             continue
-                        
+
                         # Fix array dimension issues by forcing numeric conversion
-                        valid_values = [float(v) if v is not None else float('nan') for v in valid_values]
+                        valid_values = [
+                            float(v) if v is not None else float("nan")
+                            for v in valid_values
+                        ]
                         if all(np.isnan(valid_values)):
                             logger.warning(f"No valid values for objective {i+1}")
                             continue
-                        
+
                         fig = optuna.visualization.plot_param_importances(
                             study,
                             target=target_func,
@@ -584,6 +615,7 @@ def create_parameter_importance_plot(study, output_dir, interactive=True):
                             f"Could not create parameter importance plot for objective {i+1}: {e}"
                         )
                         import traceback
+
                         logger.debug(traceback.format_exc())
             else:
                 # For single-objective, create standard importance plot
@@ -596,6 +628,7 @@ def create_parameter_importance_plot(study, output_dir, interactive=True):
                 except Exception as e:
                     logger.warning(f"Could not create parameter importance plot: {e}")
                     import traceback
+
                     logger.debug(traceback.format_exc())
 
             return output_files[0] if output_files else None
@@ -610,6 +643,7 @@ def create_parameter_importance_plot(study, output_dir, interactive=True):
     except Exception as e:
         logger.error(f"Error creating parameter importance plot: {e}")
         import traceback
+
         logger.error(traceback.format_exc())
         return None
 
@@ -662,8 +696,10 @@ def main():
         # For IPython display, import only if needed
         try:
             # Create Pareto front visualization
-            pareto_plot = create_pareto_front_plot(study, args.output_dir, args.interactive)
-            
+            pareto_plot = create_pareto_front_plot(
+                study, args.output_dir, args.interactive
+            )
+
             # Generate table of Pareto-optimal solutions
             pareto_df = generate_pareto_solutions_table(study, args.output_dir)
             if pareto_df is not None:
@@ -671,6 +707,7 @@ def main():
         except Exception as e:
             logger.error(f"Error in Pareto front visualization: {e}")
             import traceback
+
             logger.error(traceback.format_exc())
     else:
         logger.info("Detected single-objective study")
