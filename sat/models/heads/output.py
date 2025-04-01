@@ -48,6 +48,8 @@ class SAOutput(ModelOutput):
             Scale parameters for DSM distribution mixtures.
         logits_g (`torch.FloatTensor`, *optional*):
             Logits for DSM mixture component weights.
+        event_dependency_matrix (`torch.FloatTensor`, *optional*):
+            Event dependency matrix for the MENSA model
     """
 
     loss: Optional[torch.FloatTensor] = None
@@ -63,6 +65,7 @@ class SAOutput(ModelOutput):
     shape: Optional[torch.FloatTensor] = None
     scale: Optional[torch.FloatTensor] = None
     logits_g: Optional[torch.FloatTensor] = None
+    event_dependency_matrix: Optional[torch.FloatTensor] = None
 
 
 @dataclass
