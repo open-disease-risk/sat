@@ -96,16 +96,10 @@ class MENSATaskHead(SurvivalTask):
                 )
 
         # Instantiate loss function if available
-        self.loss = None
-        if hasattr(config, "loss") and config.model_type in config.loss:
-            loss = config.loss[config.model_type]
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug(f"Instantiate the loss {loss}")
-            try:
-                self.loss = hydra.utils.instantiate(loss)
-            except Exception as e:
-                logger.error(f"Failed to instantiate loss: {str(e)}")
-                logger.warning("Continuing without loss function")
+        loss = config.loss["survival"]
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Instantiate the loss {loss}")
+        self.loss = hydra.utils.instantiate(loss)
 
     def _compute_survival_function(self, time_points, shape, scale, logits_g):
         """

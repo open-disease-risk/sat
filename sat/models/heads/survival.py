@@ -92,7 +92,7 @@ class SurvivalTaskHead(SurvivalTask):
                     "SurvivalTaskHead created as part of MTL - will be initialized by MTL"
                 )
 
-        loss = config.loss[config.model_type]
+        loss = config.loss["survival"]
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f"Instantiate the loss {loss}")
         self.loss = hydra.utils.instantiate(loss)

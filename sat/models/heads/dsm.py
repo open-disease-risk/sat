@@ -120,7 +120,7 @@ class DSMTaskHead(SurvivalTask):
         # Instantiate loss function if available
         self.loss = None
         if hasattr(config, "loss") and config.model_type in config.loss:
-            loss = config.loss[config.model_type]
+            loss = config.loss["survival"]
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug(f"Instantiate the loss {loss}")
             try:
