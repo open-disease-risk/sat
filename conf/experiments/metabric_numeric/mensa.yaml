@@ -1,0 +1,30 @@
+defaults:
+  - metabric_numeric/defaults
+  - _self_
+task: mensa-survival
+transformer: 
+  _target_: sat.models.heads.SurvivalTaskHead
+  num_features: ${..num_features}
+  num_events: ${..num_events}
+  num_hidden_layers: 3
+  intermediate_size: 128
+  indiv_intermediate_size: 64
+  indiv_num_hidden_layers: 2
+  batch_norm: true
+  bias: true
+  hidden_dropout_prob: 0.2
+  num_mixtures: 4
+  distribution: "weibull"
+  event_dependency: true
+  temp: 1000.0
+  discount: 0.8
+  loss:
+    ${..transformer.model_type}:
+      _target_: sat.loss.survival.MENSALoss
+      duration_cuts: ${paths.duration_cuts}
+      importance_sample_weights: ${paths.importance_sample_weights}
+      num_events: ${..num_events}
+      distribution: "weibull"
+      discount: 0.8
+      elbo: false
+      dependency_regularization: 0.01

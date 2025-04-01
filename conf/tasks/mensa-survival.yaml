@@ -1,0 +1,16 @@
+_target_: sat.models.heads.MENSATaskHead
+num_features: ${..num_features}
+num_events: ${..num_events}
+num_hidden_layers: 2
+intermediate_size: 64
+indiv_intermediate_size: 32
+indiv_num_hidden_layers: 1
+batch_norm: true
+bias: true
+hidden_dropout_prob: 0.1
+num_mixtures: 4
+distribution: "weibull"
+event_dependency: true
+temp: 1000.0
+discount: 1.0
+loss_weight: 1.0

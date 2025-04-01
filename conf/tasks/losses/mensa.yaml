@@ -1,0 +1,8 @@
+_target_: sat.loss.survival.MENSALoss
+duration_cuts: ${paths.duration_cuts}
+importance_sample_weights: ${paths.importance_sample_weights}
+num_events: ${..num_events}
+distribution: "weibull"
+discount: 1.0
+elbo: false
+dependency_regularization: 0.01
