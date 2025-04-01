@@ -1,16 +1,49 @@
-_target_: sat.models.heads.MENSATaskHead
-num_features: ${..num_features}
-num_events: ${..num_events}
-num_hidden_layers: 2
-intermediate_size: 64
-indiv_intermediate_size: 32
-indiv_num_hidden_layers: 1
-batch_norm: true
-bias: true
-hidden_dropout_prob: 0.1
-num_mixtures: 4
-distribution: "weibull"
-event_dependency: true
-temp: 1000.0
-discount: 1.0
-loss_weight: 1.0
+# MENSA: Multi-Event Neural Survival Analysis task configuration
+defaults:
+  - losses: mensa
+  - metrics: default
+
+eval_metric: "eval_ipcw_avg"
+eval_metric_greater_is_better: true
+
+config:
+  _target_: sat.models.heads.MTLConfig
+  _convert_: "partial"
+  freeze_transformer: false
+  initializer_range: ${mtl_initializer_range}
+  initializer: ${mtl_initializer}
+  pretrained_params: ${transformers}
+  sentence_emb: ${sentence_emb}
+  token_emb: ${token_emb}
+  hidden_size: ${transformer_hidden_size}
+  num_features: ${tokenizers.max_seq_length}
+  intermediate_size: ${shared_intermediate_size}
+  num_labels: ${shared_num_labels}
+  batch_norm: ${shared_batch_norm}
+  hidden_dropout_prob: ${shared_hidden_dropout_prob}
+  bias: ${shared_bias}
+  num_hidden_layers: ${shared_num_hidden_layers}
+  select_hidden_layers: ${select_hidden_layers}
+  return_dict: true
+  task_heads:
+    - _target_: sat.models.heads.MENSAConfig
+      _recursive_: false
+      initializer_range: ${survival_initializer_range}
+      initializer: ${survival_initializer}
+      num_features: ${shared_num_labels}
+      intermediate_size: ${survival_shared_intermediate_size}
+      num_hidden_layers: ${survival_shared_num_hidden_layers}
+      indiv_intermediate_size: ${mensa_intermediate_size}
+      indiv_num_hidden_layers: ${mensa_num_hidden_layers}
+      num_labels: ${data.label_transform.cuts}
+      batch_norm: ${mensa_batch_norm}
+      hidden_dropout_prob: ${mensa_hidden_dropout_prob}
+      bias: ${mensa_bias}
+      loss: ${tasks.losses}
+      loss_weight: ${survival_loss_weight}
+      num_events: ${data.num_events}
+      num_mixtures: ${mensa_num_mixtures}
+      distribution: ${mensa_distribution}
+      event_distribution: ${mensa_event_distribution}
+      temp: ${mensa_temp}
+      discount: ${mensa_discount}
