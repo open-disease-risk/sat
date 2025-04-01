@@ -162,15 +162,47 @@ class MENSALoss(Loss):
         # Calculate survival function for each component
         time_expanded = time.unsqueeze(1).expand(-1, num_mixtures)
 
+        # Add small epsilon to prevent numerical issues
+        eps = 1e-7
+
+        # Clamp scale to ensure positive values
+        scale_safe = torch.clamp(scale, min=eps)
+
         if self.distribution.lower() == "weibull":
-            # Weibull survival: exp(-(t/scale)^shape)
-            log_surv = -torch.pow(time_expanded / scale, shape)
+            # We need to be careful with the Weibull calculation to avoid numerical instability
+
+            # Make sure time is positive
+            time_safe = torch.clamp(time_expanded, min=eps)
+
+            # Compute ratio safely
+            ratio = time_safe / scale_safe
+
+            # Clamp ratio to avoid huge values that could cause overflow
+            ratio_clamped = torch.clamp(ratio, min=eps, max=1e15)
+
+            # Clamp shape to avoid extreme exponents
+            shape_safe = torch.clamp(shape, min=eps, max=100.0)
+
+            # Compute power with clamped values
+            # Use log-domain for numerical stability
+            log_ratio = torch.log(ratio_clamped)
+            log_term = shape_safe * log_ratio
+            log_surv = -torch.exp(torch.clamp(log_term, max=30.0))
+
         elif self.distribution.lower() == "lognormal":
             # Log-normal survival function: 1 - CDF of normal distribution
-            z = (torch.log(time_expanded) - scale) / shape
-            surv = 0.5 - 0.5 * torch.erf(
-                z / torch.sqrt(torch.tensor(2.0, device=device))
+            # Make sure time is positive
+            time_safe = torch.clamp(time_expanded, min=eps)
+
+            # Compute z-score safely with clamped values
+            z = (torch.log(time_safe) - scale) / torch.clamp(shape, min=eps)
+
+            # Compute error function with clamped input
+            z_clamped = torch.clamp(
+                z / torch.sqrt(torch.tensor(2.0, device=device)), min=-8.0, max=8.0
             )
+            surv = 0.5 - 0.5 * torch.erf(z_clamped)
+
             # Avoid log(0)
             surv = torch.clamp(surv, min=1e-7)
             log_surv = torch.log(surv)

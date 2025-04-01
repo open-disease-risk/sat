@@ -319,9 +319,18 @@ class MENSAParameterNet(nn.Module):
             self.event_dependency_matrix = nn.Parameter(
                 torch.zeros(num_events, num_events)
             )
-            # Initialize diagonal elements to higher values to start with more independence
+            # Initialize matrix with proper values to ensure numerical stability
             with torch.no_grad():
-                self.event_dependency_matrix.fill_diagonal_(1.0)
+                # Initialize diagonal elements to higher values (3.0) to start with more independence
+                # This ensures the softmax will give ~95% weight to the diagonal
+                self.event_dependency_matrix.fill_diagonal_(3.0)
+
+                # Add small random noise to off-diagonal elements to break symmetry
+                # but keep values low enough that initial dependencies are minimal
+                mask = ~torch.eye(num_events, dtype=torch.bool)
+                self.event_dependency_matrix.data[mask] = (
+                    torch.randn(num_events, num_events)[mask] * 0.01
+                )
 
         # Event-specific networks
         self.event_nets = nn.ModuleList()
@@ -409,9 +418,20 @@ class MENSAParameterNet(nn.Module):
             # Extract event-specific features
             event_features = event_net["features"](shared_features)
 
-            # Compute parameters for this event
-            shape = F.softplus(event_net["shape"](event_features)) + 0.01
-            scale = F.softplus(event_net["scale"](event_features)) + 0.01
+            # Compute parameters for this event with improved numerical stability
+            # Use a larger min value for shape and scale to avoid numerical issues
+            shape = (
+                F.softplus(event_net["shape"](event_features)) + 0.1
+            )  # Minimum value of 0.1
+            scale = (
+                F.softplus(event_net["scale"](event_features)) + 0.5
+            )  # Minimum value of 0.5
+
+            # Ensure values are in a reasonable range
+            shape = torch.clamp(shape, min=0.1, max=100.0)
+            scale = torch.clamp(scale, min=0.5, max=1000.0)
+
+            # Regular logits for mixture weights
             logits_g = event_net["mixture"](event_features)
 
             all_shapes.append(shape)
@@ -425,21 +445,36 @@ class MENSAParameterNet(nn.Module):
 
         # Apply event dependencies if enabled
         if self.event_dependency:
+            # Apply temperature to dependency matrix to control sharpness of softmax
+            # Higher temperature (>1) gives more weight to top dependencies
+            temp = 1.0
+
             # Normalize the dependency matrix using softmax along rows
             # This creates a probability distribution over events for each event
-            dependency_weights = F.softmax(self.event_dependency_matrix, dim=1)
+            dependency_weights = F.softmax(self.event_dependency_matrix / temp, dim=1)
+
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"Dependency weights: {dependency_weights}")
 
             # For each event, adjust parameters based on dependencies
             batch_size = x.shape[0]
             adjusted_shape = torch.zeros_like(stacked_shape)
             adjusted_scale = torch.zeros_like(stacked_scale)
 
+            # Apply weighted dependencies to each parameter, with stability safeguards
             for i in range(self.num_events):
                 for j in range(self.num_events):
                     # Apply weighted influence from event j to event i
                     weight = dependency_weights[i, j]
-                    adjusted_shape[:, i, :] += weight * stacked_shape[:, j, :]
-                    adjusted_scale[:, i, :] += weight * stacked_scale[:, j, :]
+
+                    # Skip negligible influences to improve numerical stability
+                    if weight > 1e-6:
+                        adjusted_shape[:, i, :] += weight * stacked_shape[:, j, :]
+                        adjusted_scale[:, i, :] += weight * stacked_scale[:, j, :]
+
+            # Apply final clamping to ensure reasonable parameter ranges
+            adjusted_shape = torch.clamp(adjusted_shape, min=0.1, max=100.0)
+            adjusted_scale = torch.clamp(adjusted_scale, min=0.5, max=1000.0)
 
             # Return adjusted parameters, but keep original mixture weights
             return adjusted_shape, adjusted_scale, stacked_logits_g

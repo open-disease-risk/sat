@@ -148,15 +148,49 @@ class MENSATaskHead(SurvivalTask):
 
             if self.distribution.lower() == "weibull":
                 # Weibull survival function: exp(-(t/scale)^shape)
-                survival_per_mixture = torch.exp(
-                    -torch.pow(time_expanded / scale_expanded, shape_expanded)
-                )
+                # Add small epsilon to prevent numerical issues
+                eps = 1e-7
+
+                # Clamp scale to ensure positive values
+                scale_safe = torch.clamp(scale_expanded, min=eps)
+
+                # Make sure time is positive
+                time_safe = torch.clamp(time_expanded, min=eps)
+
+                # Compute ratio safely
+                ratio = time_safe / scale_safe
+
+                # Clamp ratio to avoid huge values that could cause overflow
+                ratio_clamped = torch.clamp(ratio, min=eps, max=1e15)
+
+                # Clamp shape to avoid extreme exponents
+                shape_safe = torch.clamp(shape_expanded, min=eps, max=100.0)
+
+                # Use log-domain for numerical stability
+                log_ratio = torch.log(ratio_clamped)
+                log_term = shape_safe * log_ratio
+                log_surv = -torch.exp(torch.clamp(log_term, max=30.0))
+
+                survival_per_mixture = torch.exp(log_surv)
             elif self.distribution.lower() == "lognormal":
                 # Log-normal survival function: 1 - CDF of normal distribution
-                z = (torch.log(time_expanded) - scale_expanded) / shape_expanded
-                survival_per_mixture = 0.5 - 0.5 * torch.erf(
-                    z / torch.sqrt(torch.tensor(2.0, device=device))
-                )
+                # Add small epsilon to prevent numerical issues
+                eps = 1e-7
+
+                # Ensure positive values
+                time_safe = torch.clamp(time_expanded, min=eps)
+                shape_safe = torch.clamp(shape_expanded, min=eps)
+
+                # Compute log of time safely
+                log_time = torch.log(time_safe)
+
+                # Compute normalized z-score with clamping
+                z = (log_time - scale_expanded) / shape_safe
+                z_clamped = torch.clamp(z, min=-8.0, max=8.0)  # Prevent extreme values
+
+                # Compute error function
+                sqrt_2 = torch.sqrt(torch.tensor(2.0, device=device))
+                survival_per_mixture = 0.5 - 0.5 * torch.erf(z_clamped / sqrt_2)
             else:
                 raise ValueError(f"Unsupported distribution: {self.distribution}")
 
@@ -206,15 +240,23 @@ class MENSATaskHead(SurvivalTask):
 
             # Avoid division by zero or negative values
             eps = 1e-7
-            survival_t = torch.clamp(survival_t, min=eps)
-            survival_t_dt = torch.clamp(survival_t_dt, min=eps)
+            survival_t = torch.clamp(survival_t, min=eps, max=1.0 - eps)
+            survival_t_dt = torch.clamp(survival_t_dt, min=eps, max=1.0 - eps)
+
+            # Ensure time differences are positive
+            dt_safe = torch.clamp(dt, min=eps)
 
             # Compute log survival
             log_surv_t = torch.log(survival_t)
             log_surv_t_dt = torch.log(survival_t_dt)
 
-            # Compute discrete hazard
-            discrete_hazard = -(log_surv_t_dt - log_surv_t) / dt
+            # Compute discrete hazard with clamping
+            # Using log space for better numerical stability
+            log_diff = log_surv_t_dt - log_surv_t
+            # Clamp to avoid extremely negative values
+            log_diff_clamped = torch.clamp(log_diff, min=-30.0, max=0.0)
+
+            discrete_hazard = -log_diff_clamped / dt_safe
 
             # Ensure non-negative hazard
             event_hazard = F.softplus(discrete_hazard)
@@ -244,13 +286,24 @@ class MENSATaskHead(SurvivalTask):
 
         # Generate time points for evaluating the survival function
         # These should match the duration cuts used in training
-        if hasattr(self.loss, "duration_cuts"):
-            time_points = (
-                self.loss.duration_cuts.to(device).unsqueeze(0).expand(batch_size, -1)
-            )
+        if hasattr(self.loss, "duration_cuts") and self.loss.duration_cuts is not None:
+            # Ensure duration cuts are positive and sorted
+            eps = 1e-7
+            duration_cuts = self.loss.duration_cuts.to(device)
+
+            # Add small epsilon to ensure strictly positive values
+            if duration_cuts.min() <= 0:
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(
+                        f"Found non-positive values in duration cuts, adding epsilon"
+                    )
+                duration_cuts = torch.clamp(duration_cuts, min=eps)
+
+            time_points = duration_cuts.unsqueeze(0).expand(batch_size, -1)
+
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug(
-                    f"Using duration cuts from loss, shape: {time_points.shape}"
+                    f"Using duration cuts from loss, shape: {time_points.shape}, range: [{time_points.min():.5f}, {time_points.max():.5f}]"
                 )
         else:
             # If duration cuts aren't available, create a reasonable range
@@ -260,7 +313,9 @@ class MENSATaskHead(SurvivalTask):
                 .expand(batch_size, -1)
             )
             if logger.isEnabledFor(logging.DEBUG):
-                logger.debug(f"Using fallback time points, shape: {time_points.shape}")
+                logger.debug(
+                    f"Using fallback time points, shape: {time_points.shape}, range: [{time_points.min():.5f}, {time_points.max():.5f}]"
+                )
 
         # Get Weibull parameters from MENSA parameter network
         shape, scale, logits_g = self.nets(sequence_output)
