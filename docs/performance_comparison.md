@@ -231,6 +231,70 @@ Based on our comprehensive benchmarks, we recommend:
 
 5. **For HSA synthetic dataset and similar competing risks scenarios**, our hybrid approach combining multiple ranking perspectives has shown the best results.
 
+6. **Consider MENSA model** when:
+   - Working with multiple events that may have dependencies
+   - Need for continuous parametric survival functions
+   - Interpretable event dependencies are important
+   - Using transformer-based feature extraction
+
+## MENSA Model Performance Considerations
+
+MENSA (Multi-Event Neural Survival Analysis) provides several key performance characteristics:
+
+1. **Computational Complexity**: The event dependency matrix introduces additional computational cost, particularly for models with many events.
+
+2. **Memory Usage**: The dependency mechanism requires storing and computing gradients for additional parameters.
+
+3. **Training Time vs. Prediction Time**: MENSA typically has a higher training cost than simpler models like DeepHit, but prediction time can be comparable since the dependency matrix is small relative to the overall model size.
+
+4. **Scaling with Event Count**: Performance impact becomes more noticeable as the number of events increases, with complexity scaling approximately as O(E²) where E is the number of events.
+
+### Detailed Benchmarks
+
+Our benchmarks provide concrete insights into MENSA's performance characteristics:
+
+#### Training and Inference Performance
+
+| Model | 2 Events (Train) | 2 Events (Infer) | 4 Events (Train) | 4 Events (Infer) | 8 Events (Train) | 8 Events (Infer) |
+|-------|------------------|------------------|------------------|------------------|------------------|------------------|
+| DSM | 1.69s | 0.064s | 1.93s | 0.052s | 1.99s | 0.082s |
+| MENSA (no dependencies) | 0.69s | 0.022s | 0.92s | 0.031s | 1.08s | 0.026s |
+| MENSA (with dependencies) | 0.79s | 0.027s | 0.84s | 0.025s | 1.39s | 0.041s |
+
+#### Key Findings
+
+1. **MENSA without Dependencies**:
+   - Consistently outperforms DSM in training time (59% faster for 2 events)
+   - Maintains excellent inference speeds (65% faster than DSM for 2 events)
+   - Scales reasonably well with increased event count
+
+2. **MENSA with Dependencies**:
+   - Still outperforms DSM even with dependency calculations
+   - Dependency overhead becomes more significant with 8+ events (1.39s vs 1.08s)
+   - Provides unique insights via the dependency matrix at a modest performance cost
+
+3. **Scaling Patterns**:
+   - Training time increase from 2→8 events: 
+     - DSM: 17.8% increase
+     - MENSA (no dependencies): 56.5% increase
+     - MENSA (with dependencies): 75.9% increase
+   - Confirms O(E²) theoretical complexity for dependency calculations
+
+#### Comparison with Ranking Losses
+
+When comparing MENSA with traditional ranking-based approaches:
+
+| Loss Function | Batch=32, Events=2 (Forward) | Batch=32, Events=2 (Backward) |
+|---------------|-------------------------------|-------------------------------|
+| MultiEventRankingLoss | 0.282 ms | 0.197 ms |
+| SampleRankingLoss | 0.380 ms | 0.265 ms |
+| SampleListMLELoss | 0.387 ms | 0.018 ms |
+| EventListMLELoss | 4.272 ms | 0.057 ms |
+
+MultiEventRankingLoss and SampleListMLELoss typically offer the best performance for ranking-based approaches, while MENSA provides continuous parametric modeling with explicit event dependencies.
+
+For more detailed information and implementation considerations, see the [MENSA Documentation](mensa.md).
+
 ## Recommendations for Further Improvements
 
 Additional optimizations to consider:
