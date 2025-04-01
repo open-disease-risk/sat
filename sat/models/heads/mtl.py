@@ -24,7 +24,6 @@ from .embeddings import (
 from .output import SAOutput
 from .regression import EventDurationTaskHead
 from .survival import SurvivalTaskHead
-from .mensa import MENSATaskHead
 
 logger = logging.get_default_logger()
 
@@ -201,11 +200,8 @@ class MTLForSurvival(MTLTask):
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug(f"{i}-th task configuration: {task_head_config}")
             model = AutoModel.from_config(task_head_config)
-            if isinstance(model, SurvivalTaskHead) or isinstance(model, MENSATaskHead):
-                if isinstance(model, MENSATaskHead):
-                    logger.info("MENSA task head initialized")
-                else:
-                    logger.info("Survival task head initialized")
+            if isinstance(model, SurvivalTaskHead):
+                logger.info("Survival task head initialized")
                 self.is_survival = True
             elif isinstance(model, EventClassificationTaskHead):
                 logger.info("Event classification task head initialized")
