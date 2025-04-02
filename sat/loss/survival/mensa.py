@@ -10,6 +10,8 @@ import pandas as pd
 
 from sat.models.heads import SAOutput
 from sat.utils import logging
+from sat.distributions import WeibullDistribution, LogNormalDistribution
+from sat.distributions import WeibullMixtureDistribution, LogNormalMixtureDistribution
 from ..base import Loss
 
 logger = logging.get_default_logger()
@@ -19,11 +21,9 @@ class MENSALoss(Loss):
     """
     MENSA loss for multi-event survival analysis.
 
-    This implementation follows the paper:
-    "MENSA: Multi-Event Neural Survival Analysis"
-
+    Implementation based on the paper "MENSA: Multi-Event Neural Survival Analysis."
     The loss function consists of multiple components:
-    1. Negative log-likelihood for uncensored data using mixture of Weibull distributions
+    1. Negative log-likelihood for uncensored data using mixture distributions
     2. Negative log survival probability for censored data
     3. Regularization for the event dependency matrix
     4. Optional ELBO loss for mixture weights
@@ -55,7 +55,7 @@ class MENSALoss(Loss):
         """
         super(MENSALoss, self).__init__(num_events)
 
-        # load the importance sampling weights if not None
+        # Load the importance sampling weights if provided
         if importance_sample_weights is not None:
             df = pd.read_csv(importance_sample_weights, header=None, names=["weights"])
             weights = torch.tensor(df.weights.values).to(torch.float32)
@@ -92,50 +92,53 @@ class MENSALoss(Loss):
         shape: torch.Tensor,
         scale: torch.Tensor,
         logits_g: torch.Tensor,
+        event_type: str = None,
+        use_expert_priors: bool = False,
+        constrain_params: bool = False,
     ):
         """
         Compute negative log-likelihood for uncensored data.
+        Uses distribution classes for numerical stability with optional expert knowledge.
 
         Args:
             time: Event times [batch_size]
             shape: Shape parameters [batch_size, num_mixtures]
             scale: Scale parameters [batch_size, num_mixtures]
             logits_g: Mixture weight logits [batch_size, num_mixtures]
+            event_type: Optional event type for expert knowledge
+            use_expert_priors: Whether to use expert knowledge priors
+            constrain_params: Whether to apply parameter constraints
 
         Returns:
             torch.Tensor: Negative log-likelihood [batch_size]
         """
-        batch_size, num_mixtures = shape.shape
-        device = time.device
-
-        # Calculate log likelihood for each component distribution
-        time_expanded = time.unsqueeze(1).expand(-1, num_mixtures)
-
+        # Create the appropriate mixture distribution based on distribution type
         if self.distribution.lower() == "weibull":
-            # Compute PDF of Weibull: (shape/scale)*(t/scale)^(shape-1)*exp(-(t/scale)^shape)
-            # Log PDF is more stable numerically
-            term1 = torch.log(shape) - torch.log(scale)
-            term2 = (shape - 1) * (torch.log(time_expanded) - torch.log(scale))
-            term3 = -torch.pow(time_expanded / scale, shape)
-            log_pdf = term1 + term2 + term3
+            mixture_dist = WeibullMixtureDistribution(
+                shape,
+                scale,
+                logits_g,
+                constrain_shape=constrain_params,
+                event_type=event_type,
+                use_expert_priors=use_expert_priors,
+            )
         elif self.distribution.lower() == "lognormal":
-            # Compute PDF of lognormal distribution
-            z = (torch.log(time_expanded) - scale) / shape
-            log_pdf = (
-                -torch.log(shape)
-                - torch.log(time_expanded)
-                - 0.5 * torch.log(2 * torch.tensor(np.pi, device=device))
-                - 0.5 * z * z
+            mixture_dist = LogNormalMixtureDistribution(
+                scale,
+                shape,
+                logits_g,  # Note parameter order for lognormal: loc, scale
+                constrain_params=constrain_params,
+                event_type=event_type,
+                use_expert_priors=use_expert_priors,
             )
         else:
             raise ValueError(f"Unsupported distribution: {self.distribution}")
 
-        # Use logsumexp for numerical stability when calculating mixture log likelihood
-        log_weights = F.log_softmax(logits_g, dim=1)
-        mixture_ll = torch.logsumexp(log_weights + log_pdf, dim=1)
+        # Compute log-likelihood using the mixture distribution
+        log_likelihood = mixture_dist.log_likelihood(time)
 
         # Return negative log likelihood
-        return -mixture_ll
+        return -log_likelihood
 
     def _negative_log_survival(
         self,
@@ -143,87 +146,59 @@ class MENSALoss(Loss):
         shape: torch.Tensor,
         scale: torch.Tensor,
         logits_g: torch.Tensor,
+        event_type: str = None,
+        use_expert_priors: bool = False,
+        constrain_params: bool = False,
     ):
         """
         Compute negative log survival probability for censored data.
+        Uses distribution classes for numerical stability with optional expert knowledge.
 
         Args:
             time: Censoring times [batch_size]
             shape: Shape parameters [batch_size, num_mixtures]
             scale: Scale parameters [batch_size, num_mixtures]
             logits_g: Mixture weight logits [batch_size, num_mixtures]
+            event_type: Optional event type for expert knowledge
+            use_expert_priors: Whether to use expert knowledge priors
+            constrain_params: Whether to apply parameter constraints
 
         Returns:
             torch.Tensor: Negative log survival probability [batch_size]
         """
-        batch_size, num_mixtures = shape.shape
-        device = time.device
-
-        # Calculate survival function for each component
-        time_expanded = time.unsqueeze(1).expand(-1, num_mixtures)
-
-        # Add small epsilon to prevent numerical issues
-        eps = 1e-7
-
-        # Clamp scale to ensure positive values
-        scale_safe = torch.clamp(scale, min=eps)
-
+        # Create the appropriate mixture distribution based on distribution type
         if self.distribution.lower() == "weibull":
-            # We need to be careful with the Weibull calculation to avoid numerical instability
-
-            # Make sure time is positive
-            time_safe = torch.clamp(time_expanded, min=eps)
-
-            # Compute ratio safely
-            ratio = time_safe / scale_safe
-
-            # Clamp ratio to avoid huge values that could cause overflow
-            ratio_clamped = torch.clamp(ratio, min=eps, max=1e15)
-
-            # Clamp shape to avoid extreme exponents
-            shape_safe = torch.clamp(shape, min=eps, max=100.0)
-
-            # Compute power with clamped values
-            # Use log-domain for numerical stability
-            log_ratio = torch.log(ratio_clamped)
-            log_term = shape_safe * log_ratio
-            log_surv = -torch.exp(torch.clamp(log_term, max=30.0))
-
-        elif self.distribution.lower() == "lognormal":
-            # Log-normal survival function: 1 - CDF of normal distribution
-            # Make sure time is positive
-            time_safe = torch.clamp(time_expanded, min=eps)
-
-            # Compute z-score safely with clamped values
-            z = (torch.log(time_safe) - scale) / torch.clamp(shape, min=eps)
-
-            # Compute error function with clamped input
-            z_clamped = torch.clamp(
-                z / torch.sqrt(torch.tensor(2.0, device=device)), min=-8.0, max=8.0
+            mixture_dist = WeibullMixtureDistribution(
+                shape,
+                scale,
+                logits_g,
+                constrain_shape=constrain_params,
+                event_type=event_type,
+                use_expert_priors=use_expert_priors,
             )
-            surv = 0.5 - 0.5 * torch.erf(z_clamped)
-
-            # Avoid log(0)
-            surv = torch.clamp(surv, min=1e-7)
-            log_surv = torch.log(surv)
+        elif self.distribution.lower() == "lognormal":
+            mixture_dist = LogNormalMixtureDistribution(
+                scale,
+                shape,
+                logits_g,  # Note parameter order for lognormal: loc, scale
+                constrain_params=constrain_params,
+                event_type=event_type,
+                use_expert_priors=use_expert_priors,
+            )
         else:
             raise ValueError(f"Unsupported distribution: {self.distribution}")
 
-        # Calculate mixture survival:
-        # S(t) = Σ_k w_k * S_k(t)
-        weights = F.softmax(logits_g, dim=1)
+        # Reshape time for distribution API which expects [batch_size, num_times]
+        time_reshaped = time.unsqueeze(-1)  # [batch_size, 1]
 
-        # Calculate weighted sum for survival - we can't use logsumexp here
-        # because survival is a weighted sum, not a product of components
-        surv_per_component = torch.exp(log_surv)
-        mixture_surv = torch.sum(weights * surv_per_component, dim=1)
+        # Compute log survival using the mixture distribution
+        log_survival = mixture_dist.log_survival(time_reshaped)
 
-        # Avoid log(0)
-        mixture_surv = torch.clamp(mixture_surv, min=1e-7)
-        log_mixture_surv = torch.log(mixture_surv)
+        # Squeeze to get [batch_size] tensor
+        log_survival = log_survival.squeeze(-1)
 
         # Return negative log survival
-        return -log_mixture_surv
+        return -log_survival
 
     def _dependency_regularization(self, event_dependency_matrix):
         """
@@ -302,6 +277,11 @@ class MENSALoss(Loss):
             if not torch.any(event_indicator):
                 continue
 
+            # Clamp extreme durations to reasonable values for numerical stability
+            eps = 1e-6
+            max_duration = 1e6
+            event_duration = torch.clamp(event_duration, min=eps, max=max_duration)
+
             # Calculate uncensored loss for samples with events
             uncensored_mask = event_indicator == 1
             if torch.any(uncensored_mask):
@@ -310,11 +290,36 @@ class MENSALoss(Loss):
                 uncensored_scale = scale[uncensored_mask]
                 uncensored_logits_g = logits_g[uncensored_mask]
 
+                # Extract event type if available
+                event_type = None
+                if (
+                    hasattr(predictions, "event_types")
+                    and predictions.event_types is not None
+                    and event_idx < len(predictions.event_types)
+                ):
+                    event_type = predictions.event_types[event_idx]
+
+                # Extract expert knowledge flags from predictions if available
+                use_expert_priors = False
+                constrain_params = False
+                if hasattr(predictions, "use_expert_priors"):
+                    use_expert_priors = predictions.use_expert_priors
+                if hasattr(predictions, "constrain_params"):
+                    constrain_params = predictions.constrain_params
+
                 uncensored_loss = self._negative_log_likelihood(
                     uncensored_times,
                     uncensored_shape,
                     uncensored_scale,
                     uncensored_logits_g,
+                    event_type=event_type,
+                    use_expert_priors=use_expert_priors,
+                    constrain_params=constrain_params,
+                )
+
+                # Check for invalid values and replace with reasonable defaults
+                uncensored_loss = torch.nan_to_num(
+                    uncensored_loss, nan=1.0, posinf=10.0, neginf=-10.0
                 )
 
                 # Apply sample weighting if needed
@@ -341,11 +346,36 @@ class MENSALoss(Loss):
                     valid_censored_scale = censored_scale[valid_times_mask]
                     valid_censored_logits_g = censored_logits_g[valid_times_mask]
 
+                    # Extract event type if available
+                    event_type = None
+                    if (
+                        hasattr(predictions, "event_types")
+                        and predictions.event_types is not None
+                        and event_idx < len(predictions.event_types)
+                    ):
+                        event_type = predictions.event_types[event_idx]
+
+                    # Extract expert knowledge flags from predictions if available
+                    use_expert_priors = False
+                    constrain_params = False
+                    if hasattr(predictions, "use_expert_priors"):
+                        use_expert_priors = predictions.use_expert_priors
+                    if hasattr(predictions, "constrain_params"):
+                        constrain_params = predictions.constrain_params
+
                     censored_loss = self._negative_log_survival(
                         valid_censored_times,
                         valid_censored_shape,
                         valid_censored_scale,
                         valid_censored_logits_g,
+                        event_type=event_type,
+                        use_expert_priors=use_expert_priors,
+                        constrain_params=constrain_params,
+                    )
+
+                    # Check for invalid values and replace with reasonable defaults
+                    censored_loss = torch.nan_to_num(
+                        censored_loss, nan=1.0, posinf=10.0, neginf=-10.0
                     )
 
                     # Apply discount factor for censored samples
@@ -375,6 +405,9 @@ class MENSALoss(Loss):
                     dim=1,
                 )
 
+                # Handle any invalid KL values
+                kl_div = torch.nan_to_num(kl_div, nan=0.0, posinf=1.0, neginf=0.0)
+
                 kl_term = torch.mean(kl_div) * 0.1  # Weight the KL term
             else:
                 kl_term = torch.tensor(0.0, device=device)
@@ -382,10 +415,17 @@ class MENSALoss(Loss):
             # Combine loss components
             event_loss = uncensored_loss + censored_loss + kl_term
 
-            # Add to total loss if not zero
-            if event_loss.item() != 0:
-                total_loss = total_loss + event_loss
-                total_valid_events += 1
+            # Ensure event loss is finite
+            if not torch.isfinite(event_loss):
+                if logger.isEnabledFor(logging.WARNING):
+                    logger.warning(
+                        f"Non-finite event loss detected: {event_loss.item()}. Using default value."
+                    )
+                event_loss = torch.tensor(1.0, device=device, requires_grad=True)
+
+            # Add to total loss
+            total_loss = total_loss + event_loss
+            total_valid_events += 1
 
         # Add dependency matrix regularization if available
         if (
@@ -395,11 +435,28 @@ class MENSALoss(Loss):
             dependency_reg = self._dependency_regularization(
                 predictions.event_dependency_matrix
             )
+
+            # Ensure regularization is finite
+            dependency_reg = torch.nan_to_num(
+                dependency_reg, nan=0.0, posinf=1.0, neginf=0.0
+            )
+
             total_loss = total_loss + dependency_reg
 
         # Return average loss across event types
         if total_valid_events > 0:
-            return total_loss / total_valid_events
+            # Final check for invalid loss values
+            final_loss = total_loss / total_valid_events
+
+            # If the loss is still not finite, return a default value that can be backpropagated
+            if not torch.isfinite(final_loss):
+                if logger.isEnabledFor(logging.WARNING):
+                    logger.warning(
+                        f"Non-finite final loss detected: {final_loss.item()}. Using default value."
+                    )
+                final_loss = torch.tensor(1.0, device=device, requires_grad=True)
+
+            return final_loss
         else:
-            # Return zero loss if no events found
-            return torch.tensor(0.0, device=device, requires_grad=True)
+            # Return default loss if no events found
+            return torch.tensor(1.0, device=device, requires_grad=True)

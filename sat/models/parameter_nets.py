@@ -254,10 +254,11 @@ class MENSAParameterNet(nn.Module):
 
     Based on the paper: "MENSA: Multi-Event Neural Survival Analysis" (2024)
 
-    Key differences from standard parameter networks:
-    - Uses SELU activation as in the MENSA paper
+    Key features:
+    - Uses SELU activation for better numerical stability
     - Explicit modeling of event dependencies via a dependency matrix
-    - Modified parameter adjustment based on event correlations
+    - Specialized parameter initialization for distribution stability
+    - Proper parameter range constraints to prevent gradient issues
     """
 
     def __init__(
@@ -378,15 +379,20 @@ class MENSAParameterNet(nn.Module):
             self.event_nets.append(event_net)
 
     def _initialize_event_parameters(self, event_net, event_idx):
-        """Initialize parameters for an event network to break symmetry"""
+        """
+        Initialize parameters for an event network to break symmetry.
+        
+        Uses He initialization for weights and strategic bias initialization
+        for better convergence in mixture models.
+        """
         with torch.no_grad():
-            # MENSA paper uses different initialization
-            # Use MSRA initialization (He initialization) for SELU
+            # MENSA paper uses specialized initialization for SELU activation
+            # Use He (kaiming) initialization for weights
             nn.init.kaiming_normal_(event_net["shape"].weight, nonlinearity="linear")
             nn.init.kaiming_normal_(event_net["scale"].weight, nonlinearity="linear")
             nn.init.kaiming_normal_(event_net["mixture"].weight, nonlinearity="linear")
 
-            # Different bias initialization for each event
+            # Different bias initialization for each event to break symmetry
             if event_net["shape"].bias is not None:
                 event_net["shape"].bias.data.fill_(0.1 * event_idx)
             if event_net["scale"].bias is not None:
@@ -419,19 +425,15 @@ class MENSAParameterNet(nn.Module):
             event_features = event_net["features"](shared_features)
 
             # Compute parameters for this event with improved numerical stability
-            # Use a larger min value for shape and scale to avoid numerical issues
-            shape = (
-                F.softplus(event_net["shape"](event_features)) + 0.1
-            )  # Minimum value of 0.1
-            scale = (
-                F.softplus(event_net["scale"](event_features)) + 0.5
-            )  # Minimum value of 0.5
+            # Use appropriate minimum values for distribution parameters
+            shape = F.softplus(event_net["shape"](event_features)) + 0.1  # Min 0.1
+            scale = F.softplus(event_net["scale"](event_features)) + 0.5  # Min 0.5
 
-            # Ensure values are in a reasonable range
+            # Ensure values are in a reasonable range to prevent gradient issues
             shape = torch.clamp(shape, min=0.1, max=100.0)
             scale = torch.clamp(scale, min=0.5, max=1000.0)
 
-            # Regular logits for mixture weights
+            # Regular logits for mixture weights (no constraints needed)
             logits_g = event_net["mixture"](event_features)
 
             all_shapes.append(shape)
@@ -445,8 +447,8 @@ class MENSAParameterNet(nn.Module):
 
         # Apply event dependencies if enabled
         if self.event_dependency:
-            # Apply temperature to dependency matrix to control sharpness of softmax
-            # Higher temperature (>1) gives more weight to top dependencies
+            # Apply temperature to dependency matrix to control softmax sharpness
+            # Temperature of 1.0 gives balanced importance to dependencies
             temp = 1.0
 
             # Normalize the dependency matrix using softmax along rows
@@ -457,17 +459,16 @@ class MENSAParameterNet(nn.Module):
                 logger.debug(f"Dependency weights: {dependency_weights}")
 
             # For each event, adjust parameters based on dependencies
-            batch_size = x.shape[0]
             adjusted_shape = torch.zeros_like(stacked_shape)
             adjusted_scale = torch.zeros_like(stacked_scale)
 
-            # Apply weighted dependencies to each parameter, with stability safeguards
+            # Apply weighted dependencies to each parameter with stability safeguards
             for i in range(self.num_events):
                 for j in range(self.num_events):
                     # Apply weighted influence from event j to event i
                     weight = dependency_weights[i, j]
 
-                    # Skip negligible influences to improve numerical stability
+                    # Skip negligible influences to improve numerical stability and speed
                     if weight > 1e-6:
                         adjusted_shape[:, i, :] += weight * stacked_shape[:, j, :]
                         adjusted_scale[:, i, :] += weight * stacked_scale[:, j, :]
@@ -477,6 +478,7 @@ class MENSAParameterNet(nn.Module):
             adjusted_scale = torch.clamp(adjusted_scale, min=0.5, max=1000.0)
 
             # Return adjusted parameters, but keep original mixture weights
+            # This allows the mixture components to still be event-specific
             return adjusted_shape, adjusted_scale, stacked_logits_g
 
         # If no dependency modeling, return original parameters

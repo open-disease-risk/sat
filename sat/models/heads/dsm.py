@@ -14,6 +14,8 @@ from sat.models.parameter_nets import (
     ParamCauseSpecificNetCompRisk,
 )
 from sat.utils import logging
+from sat.distributions import WeibullDistribution, LogNormalDistribution
+from sat.distributions import WeibullMixtureDistribution, LogNormalMixtureDistribution
 
 from .base import SurvivalTask
 from .output import SAOutput  # Using SAOutput directly instead of a custom DSMOutput
@@ -34,6 +36,9 @@ class DSMConfig(SurvivalConfig):
         distribution: str = "weibull",
         temp: float = 1000.0,
         discount: float = 1.0,
+        use_expert_priors: bool = False,
+        constrain_params: bool = False,
+        event_types: list = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -41,6 +46,11 @@ class DSMConfig(SurvivalConfig):
         self.distribution = distribution
         self.temp = temp  # Temperature for gumbel softmax
         self.discount = discount  # Discount factor for censoring loss
+        self.use_expert_priors = use_expert_priors  # Whether to use expert knowledge
+        self.constrain_params = (
+            constrain_params  # Whether to apply parameter constraints
+        )
+        self.event_types = event_types  # Optional list of event type names
 
 
 class DSMTaskHead(SurvivalTask):
@@ -56,6 +66,16 @@ class DSMTaskHead(SurvivalTask):
     - Learns latent representations from covariates
     - Handles right-censoring through careful loss formulation
     - Can model competing risks with multiple event types
+    - Support for expert knowledge incorporation via informative priors and constraints
+
+    Original DSM paper:
+    - Nagpal et al. (2021). "Deep Survival Machines: Fully Parametric Survival Regression and Representation Learning for Censored Data with Competing Risks." IEEE Journal of Biomedical and Health Informatics, 25(8), 3163-3175.
+
+    Expert knowledge references:
+    - Cox, C. (2008). "The generalized F distribution: An umbrella for parametric survival analysis." Statistics in Medicine, 27(21), 4301-4312.
+    - Collett, D. (2015). "Modelling Survival Data in Medical Research," Chapman and Hall/CRC, Chapter 6.
+    - Ibrahim, Chen & Sinha (2001). "Bayesian Survival Analysis," Springer, Chapter 3.4 (Prior Elicitation).
+    - Lambert, Collett, Kimber & Johnson (2004). "Parametric accelerated failure time models with random effects and an application to kidney transplant survival." Statistics in Medicine, 23(20), 3177-3192.
     """
 
     config_class = DSMConfig
@@ -67,6 +87,9 @@ class DSMTaskHead(SurvivalTask):
         self.distribution = config.distribution
         self.temp = config.temp
         self.discount = config.discount
+        self.use_expert_priors = config.use_expert_priors
+        self.constrain_params = config.constrain_params
+        self.event_types = config.event_types
 
         # Following the SurvivalTaskHead pattern:
         # - Use ParamCauseSpecificNet for single event
@@ -118,116 +141,141 @@ class DSMTaskHead(SurvivalTask):
                 )
 
         # Instantiate loss function if available
-        self.loss = None
-        if hasattr(config, "loss") and config.model_type in config.loss:
-            loss = config.loss["survival"]
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug(f"Instantiate the loss {loss}")
-            try:
-                self.loss = hydra.utils.instantiate(loss)
-            except Exception as e:
-                logger.error(f"Failed to instantiate loss: {str(e)}")
-                logger.warning("Continuing without loss function")
+        loss = config.loss["survival"]
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Instantiate the loss {loss}")
+        self.loss = hydra.utils.instantiate(loss)
 
-    def _compute_survival_function(self, time_points, shape, scale, logits_g):
+    def _compute_survival_function(
+        self, time_points, shape, scale, logits_g, event_idx=0
+    ):
         """
         Compute survival function for given time points and distribution parameters.
+        Uses distribution classes for numerical stability.
 
         Args:
             time_points: Tensor of time points at which to evaluate survival [batch_size, num_time_points]
             shape: Shape parameters [batch_size, num_mixtures]
             scale: Scale parameters [batch_size, num_mixtures]
             logits_g: Mixture weight logits [batch_size, num_mixtures]
+            event_idx: Optional event index for event-specific priors
 
         Returns:
             Survival function values [batch_size, num_time_points]
         """
         batch_size, num_time_points = time_points.shape
-        device = time_points.device
 
-        # Compute mixture weights with gumbel softmax
+        # For training, use gumbel softmax for the mixture weights
         if self.training:
-            weights = F.gumbel_softmax(logits_g, tau=self.temp, hard=False, dim=1)
+            # Apply gumbel softmax to create differentiable one-hot vectors
+            processed_logits = F.gumbel_softmax(
+                logits_g, tau=self.temp, hard=False, dim=1
+            )
         else:
-            weights = F.softmax(logits_g, dim=1)
+            # Just pass through the original logits for inference
+            processed_logits = logits_g
 
-        # Create output tensor
-        survival = torch.zeros(batch_size, num_time_points, device=device)
+        # Extract event type if available for the specified event
+        event_type = None
+        if self.event_types is not None and event_idx < len(self.event_types):
+            event_type = self.event_types[event_idx]
 
-        # Expand parameters for broadcasting
-        # shape: [batch_size, num_mixtures, 1]
-        shape_expanded = shape.unsqueeze(2)
-        # scale: [batch_size, num_mixtures, 1]
-        scale_expanded = scale.unsqueeze(2)
-        # weights: [batch_size, num_mixtures, 1]
-        weights_expanded = weights.unsqueeze(2)
-        # time_points: [batch_size, 1, num_time_points]
-        time_expanded = time_points.unsqueeze(1)
-
+        # Create the appropriate mixture distribution based on distribution type
         if self.distribution.lower() == "weibull":
-            # Weibull survival function: exp(-(t/scale)^shape)
-            survival_per_mixture = torch.exp(
-                -torch.pow(time_expanded / scale_expanded, shape_expanded)
+            mixture_dist = WeibullMixtureDistribution(
+                shape,
+                scale,
+                processed_logits,
+                constrain_shape=self.constrain_params,
+                event_type=event_type,
+                use_expert_priors=self.use_expert_priors,
             )
         elif self.distribution.lower() == "lognormal":
-            # Log-normal survival function: 1 - CDF of normal distribution
-            z = (torch.log(time_expanded) - scale_expanded) / shape_expanded
-            survival_per_mixture = 0.5 - 0.5 * torch.erf(
-                z / torch.sqrt(torch.tensor(2.0, device=device))
+            mixture_dist = LogNormalMixtureDistribution(
+                scale,  # For LogNormal, this is loc
+                shape,  # For LogNormal, this is scale
+                processed_logits,
+                constrain_params=self.constrain_params,
+                event_type=event_type,
+                use_expert_priors=self.use_expert_priors,
             )
         else:
             raise ValueError(f"Unsupported distribution: {self.distribution}")
 
-        # Compute weighted sum of individual distributions
-        # [batch_size, num_mixtures, num_time_points] -> [batch_size, num_time_points]
-        survival = torch.sum(weights_expanded * survival_per_mixture, dim=1)
+        # Compute survival function using the mixture distribution
+        survival = mixture_dist.survival_function(time_points)
 
         return survival
 
-    def _compute_hazard_function(self, time_points, shape, scale, logits_g):
+    def _compute_hazard_function(
+        self, time_points, shape, scale, logits_g, event_idx=0
+    ):
         """
         Compute hazard function from the survival function.
+        Uses distribution classes for numerical stability.
 
         Args:
             time_points: Tensor of time points [batch_size, num_time_points]
             shape: Shape parameters [batch_size, num_mixtures]
             scale: Scale parameters [batch_size, num_mixtures]
             logits_g: Mixture weight logits [batch_size, num_mixtures]
+            event_idx: Optional event index for event-specific priors
 
         Returns:
             Hazard function values [batch_size, num_time_points-1]
         """
         batch_size, num_time_points = time_points.shape
-        device = time_points.device
 
-        # Compute survival function at each time point
-        survival = self._compute_survival_function(time_points, shape, scale, logits_g)
+        # For training, use gumbel softmax for the mixture weights
+        if self.training:
+            # Apply gumbel softmax to create differentiable one-hot vectors
+            processed_logits = F.gumbel_softmax(
+                logits_g, tau=self.temp, hard=False, dim=1
+            )
+        else:
+            # Just pass through the original logits for inference
+            processed_logits = logits_g
 
-        # Calculate hazard: -d/dt log(S(t)) ≈ -(log(S(t+dt)) - log(S(t))) / dt
-        # We take log(S(t+dt)) - log(S(t)) instead of S(t+dt) - S(t) to stabilize computation
-        # This approximates instantaneous hazard by discrete hazard over small intervals
+        # Extract event type if available for the specified event
+        event_type = None
+        if self.event_types is not None and event_idx < len(self.event_types):
+            event_type = self.event_types[event_idx]
 
-        # Get S(t) and S(t+dt)
-        survival_t = survival[:, :-1]  # S(t)
-        survival_t_dt = survival[:, 1:]  # S(t+dt)
+        # Create the appropriate mixture distribution based on distribution type
+        if self.distribution.lower() == "weibull":
+            mixture_dist = WeibullMixtureDistribution(
+                shape,
+                scale,
+                processed_logits,
+                constrain_shape=self.constrain_params,
+                event_type=event_type,
+                use_expert_priors=self.use_expert_priors,
+            )
+        elif self.distribution.lower() == "lognormal":
+            mixture_dist = LogNormalMixtureDistribution(
+                scale,  # For LogNormal, this is loc
+                shape,  # For LogNormal, this is scale
+                processed_logits,
+                constrain_params=self.constrain_params,
+                event_type=event_type,
+                use_expert_priors=self.use_expert_priors,
+            )
+        else:
+            raise ValueError(f"Unsupported distribution: {self.distribution}")
 
-        # Time differences for each interval
-        dt = time_points[:, 1:] - time_points[:, :-1]
+        # Ensure time points are strictly positive for hazard calculations
+        eps = 1e-5
+        time_safe = torch.clamp(time_points, min=eps)
 
-        # Avoid division by zero or negative values
-        eps = 1e-7
-        survival_t = torch.clamp(survival_t, min=eps)
-        survival_t_dt = torch.clamp(survival_t_dt, min=eps)
+        # Get hazard function from the distribution using the safe time points
+        hazard = mixture_dist.hazard_function(time_safe)
 
-        # Compute log survival
-        log_surv_t = torch.log(survival_t)
-        log_surv_t_dt = torch.log(survival_t_dt)
+        # Apply softplus to ensure non-negative hazard and clamp to prevent extreme values
+        hazard = F.softplus(hazard)
+        hazard = torch.clamp(hazard, min=0.0, max=1e3)
 
-        # Compute discrete hazard
-        discrete_hazard = -(log_surv_t_dt - log_surv_t) / dt
-
-        # Ensure non-negative hazard
-        hazard = F.softplus(discrete_hazard)
+        # Check for any NaN or Inf values and replace them
+        hazard = torch.nan_to_num(hazard, nan=0.0, posinf=1e3, neginf=0.0)
 
         return hazard
 
@@ -240,13 +288,24 @@ class DSMTaskHead(SurvivalTask):
 
         # Generate time points for evaluating the survival function
         # These should match the duration cuts used in training
-        if hasattr(self.loss, "duration_cuts"):
-            time_points = (
-                self.loss.duration_cuts.to(device).unsqueeze(0).expand(batch_size, -1)
-            )
+        eps = 1e-7
+        if hasattr(self.loss, "duration_cuts") and self.loss.duration_cuts is not None:
+            # Ensure duration cuts are positive and sorted
+            duration_cuts = self.loss.duration_cuts.to(device)
+
+            # Add small epsilon to ensure strictly positive values
+            if duration_cuts.min() <= 0:
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(
+                        f"Found non-positive values in duration cuts, adding epsilon"
+                    )
+                duration_cuts = torch.clamp(duration_cuts, min=eps)
+
+            time_points = duration_cuts.unsqueeze(0).expand(batch_size, -1)
+
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug(
-                    f"Using duration cuts from loss, shape: {time_points.shape}"
+                    f"Using duration cuts from loss, shape: {time_points.shape}, range: [{time_points.min():.5f}, {time_points.max():.5f}]"
                 )
         else:
             # If duration cuts aren't available, create a reasonable range
@@ -257,7 +316,9 @@ class DSMTaskHead(SurvivalTask):
                 .expand(batch_size, -1)
             )
             if logger.isEnabledFor(logging.DEBUG):
-                logger.debug(f"Using fallback time points, shape: {time_points.shape}")
+                logger.debug(
+                    f"Using fallback time points, shape: {time_points.shape}, range: [{time_points.min():.5f}, {time_points.max():.5f}]"
+                )
 
         # Compute parameters using our specialized parameter networks
         shape, scale, logits_g = self.nets(sequence_output)
@@ -282,12 +343,12 @@ class DSMTaskHead(SurvivalTask):
             event_scale = scale[:, event_idx, :]
             event_logits_g = logits_g[:, event_idx, :]
 
-            # Compute survival and hazard functions
+            # Compute survival and hazard functions with event_idx for expert knowledge
             survival = self._compute_survival_function(
-                time_points, event_shape, event_scale, event_logits_g
+                time_points, event_shape, event_scale, event_logits_g, event_idx
             )
             hazard = self._compute_hazard_function(
-                time_points, event_shape, event_scale, event_logits_g
+                time_points, event_shape, event_scale, event_logits_g, event_idx
             )
 
             # Compute risk (1 - survival)

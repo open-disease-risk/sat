@@ -21,9 +21,11 @@ AutoConfig.register(heads.SatBertConfig.model_type, heads.SatBertConfig)
 AutoConfig.register(heads.SurvivalConfig.model_type, heads.SurvivalConfig)
 AutoModel.register(heads.SurvivalConfig, heads.SurvivalTaskHead)
 
-# Register MENSA
 AutoConfig.register(heads.MENSAConfig.model_type, heads.MENSAConfig)
 AutoModel.register(heads.MENSAConfig, heads.MENSATaskHead)
+
+AutoConfig.register(heads.DSMConfig.model_type, heads.DSMConfig)
+AutoModel.register(heads.DSMConfig, heads.DSMTaskHead)
 
 AutoConfig.register(
     heads.EventClassificationTaskConfig.model_type,

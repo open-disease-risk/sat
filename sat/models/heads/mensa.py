@@ -10,6 +10,8 @@ import torch.nn.functional as F
 
 from sat.models.parameter_nets import MENSAParameterNet
 from sat.utils import logging
+from sat.distributions import WeibullDistribution, LogNormalDistribution
+from sat.distributions import WeibullMixtureDistribution, LogNormalMixtureDistribution
 
 from .base import SurvivalTask
 from .output import SAOutput
@@ -31,6 +33,10 @@ class MENSAConfig(SurvivalConfig):
         event_dependency: bool = True,
         temp: float = 1000.0,
         discount: float = 1.0,
+        use_expert_priors: bool = False,
+        constrain_params: bool = False,
+        event_types: list = None,
+        dependency_regularization: float = 0.01,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -39,13 +45,21 @@ class MENSAConfig(SurvivalConfig):
         self.event_dependency = event_dependency
         self.temp = temp  # Temperature for gumbel softmax
         self.discount = discount  # Discount factor for censoring loss
+        self.use_expert_priors = use_expert_priors  # Whether to use expert knowledge
+        self.constrain_params = (
+            constrain_params  # Whether to apply parameter constraints
+        )
+        self.event_types = event_types  # Optional list of event type names
+        self.dependency_regularization = (
+            dependency_regularization  # Weight for dependency regularization
+        )
 
 
 class MENSATaskHead(SurvivalTask):
     """
     Multi-Event Neural Survival Analysis (MENSA) implementation.
 
-    MENSA models survival functions as mixtures of Weibull distributions
+    MENSA models survival functions as mixtures of parametric distributions
     with explicit dependencies between different event types.
 
     Based on the paper: "MENSA: Multi-Event Neural Survival Analysis" (2024)
@@ -53,8 +67,15 @@ class MENSATaskHead(SurvivalTask):
     Key features:
     - Explicit modeling of dependencies between event types
     - SELU activations for more stable training
-    - Weibull mixture model for flexible survival distributions
+    - Weibull or LogNormal mixture models for flexible survival distributions
     - Specifically designed for multi-event scenarios
+    - Support for expert knowledge incorporation via informative priors and constraints
+
+    Expert knowledge references:
+    - Crowder, M. J. (2001). "Classical Competing Risks," Chapman and Hall/CRC, pp. 75-108.
+    - Kleinbaum & Klein (2012). "Survival Analysis: A Self-Learning Text," Springer, Chapter 9.
+    - Ibrahim, Chen & Sinha (2001). "Bayesian Survival Analysis," Springer, Chapter 3.4 (Prior Elicitation).
+    - Christensen et al. (2011). "Bayesian Ideas and Data Analysis," CRC Press, Chapter 11.
     """
 
     config_class = MENSAConfig
@@ -67,6 +88,10 @@ class MENSATaskHead(SurvivalTask):
         self.event_dependency = config.event_dependency
         self.temp = config.temp
         self.discount = config.discount
+        self.use_expert_priors = config.use_expert_priors
+        self.constrain_params = config.constrain_params
+        self.event_types = config.event_types
+        self.dependency_regularization = config.dependency_regularization
 
         # Always use MENSAParameterNet
         self.nets = MENSAParameterNet(
@@ -104,6 +129,7 @@ class MENSATaskHead(SurvivalTask):
     def _compute_survival_function(self, time_points, shape, scale, logits_g):
         """
         Compute survival function for given time points and distribution parameters.
+        Uses distribution classes for numerical stability with expert knowledge.
 
         Args:
             time_points: Tensor of time points at which to evaluate survival [batch_size, num_time_points]
@@ -128,75 +154,45 @@ class MENSATaskHead(SurvivalTask):
             event_scale = scale[:, event_idx, :]  # [batch_size, num_mixtures]
             event_logits_g = logits_g[:, event_idx, :]  # [batch_size, num_mixtures]
 
-            # Compute mixture weights with gumbel softmax
+            # Process logits differently for training vs inference
             if self.training:
-                weights = F.gumbel_softmax(
+                # Apply gumbel softmax to create differentiable one-hot vectors
+                processed_logits = F.gumbel_softmax(
                     event_logits_g, tau=self.temp, hard=False, dim=1
                 )
             else:
-                weights = F.softmax(event_logits_g, dim=1)
+                # Just pass through the original logits for inference
+                processed_logits = event_logits_g
 
-            # Expand parameters for broadcasting
-            # shape: [batch_size, num_mixtures, 1]
-            shape_expanded = event_shape.unsqueeze(2)
-            # scale: [batch_size, num_mixtures, 1]
-            scale_expanded = event_scale.unsqueeze(2)
-            # weights: [batch_size, num_mixtures, 1]
-            weights_expanded = weights.unsqueeze(2)
-            # time_points: [batch_size, 1, num_time_points]
-            time_expanded = time_points.unsqueeze(1)
+            # Extract event type if available for the specified event
+            event_type = None
+            if self.event_types is not None and event_idx < len(self.event_types):
+                event_type = self.event_types[event_idx]
 
+            # Create the appropriate mixture distribution based on distribution type
             if self.distribution.lower() == "weibull":
-                # Weibull survival function: exp(-(t/scale)^shape)
-                # Add small epsilon to prevent numerical issues
-                eps = 1e-7
-
-                # Clamp scale to ensure positive values
-                scale_safe = torch.clamp(scale_expanded, min=eps)
-
-                # Make sure time is positive
-                time_safe = torch.clamp(time_expanded, min=eps)
-
-                # Compute ratio safely
-                ratio = time_safe / scale_safe
-
-                # Clamp ratio to avoid huge values that could cause overflow
-                ratio_clamped = torch.clamp(ratio, min=eps, max=1e15)
-
-                # Clamp shape to avoid extreme exponents
-                shape_safe = torch.clamp(shape_expanded, min=eps, max=100.0)
-
-                # Use log-domain for numerical stability
-                log_ratio = torch.log(ratio_clamped)
-                log_term = shape_safe * log_ratio
-                log_surv = -torch.exp(torch.clamp(log_term, max=30.0))
-
-                survival_per_mixture = torch.exp(log_surv)
+                mixture_dist = WeibullMixtureDistribution(
+                    event_shape,
+                    event_scale,
+                    processed_logits,
+                    constrain_shape=self.constrain_params,
+                    event_type=event_type,
+                    use_expert_priors=self.use_expert_priors,
+                )
             elif self.distribution.lower() == "lognormal":
-                # Log-normal survival function: 1 - CDF of normal distribution
-                # Add small epsilon to prevent numerical issues
-                eps = 1e-7
-
-                # Ensure positive values
-                time_safe = torch.clamp(time_expanded, min=eps)
-                shape_safe = torch.clamp(shape_expanded, min=eps)
-
-                # Compute log of time safely
-                log_time = torch.log(time_safe)
-
-                # Compute normalized z-score with clamping
-                z = (log_time - scale_expanded) / shape_safe
-                z_clamped = torch.clamp(z, min=-8.0, max=8.0)  # Prevent extreme values
-
-                # Compute error function
-                sqrt_2 = torch.sqrt(torch.tensor(2.0, device=device))
-                survival_per_mixture = 0.5 - 0.5 * torch.erf(z_clamped / sqrt_2)
+                mixture_dist = LogNormalMixtureDistribution(
+                    event_scale,  # For LogNormal, this is loc
+                    event_shape,  # For LogNormal, this is scale
+                    processed_logits,
+                    constrain_params=self.constrain_params,
+                    event_type=event_type,
+                    use_expert_priors=self.use_expert_priors,
+                )
             else:
                 raise ValueError(f"Unsupported distribution: {self.distribution}")
 
-            # Compute weighted sum of individual distributions
-            # [batch_size, num_mixtures, num_time_points] -> [batch_size, num_time_points]
-            event_survival = torch.sum(weights_expanded * survival_per_mixture, dim=1)
+            # Compute survival function using the mixture distribution
+            event_survival = mixture_dist.survival_function(time_points)
 
             # Store in the appropriate event slot
             survival[:, event_idx, :] = event_survival
@@ -206,6 +202,7 @@ class MENSATaskHead(SurvivalTask):
     def _compute_hazard_function(self, time_points, shape, scale, logits_g):
         """
         Compute hazard function from the survival function.
+        Uses distribution classes for numerical stability with expert knowledge.
 
         Args:
             time_points: Tensor of time points [batch_size, num_time_points]
@@ -214,52 +211,65 @@ class MENSATaskHead(SurvivalTask):
             logits_g: Mixture weight logits [batch_size, num_events, num_mixtures]
 
         Returns:
-            Hazard function values [batch_size, num_events, num_time_points-1]
+            Hazard function values [batch_size, num_events, num_time_points]
         """
         batch_size, num_time_points = time_points.shape
         num_events = shape.size(1)
         device = time_points.device
 
-        # Compute survival function at each time point
-        survival = self._compute_survival_function(time_points, shape, scale, logits_g)
-
-        # Initialize hazard tensor
-        hazard = torch.zeros(batch_size, num_events, num_time_points - 1, device=device)
+        # Initialize hazard tensor - use same dimensions as time_points for consistent shape
+        hazard = torch.zeros(batch_size, num_events, num_time_points, device=device)
 
         # Process each event separately
         for event_idx in range(num_events):
-            # Get survival for this event
-            event_survival = survival[:, event_idx, :]  # [batch_size, num_time_points]
+            # Get parameters for this event
+            event_shape = shape[:, event_idx, :]  # [batch_size, num_mixtures]
+            event_scale = scale[:, event_idx, :]  # [batch_size, num_mixtures]
+            event_logits_g = logits_g[:, event_idx, :]  # [batch_size, num_mixtures]
 
-            # Get S(t) and S(t+dt)
-            survival_t = event_survival[:, :-1]  # S(t)
-            survival_t_dt = event_survival[:, 1:]  # S(t+dt)
+            # Process logits differently for training vs inference
+            if self.training:
+                # Apply gumbel softmax to create differentiable one-hot vectors
+                processed_logits = F.gumbel_softmax(
+                    event_logits_g, tau=self.temp, hard=False, dim=1
+                )
+            else:
+                # Just pass through the original logits for inference
+                processed_logits = event_logits_g
 
-            # Time differences for each interval
-            dt = time_points[:, 1:] - time_points[:, :-1]
+            # Extract event type if available for the specified event
+            event_type = None
+            if self.event_types is not None and event_idx < len(self.event_types):
+                event_type = self.event_types[event_idx]
 
-            # Avoid division by zero or negative values
-            eps = 1e-7
-            survival_t = torch.clamp(survival_t, min=eps, max=1.0 - eps)
-            survival_t_dt = torch.clamp(survival_t_dt, min=eps, max=1.0 - eps)
+            # Create the appropriate mixture distribution based on distribution type
+            if self.distribution.lower() == "weibull":
+                mixture_dist = WeibullMixtureDistribution(
+                    event_shape,
+                    event_scale,
+                    processed_logits,
+                    constrain_shape=self.constrain_params,
+                    event_type=event_type,
+                    use_expert_priors=self.use_expert_priors,
+                )
+            elif self.distribution.lower() == "lognormal":
+                mixture_dist = LogNormalMixtureDistribution(
+                    event_scale,  # For LogNormal, this is loc
+                    event_shape,  # For LogNormal, this is scale
+                    processed_logits,
+                    constrain_params=self.constrain_params,
+                    event_type=event_type,
+                    use_expert_priors=self.use_expert_priors,
+                )
+            else:
+                raise ValueError(f"Unsupported distribution: {self.distribution}")
 
-            # Ensure time differences are positive
-            dt_safe = torch.clamp(dt, min=eps)
+            # Compute hazard function using the mixture distribution directly
+            event_hazard = mixture_dist.hazard_function(time_points)
 
-            # Compute log survival
-            log_surv_t = torch.log(survival_t)
-            log_surv_t_dt = torch.log(survival_t_dt)
-
-            # Compute discrete hazard with clamping
-            # Using log space for better numerical stability
-            log_diff = log_surv_t_dt - log_surv_t
-            # Clamp to avoid extremely negative values
-            log_diff_clamped = torch.clamp(log_diff, min=-30.0, max=0.0)
-
-            discrete_hazard = -log_diff_clamped / dt_safe
-
-            # Ensure non-negative hazard
-            event_hazard = F.softplus(discrete_hazard)
+            # Apply softplus to ensure non-negative hazard and clamp extreme values
+            event_hazard = F.softplus(event_hazard)
+            event_hazard = torch.clamp(event_hazard, max=1e3)
 
             # Store in the appropriate event slot
             hazard[:, event_idx, :] = event_hazard
@@ -317,7 +327,7 @@ class MENSATaskHead(SurvivalTask):
                     f"Using fallback time points, shape: {time_points.shape}, range: [{time_points.min():.5f}, {time_points.max():.5f}]"
                 )
 
-        # Get Weibull parameters from MENSA parameter network
+        # Get distribution parameters from MENSA parameter network
         shape, scale, logits_g = self.nets(sequence_output)
 
         if logger.isEnabledFor(logging.DEBUG):
@@ -330,15 +340,58 @@ class MENSATaskHead(SurvivalTask):
         if self.event_dependency and hasattr(self.nets, "event_dependency_matrix"):
             dependency_matrix = F.softmax(self.nets.event_dependency_matrix, dim=1)
 
-        # Compute survival and hazard functions
-        survival = self._compute_survival_function(time_points, shape, scale, logits_g)
-        hazard = self._compute_hazard_function(time_points, shape, scale, logits_g)
+        # Ensure time points have good numeric properties
+        # We need to ensure the first time point is strictly positive
+        if time_points.shape[1] > 0 and time_points[:, 0].min() < 1e-5:
+            # If first time point is very close to zero, replace it with a small value
+            # This avoids numerical issues at t=0 for hazard calculations
+            safe_time_points = time_points.clone()
+            safe_time_points[:, 0] = torch.max(
+                safe_time_points[:, 0], torch.tensor(1e-5, device=device)
+            )
+        else:
+            safe_time_points = time_points
+
+        # Special case: if any time point is too close to another one, add a small offset
+        # This prevents division issues in hazard calculation
+        if safe_time_points.shape[1] > 1:
+            time_diffs = safe_time_points[:, 1:] - safe_time_points[:, :-1]
+            min_diff = 1e-6
+            for i in range(1, safe_time_points.shape[1]):
+                if (time_diffs[:, i - 1] < min_diff).any():
+                    safe_time_points[:, i] = torch.max(
+                        safe_time_points[:, i], safe_time_points[:, i - 1] + min_diff
+                    )
+
+        # Log time points for debugging
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                f"Time points after safety adjustment: range [{safe_time_points.min():.8f}, {safe_time_points.max():.8f}]"
+            )
+
+        # Compute survival and hazard functions with improved numerical stability
+        survival = self._compute_survival_function(
+            safe_time_points, shape, scale, logits_g
+        )
+
+        # Compute hazard using the same time points as survival to ensure consistent dimensions
+        hazard = self._compute_hazard_function(safe_time_points, shape, scale, logits_g)
 
         # Compute risk (1 - survival)
         risk = 1.0 - survival
 
-        # Pad hazard with zeros at the start to match survival dimensions
-        hazard = pad_col(hazard, val=0.0, where="start")
+        # Ensure survival, hazard, and risk all have the same dimensions
+        if hazard.shape != survival.shape:
+            if logger.isEnabledFor(logging.WARNING):
+                logger.warning(
+                    f"Dimension mismatch: hazard {hazard.shape}, survival {survival.shape}"
+                )
+            # Create new hazard tensor with correct shape
+            correct_hazard = torch.zeros_like(survival)
+            # Copy as much as possible from original hazard
+            min_time_dim = min(hazard.shape[2], survival.shape[2])
+            correct_hazard[:, :, :min_time_dim] = hazard[:, :, :min_time_dim]
+            hazard = correct_hazard
 
         # Create output container with complete set of fields
         output = SAOutput(
@@ -357,6 +410,9 @@ class MENSATaskHead(SurvivalTask):
             scale=scale,  # [batch, events, num_mixtures]
             logits_g=logits_g,  # [batch, events, num_mixtures]
             event_dependency_matrix=dependency_matrix,  # Store dependency matrix if available
+            event_types=self.event_types,  # Pass event types for expert knowledge
+            use_expert_priors=self.use_expert_priors,  # Pass expert priors flag
+            constrain_params=self.constrain_params,  # Pass parameter constraint flag
         )
 
         # Compute loss if labels are provided

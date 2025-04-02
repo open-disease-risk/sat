@@ -16,6 +16,7 @@ from .classification import EventClassificationTaskConfig, EventClassificationTa
 from .embeddings import SentenceEmbedding, TokenEmbedding
 from .mtl import MTLConfig, MTLForSurvival
 from .mensa import MENSAConfig, MENSATaskHead
+from .dsm import DSMConfig, DSMTaskHead
 
 # Base classes and utilities
 from .output import SAOutput, TaskOutput
@@ -46,10 +47,12 @@ __all__ = [
     "MTLConfig",
     "SatBertConfig",
     "MENSAConfig",
+    "DSMConfig",
     # Task heads
     "SurvivalTaskHead",
     "EventClassificationTaskHead",
     "EventDurationTaskHead",
     "MTLForSurvival",
     "MENSATaskHead",
+    "DSMTaskHead",
 ]
