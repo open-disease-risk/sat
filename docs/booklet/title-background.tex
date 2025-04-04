@@ -1,0 +1,100 @@
+% Title page background artwork for survival analysis presentation
+% Based on the color scheme defined in book-sections/color-scheme.tex
+
+\begin{tikzpicture}[scale=1.0, remember picture, overlay]
+    % Background gradient
+    \fill[left color=primaryLight!50, right color=quinaryLight!50] 
+        (current page.south west) rectangle (current page.north east);
+    
+    % Grid backdrop representing data
+    \foreach \x in {0,0.5,...,20} {
+        \foreach \y in {0,0.5,...,15} {
+            \fill[opacity=0.03, octonaryDark] (\x,\y) circle (0.02cm);
+        }
+    }
+    
+    % Main survival curve using survivalFunctionColor
+    \draw[very thick, survivalFunctionColor, domain=2:18, samples=100] 
+        plot (\x, {8+5*exp(-(\x-2)/5)});
+        
+    % Confidence interval - upper and lower bounds
+    \draw[dashed, survivalFunctionColor!80, domain=2:18, samples=100] 
+        plot (\x, {8+5*exp(-(\x-2)/4.5)+1});
+    \draw[dashed, survivalFunctionColor!80, domain=2:18, samples=100] 
+        plot (\x, {8+5*exp(-(\x-2)/5.5)-1});
+    \fill[survivalFunctionColor!20, opacity=0.5] 
+        plot[domain=2:18, samples=100] (\x, {8+5*exp(-(\x-2)/4.5)+1}) -- 
+        plot[domain=18:2, samples=100] (\x, {8+5*exp(-(\x-2)/5.5)-1}) -- cycle;
+    
+    % Competing risks curves using event colors
+    \draw[thick, event2Color, domain=2:18, samples=100] 
+        plot (\x, {6+3*exp(-(\x-2)/3)});
+    \draw[thick, event3Color, domain=2:18, samples=100] 
+        plot (\x, {4+2*exp(-(\x-2)/4)});
+    
+    % Neural network elements using dsmColor for the nodes
+    \foreach \y in {10,11,12,13} {
+        \node[circle, draw=dsmColor!80!black, fill=dsmColor!30, minimum size=0.8cm] at (5,\y) {};
+    }
+    \foreach \y in {9.5,10.5,11.5,12.5,13.5} {
+        \node[circle, draw=dsmColor!80!black, fill=dsmColor!30, minimum size=0.8cm] at (7.5,\y) {};
+    }
+    \foreach \y in {10,11,12,13} {
+        \node[circle, draw=dsmColor!80!black, fill=dsmColor!30, minimum size=0.8cm] at (10,\y) {};
+    }
+    
+    % Connect neural network nodes
+    \foreach \x in {10,11,12,13} {
+        \foreach \y in {9.5,10.5,11.5,12.5,13.5} {
+            \draw[dsmColor!50, opacity=0.3] (5,\x) -- (7.5,\y);
+        }
+    }
+    \foreach \x in {9.5,10.5,11.5,12.5,13.5} {
+        \foreach \y in {10,11,12,13} {
+            \draw[dsmColor!50, opacity=0.3] (7.5,\x) -- (10,\y);
+        }
+    }
+    
+    % Event indicators along the curves
+    \foreach \x/\y in {4/12.1, 7/10.2, 12/8.9, 16/8.4} {
+        \node[circle, fill=event1Color, inner sep=2pt] at (\x,\y) {};
+    }
+    \foreach \x/\y in {5/7.8, 9/6.8, 14/6.3} {
+        \node[circle, fill=event2Color, inner sep=2pt] at (\x,\y) {};
+    }
+    
+    % Add censoring marks using censoringColor
+    \foreach \x/\y in {6/11, 10/9.5, 15/8.6} {
+        \draw[censoringColor, very thick] (\x-0.15,\y+0.15) -- (\x+0.15,\y-0.15);
+        \draw[censoringColor, very thick] (\x-0.15,\y-0.15) -- (\x+0.15,\y+0.15);
+    }
+    
+    % Bottom elements - mixture components visualization for DSM
+    \draw[domain=2:8, samples=50, likelihoodLossColor, thick] 
+        plot (\x, {2+1.5*exp(-(\x-5)*(\x-5)/2)});
+    \draw[domain=5:12, samples=50, rankingLossColor, thick] 
+        plot (\x, {2+1.2*exp(-(\x-8)*(\x-8)/3)});
+    \draw[domain=10:18, samples=50, regressionLossColor, thick] 
+        plot (\x, {2+1*exp(-(\x-14)*(\x-14)/5)});
+    \draw[domain=2:18, samples=100, thick, black] 
+        plot (\x, {2+0.5*exp(-(\x-5)*(\x-5)/2)+0.4*exp(-(\x-8)*(\x-8)/3)+0.3*exp(-(\x-14)*(\x-14)/5)});
+    
+    % Small caption to identify the mixture distributions (DSM)
+    \node[right] at (18, 2) {\scriptsize\textcolor{dsmColor}{DSM}};
+    
+    % Logo elements for MENSA at top left corner
+    \begin{scope}[shift={(2,14)}, scale=0.5]
+        \draw[thick, mensaColor] (0,0) circle (1);
+        \draw[thick, mensaColor] (-0.5,-0.5) -- (0.5,0.5);
+        \draw[thick, mensaColor] (-0.5,0.5) -- (0.5,-0.5);
+        \node[right] at (1.2, 0) {\scriptsize\textcolor{mensaColor}{MENSA}};
+    \end{scope}
+    
+    % Small DeepHit logo at top right
+    \begin{scope}[shift={(18,14)}, scale=0.5]
+        \draw[thick, deephitColor] (0,0) circle (1);
+        \draw[thick, deephitColor] (-0.7,0) -- (0.7,0);
+        \draw[thick, deephitColor] (0,-0.7) -- (0,0.7);
+        \node[left] at (-1.2, 0) {\scriptsize\textcolor{deephitColor}{DeepHit}};
+    \end{scope}
+\end{tikzpicture}

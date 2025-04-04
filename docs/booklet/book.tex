@@ -1,0 +1,130 @@
+\documentclass[11pt,twoside,openright]{book}
+
+% Core packages
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype} % Typography enhancements
+\usepackage{amsmath,amsfonts,amssymb,mathtools}
+\usepackage{xcolor}
+\usepackage{booktabs} % Professional tables
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{cleveref}
+
+% Page layout
+\usepackage[margin=1in,headheight=25pt]{geometry}
+\usepackage{fancyhdr}
+
+% Set up fancy headers and footers
+\pagestyle{fancy}
+\fancyhf{} % Clear all header and footer fields
+
+% Create shorter chapter/section mark formats to prevent overlap with logo
+\renewcommand{\chaptermark}[1]{\markboth{\chaptername\ \thechapter:\ #1}{}}
+\renewcommand{\sectionmark}[1]{\markright{\thesection\ #1}}
+
+% Define header contents
+\fancyhead[LE]{\leftmark} % Left side of even pages: Chapter title
+\fancyhead[RO]{\rightmark} % Right side of odd pages: Section title
+\fancyhead[RE]{\raisebox{-0.1\height}{\hspace{1cm}\input{header-logo}}} % Right side of even pages: Logo with space
+\fancyhead[LO]{\raisebox{-0.1\height}{\input{header-logo}\hspace{1cm}}} % Left side of odd pages: Logo with space
+
+% Define footer contents
+\fancyfoot[LE,RO]{\thepage} % Page number
+\fancyfoot[CE,CO]{\leftmark} % Center of footer: Chapter title instead of section
+\renewcommand{\footrulewidth}{0.4pt} % Add footer line
+
+% Create chapter style that doesn't use the fancy header
+\fancypagestyle{plain}{%
+  \fancyhf{} % clear all header and footer fields
+  \fancyfoot[LE,RO]{\thepage} % page number
+  \renewcommand{\headrulewidth}{0pt}
+  \renewcommand{\footrulewidth}{0.4pt}
+}
+
+% Enhanced visualizations
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,shapes,shapes.geometric,decorations,patterns,fit,calc,shadows,backgrounds,math}
+% Ensure the calc library is loaded for coordinate calculations
+\usetikzlibrary{calc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=newest}
+\usepgfplotslibrary{fillbetween}
+
+% Beautiful boxes
+\usepackage[many]{tcolorbox}
+\tcbuselibrary{skins,breakable,theorems}
+
+% Import color scheme and box definitions
+\input{book-sections/color-scheme}
+
+% Import publication-grade PGFPlots styles
+\input{book-sections/pgfplots-styles}
+
+% Bibliography
+\usepackage[style=authoryear,natbib=true,backend=biber]{biblatex}
+\addbibresource{bibliography.bib}
+
+% Title information
+\title{Advanced Topics in Survival Analysis: \\From Foundations to Deep Learning Applications}
+\author{Open Disease Risk Project Team}
+\date{\today}
+
+\begin{document}
+
+\frontmatter
+% Replace default maketitle with our custom title page
+\input{book-title-page}
+
+\tableofcontents
+
+\chapter*{Preface}
+This book provides a comprehensive introduction to survival analysis with a special focus on deep learning approaches. It transforms the slide deck format into an educational text with in-depth explanations, mathematical foundations, and practical implementation details.
+
+\mainmatter
+
+\chapter{Introduction}
+\label{ch:introduction}
+\input{book-sections/introduction}
+
+\chapter{Motivation and Problem Setting}
+\label{ch:motivation}
+\input{book-sections/motivation}
+
+\chapter{Survival Analysis Foundations}
+\label{ch:foundations}
+\input{book-sections/foundations}
+
+\chapter{Censoring and Competing Risks}
+\label{ch:censoring}
+\input{book-sections/censoring}
+
+\chapter{Deep Survival Machines}
+\label{ch:dsm}
+\input{book-sections/dsm}
+
+\chapter{Multi-Event Neural Survival Analysis}
+\label{ch:mensa}
+\input{book-sections/mensa}
+
+\chapter{Loss Functions}
+\label{ch:loss-functions}
+\input{book-sections/loss-functions}
+
+\chapter{Numerical Stability}
+\label{ch:numerical-stability}
+\input{book-sections/numerical-stability}
+
+\chapter{Expert Knowledge Integration}
+\label{ch:expert-knowledge}
+\input{book-sections/expert-knowledge}
+
+\chapter{Conclusion}
+\label{ch:conclusion}
+\input{book-sections/conclusion}
+
+\backmatter
+\printbibliography[heading=bibintoc]
+
+\end{document}

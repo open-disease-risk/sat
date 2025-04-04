@@ -1,0 +1,224 @@
+% ===================================
+% COLOR SCHEME DEFINITIONS
+% ===================================
+% This file defines a consistent color palette for the entire book
+% To use, include this file in book.tex with \input{book-sections/color-scheme.tex}
+
+% Define primary colors
+\definecolor{primary}{RGB}{31, 119, 180}       % Blue
+\definecolor{secondary}{RGB}{255, 127, 14}     % Orange
+\definecolor{tertiary}{RGB}{44, 160, 44}       % Green
+\definecolor{quaternary}{RGB}{214, 39, 40}     % Red
+\definecolor{quinary}{RGB}{148, 103, 189}      % Purple
+\definecolor{senary}{RGB}{140, 86, 75}         % Brown
+\definecolor{septenary}{RGB}{227, 119, 194}    % Pink
+\definecolor{octonary}{RGB}{127, 127, 127}     % Gray
+\definecolor{nonary}{RGB}{188, 189, 34}        % Olive
+\definecolor{denary}{RGB}{23, 190, 207}        % Cyan
+
+% Define light versions for fills and backgrounds
+\definecolor{primaryLight}{RGB}{174, 199, 232}
+\definecolor{secondaryLight}{RGB}{255, 187, 120}
+\definecolor{tertiaryLight}{RGB}{152, 223, 138}
+\definecolor{quaternaryLight}{RGB}{255, 152, 150}
+\definecolor{quinaryLight}{RGB}{197, 176, 213}
+\definecolor{senaryLight}{RGB}{196, 156, 148}
+\definecolor{septenaryLight}{RGB}{247, 182, 210}
+\definecolor{octonaryLight}{RGB}{199, 199, 199}
+\definecolor{nonaryLight}{RGB}{219, 219, 141}
+\definecolor{denaryLight}{RGB}{158, 218, 229}
+
+% Define dark versions for text and lines
+\definecolor{primaryDark}{RGB}{17, 63, 96}
+\definecolor{secondaryDark}{RGB}{179, 89, 10}
+\definecolor{tertiaryDark}{RGB}{22, 80, 22}
+\definecolor{quaternaryDark}{RGB}{136, 22, 22}
+\definecolor{quinaryDark}{RGB}{94, 66, 121}
+\definecolor{senaryDark}{RGB}{85, 52, 45}
+\definecolor{septenaryDark}{RGB}{143, 75, 122}
+\definecolor{octonaryDark}{RGB}{64, 64, 64}
+\definecolor{nonaryDark}{RGB}{104, 104, 18}
+\definecolor{denaryDark}{RGB}{14, 115, 124}
+
+% ===================================
+% TCOLORBOX STYLES
+% ===================================
+
+% Reset tcolorbox definitions with the new colors
+\newtcolorbox{definitionbox}[1][]{
+    enhanced,
+    colback=primaryLight!60!white,
+    colframe=primary!75!black,
+    fonttitle=\bfseries,
+    coltitle=white,
+    attach boxed title to top left={yshift=-2mm, xshift=5mm},
+    boxed title style={colback=primary!75!black},
+    title=Definition,
+    #1
+}
+
+\newtcolorbox{equationbox}[1][]{
+    enhanced,
+    colback=secondaryLight!60!white,
+    colframe=secondary!75!black,
+    fonttitle=\bfseries,
+    breakable,
+    coltitle=white,
+    attach boxed title to top left={yshift=-2mm, xshift=5mm},
+    boxed title style={colback=secondary!75!black},
+    title=Equation,
+    #1
+}
+
+\newtcolorbox{examplebox}[1][]{
+    enhanced,
+    colback=tertiaryLight!60!white,
+    colframe=tertiary!75!black,
+    fonttitle=\bfseries,
+    coltitle=white,
+    attach boxed title to top left={yshift=-2mm, xshift=5mm},
+    boxed title style={colback=tertiary!75!black},
+    title=Example,
+    #1
+}
+
+\newtcolorbox{notebox}[1][]{
+    enhanced,
+    colback=quinaryLight!60!white,
+    colframe=quinary!75!black,
+    fonttitle=\bfseries,
+    coltitle=white,
+    attach boxed title to top left={yshift=-2mm, xshift=5mm},
+    boxed title style={colback=quinary!75!black},
+    title=Note,
+    #1
+}
+
+% ===================================
+% TIKZ AND PGFPLOTS STYLES
+% ===================================
+
+% TikZ styles
+\tikzset{
+    concept/.style={
+        draw=primary,
+        fill=primaryLight,
+        rounded corners,
+        thick,
+        align=center
+    },
+    process/.style={
+        draw=secondary,
+        fill=secondaryLight,
+        rectangle,
+        thick,
+        align=center
+    },
+    decision/.style={
+        draw=tertiary,
+        fill=tertiaryLight,
+        diamond,
+        thick,
+        align=center
+    },
+    data/.style={
+        draw=quaternary,
+        fill=quaternaryLight,
+        cylinder,
+        thick,
+        align=center
+    },
+    note/.style={
+        draw=quinary,
+        fill=quinaryLight,
+        cloud,
+        cloud puffs=15,
+        thick,
+        align=center
+    },
+    arrow/.style={
+        ->,
+        >=stealth,
+        thick
+    }
+}
+
+% PGFPlots styles
+\pgfplotscreateplotcyclelist{conceptcolors}{
+    {primary, mark=*, thick, mark options={fill=primary}},
+    {secondary, mark=square*, thick, mark options={fill=secondary}},
+    {tertiary, mark=triangle*, thick, mark options={fill=tertiary}},
+    {quaternary, mark=diamond*, thick, mark options={fill=quaternary}},
+    {quinary, mark=pentagon*, thick, mark options={fill=quinary}},
+    {senary, mark=*, thick, mark options={fill=senary}},
+    {septenary, mark=square*, thick, mark options={fill=septenary}},
+    {octonary, mark=triangle*, thick, mark options={fill=octonary}},
+    {nonary, mark=diamond*, thick, mark options={fill=nonary}},
+    {denary, mark=pentagon*, thick, mark options={fill=denary}}
+}
+
+% ===================================
+% CONCEPT-SPECIFIC COLORS
+% ===================================
+
+% Assign consistent colors to specific concepts
+% These can be used across diagrams to ensure the same concept has the same color
+
+% Survival functions and models
+\colorlet{survivalFunctionColor}{primary}
+\colorlet{hazardFunctionColor}{secondary}
+\colorlet{censoringColor}{quaternary}
+\colorlet{kaplameierColor}{tertiary}
+
+% Model types
+\colorlet{dsmColor}{quinary}
+\colorlet{mensaColor}{septenary}
+\colorlet{deephitColor}{senary}
+
+% Loss functions
+\colorlet{likelihoodLossColor}{primary}
+\colorlet{rankingLossColor}{secondary}
+\colorlet{regressionLossColor}{tertiary}
+\colorlet{classificationLossColor}{quaternary}
+\colorlet{auxiliaryLossColor}{quinary}
+
+% Events
+\colorlet{event1Color}{primary}
+\colorlet{event2Color}{secondary}
+\colorlet{event3Color}{tertiary}
+\colorlet{event4Color}{quaternary}
+
+% Risk groups
+\colorlet{lowRiskColor}{tertiary}
+\colorlet{mediumRiskColor}{primary}
+\colorlet{highRiskColor}{quaternary}
+
+% ===================================
+% USAGE EXAMPLES
+% ===================================
+%
+% For tcolorbox:
+% \begin{definitionbox}[title=Custom Title]
+% Content
+% \end{definitionbox}
+%
+% For TikZ:
+% \begin{tikzpicture}
+%   \node[concept] (a) {Concept};
+%   \node[process] (b) at (2,0) {Process};
+%   \draw[arrow] (a) -- (b);
+% \end{tikzpicture}
+%
+% For PGFPlots:
+% \begin{tikzpicture}
+%   \begin{axis}[cycle list name=conceptcolors]
+%     \addplot coordinates {(0,0) (1,1) (2,4)};
+%     \addplot coordinates {(0,0) (1,2) (2,3)};
+%   \end{axis}
+% \end{tikzpicture}
+%
+% For concept-specific colors:
+% \begin{tikzpicture}
+%   \draw[survivalFunctionColor, thick] plot coordinates {(0,1) (1,0.8) (2,0.6)};
+%   \draw[hazardFunctionColor, thick] plot coordinates {(0,0.2) (1,0.4) (2,0.6)};
+% \end{tikzpicture}

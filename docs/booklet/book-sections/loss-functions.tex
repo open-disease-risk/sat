@@ -1,0 +1,637 @@
+\section{Loss Functions for Survival Analysis}
+
+\begin{notebox}[title=Chapter Overview]
+  This chapter covers:
+  \begin{itemize}
+  \item Essential loss functions designed specifically for survival analysis
+  \item Mathematical formulations of specialized losses for time-to-event data with censoring
+  \item Different objective functions for accurate time prediction, ranking, and calibration
+  \item Adaptations of standard machine learning losses for survival contexts
+  \item Advanced techniques for balancing multiple loss components
+  \end{itemize}
+\end{notebox}
+
+Loss functions represent the fundamental component that drives the learning process in machine learning models. In survival analysis, specialized loss functions are required to handle the unique characteristics of time-to-event data, particularly the presence of censoring \parencite{lee2018,kvamme2019}. This chapter provides a comprehensive examination of loss functions developed specifically for survival analysis, organized into four main categories: survival losses, regression losses, classification losses, and auxiliary losses.
+
+Each category of loss function serves different objectives in survival modeling, from directly predicting the distribution of survival times to ranking patients according to their relative risk. Understanding the strengths, limitations, and appropriate applications of each loss function is crucial for developing effective survival models that meet the specific requirements of clinical applications.
+
+\subsection{Survival Losses}
+
+Survival losses form the core category of loss functions designed specifically for time-to-event data. They directly model the underlying survival distributions and naturally handle censored observations. This section explores the most important survival losses, from the classic negative log-likelihood with piecewise constant hazards to more sophisticated approaches in modern deep learning models.
+
+\subsubsection{Negative Log-Likelihood with Piecewise Constant Hazards}
+
+The Negative Log-Likelihood with Piecewise Constant Hazards (NLL-PCH) represents one of the fundamental loss functions in parametric survival analysis \parencite{ibrahim2001}. This approach models the hazard function as constant within predefined time intervals, creating a flexible yet tractable representation of survival distributions \parencite{kleinbaum2012}.
+
+\begin{definitionbox}[title=Piecewise Constant Hazard Function]
+  A piecewise constant hazard function divides the time axis into distinct intervals and assigns a constant hazard rate within each interval. Formally, for a partition of the time axis $0 = t_0 < t_1 < \ldots < t_K$, the hazard function is defined as:
+
+  \begin{equation}
+    h(t) = h_k \quad \text{for} \quad t \in [t_{k-1}, t_k)
+  \end{equation}
+
+  where $h_k$ is the constant hazard rate in the $k$-th interval.
+\end{definitionbox}
+
+The piecewise constant hazard approach offers several advantages for survival modeling. It provides a flexible non-parametric representation of the hazard function while maintaining computational tractability. The hazard rates can be directly estimated from data, allowing the model to capture complex temporal patterns in the risk of events.
+
+\begin{equationbox}[title=NLL-PCH Loss Function]
+  For a single observation with survival time $t_i$ and event indicator $\delta_i$ (where $\delta_i = 1$ indicates an observed event and $\delta_i = 0$ indicates censoring), the negative log-likelihood loss is given by:
+
+  \begin{align}
+    -\log L_i &= -\delta_i \log h(t_i) - \log S(t_i)\\
+    &= -\delta_i \log h(t_i) + \sum_{j=0}^{k-1} h_j \Delta_j + h_k (t_i - t_k)
+  \end{align}
+
+  where:
+  \begin{itemize}
+  \item $h(t_i)$ is the hazard rate at time $t_i$
+  \item $S(t_i)$ is the survival function at time $t_i$
+  \item $h_j$ is the constant hazard in interval $j$
+  \item $\Delta_j$ is the length of interval $j$
+  \item $k$ is the index of the interval containing $t_i$
+  \end{itemize}
+\end{equationbox}
+
+The NLL-PCH loss function consists of two main components. For observed events ($\delta_i = 1$), the first term $-\log h(t_i)$ encourages the model to assign high hazard rates at the event time. The second term $-\log S(t_i)$ applies to all observations and encourages the model to assign high survival probabilities up to the observed time. This balances the model's tendency to estimate high hazard rates everywhere.
+
+In a deep learning context, the model typically outputs the hazard rates for each interval, and the loss function guides the learning process to estimate hazards that maximize the likelihood of the observed data. This approach naturally handles censored observations by only considering the survival function (second term) for these cases.
+
+\subsubsection{Deep Survival Machines}
+
+Deep Survival Machines (DSM) represents a significant advancement in parametric survival modeling within the deep learning framework. Introduced by \textcite{nagpal2021dsm}, DSM employs a mixture of parametric distributions to model survival times, offering both flexibility and uncertainty quantification \parencite{mclachlan1988,bishop2006}.
+
+\begin{definitionbox}[title=Deep Survival Machines]
+  Deep Survival Machines is a parametric survival analysis approach that models the survival function as a mixture of $K$ parametric distributions:
+
+  \begin{equation}
+    S(t|\mathbf{x}) = \sum_{k=1}^K \pi_k(\mathbf{x}) S_k(t|\mathbf{x})
+  \end{equation}
+
+  where $\pi_k(\mathbf{x})$ are the mixture weights that depend on covariates $\mathbf{x}$, and $S_k(t|\mathbf{x})$ are the survival functions of the component distributions (typically Weibull or Log-Normal).
+\end{definitionbox}
+
+The DSM architecture consists of several key components:
+\begin{itemize}
+\item A shared representation network that processes input features
+\item Distribution parameter networks that map the representation to parameters of each mixture component
+\item A mixture mechanism that combines the component distributions
+\end{itemize}
+
+This architecture allows DSM to capture complex patterns in the data while maintaining the interpretability of parametric models. The mixture approach enables the model to represent multi-modal survival distributions, which is particularly valuable when different subgroups within the population exhibit distinct survival patterns.
+
+\begin{equationbox}[title=DSM Loss Function]
+  The negative log-likelihood loss for Deep Survival Machines is given by:
+
+  \begin{align}
+    \mathcal{L}_{DSM} &= -\sum_{i=1}^N \left[ \delta_i \log f(t_i|\mathbf{x}_i) + (1-\delta_i) \log S(t_i|\mathbf{x}_i) \right] \\
+    f(t|\mathbf{x}) &= \sum_{k=1}^K \pi_k(\mathbf{x}) f_k(t|\mathbf{x}) \\
+    S(t|\mathbf{x}) &= \sum_{k=1}^K \pi_k(\mathbf{x}) S_k(t|\mathbf{x})
+  \end{align}
+
+  where:
+  \begin{itemize}
+  \item $f(t|\mathbf{x})$ is the probability density function
+  \item $S(t|\mathbf{x})$ is the survival function
+  \item $\pi_k(\mathbf{x})$ are mixture weights that depend on covariates
+  \item $f_k$ and $S_k$ are component distributions
+  \item $\delta_i$ is the event indicator
+  \end{itemize}
+\end{equationbox}
+
+The DSM loss function follows the standard survival negative log-likelihood formulation but applies it to the mixture model context. For observed events ($\delta_i = 1$), the model maximizes the density at the event time, while for censored observations ($\delta_i = 0$), it maximizes the survival probability beyond the censoring time.
+
+A significant advantage of DSM is its ability to provide uncertainty estimates through the mixture components. By examining the distribution of predictions across different mixture components, the model can quantify both aleatoric uncertainty (inherent randomness in the data) and epistemic uncertainty (model uncertainty due to limited data).
+
+\subsubsection{Multi-Event Neural Survival Analysis (MENSA)}
+
+Multi-Event Neural Survival Analysis (MENSA) extends the DSM approach to the competing risks setting, where individuals may experience multiple types of events \parencite{zhong2021,austin2016}. MENSA explicitly models the dependencies between different event types, providing a more comprehensive framework for complex survival scenarios \parencite{fine1999,prentice1978}.
+
+\begin{definitionbox}[title=Multi-Event Neural Survival Analysis]
+  MENSA models multiple event types with dependencies by assigning a separate mixture distribution to each event type and incorporating a dependency structure between events:
+
+  \begin{equation}
+    S_j(t|\mathbf{x}) = \sum_{k=1}^K \pi_{jk}(\mathbf{x}) S_{jk}(t|\mathbf{x}, \mathbf{D})
+  \end{equation}
+
+  where $S_j$ is the survival function for event type $j$, and $\mathbf{D}$ is a dependency matrix where $D_{ij}$ represents the influence of event $i$ on event $j$.
+\end{definitionbox}
+
+The MENSA architecture builds upon DSM by introducing:
+\begin{itemize}
+\item Event-specific mixture components for each event type
+\item A dependency structure that captures relationships between events
+\item Shared representations that enable information sharing across event types
+\end{itemize}
+
+This approach allows MENSA to model complex scenarios where different events are not independent, which is common in many clinical applications. For example, in cancer progression, the risk of metastasis may depend on the occurrence and timing of other biological events.
+
+\begin{equationbox}[title=MENSA Loss Function]
+  The MENSA loss function combines a negative log-likelihood term with a regularization term:
+
+  \begin{align}
+    \mathcal{L}_{MENSA} &= \mathcal{L}_{NLL} + \mathcal{L}_{reg} \\
+    \mathcal{L}_{NLL} &= -\sum_{i=1}^N \sum_{j=1}^J \left[ \delta_{ij} \log f_j(t_i|\mathbf{x}_i) + (1-\delta_{ij}) \log S_j(t_i|\mathbf{x}_i) \right] \\
+    \mathcal{L}_{reg} &= \lambda \sum_{i \neq j} |D_{ij}|
+  \end{align}
+
+  where:
+  \begin{itemize}
+  \item $\delta_{ij}$ is the indicator for event $j$ for observation $i$
+  \item $f_j$ and $S_j$ are event-specific distributions
+  \item $D_{ij}$ represents the dependency from event $i$ to event $j$
+  \item $\lambda$ is a regularization parameter
+  \end{itemize}
+\end{equationbox}
+
+The MENSA loss function extends the standard negative log-likelihood to multiple event types, with each event having its own likelihood contribution. The regularization term encourages sparsity in the dependency matrix, preventing the model from learning spurious relationships between events.
+
+One of the key benefits of MENSA is its ability to discover and quantify relationships between different event types directly from the data. The learned dependency matrix provides valuable insights into how different events influence each other, which can inform clinical understanding and decision-making.
+
+\subsubsection{DeepHit: Discrete-Time Survival Approach}
+
+DeepHit, introduced by \textcite{lee2018}, takes a different approach to survival modeling by directly estimating the discrete probability mass function (PMF) of the survival time. This non-parametric approach offers flexibility in modeling complex survival distributions without assuming a specific parametric form \parencite{gensheimer2019}.
+
+\begin{definitionbox}[title=DeepHit Model]
+  DeepHit models the probability mass function of survival times directly at discrete time points, with separate outputs for each possible event type:
+
+  \begin{equation}
+    P(T=t, J=j|\mathbf{x}) = \text{PMF}_j(t|\mathbf{x})
+  \end{equation}
+
+  where $T$ is the survival time, $J$ is the event type, and $\text{PMF}_j(t|\mathbf{x})$ is the probability mass function for event type $j$ at time $t$ given covariates $\mathbf{x}$.
+\end{definitionbox}
+
+The DeepHit architecture consists of:
+\begin{itemize}
+\item A shared representation network that processes input features
+\item Event-specific heads that output probability masses for each time point
+\item A joint optimization framework that combines likelihood and ranking objectives
+\end{itemize}
+
+This architecture allows DeepHit to model complex temporal patterns in the risk of events while handling multiple competing risks. By directly outputting probabilities for each time point and event type, DeepHit provides a highly flexible representation of the survival distribution.
+
+\begin{equationbox}[title=DeepHit Loss Function]
+  The DeepHit loss function combines likelihood, ranking, and calibration components:
+
+  \begin{align}
+    \mathcal{L}_{DeepHit} &= \alpha \mathcal{L}_{likelihood} + \beta \mathcal{L}_{ranking} + \gamma \mathcal{L}_{calibration} \\
+    \mathcal{L}_{likelihood} &= -\sum_{i=1}^N \left[ \sum_{j=1}^J \delta_{i,j} \log P(T_i=t_i, J=j|\mathbf{x}_i) + (1-\sum_j \delta_{i,j}) \log P(T_i > t_i|\mathbf{x}_i) \right]
+  \end{align}
+
+  where:
+  \begin{itemize}
+  \item $P(T_i=t, J=j|\mathbf{x}_i)$ is the probability of event $j$ at time $t$
+  \item $P(T_i > t|\mathbf{x}_i)$ is the probability of survival beyond time $t$
+  \item $\alpha, \beta, \gamma$ are weighting coefficients
+  \item $\mathcal{L}_{ranking}$ is a ranking loss (discussed in Section \ref{sec:ranking})
+  \item $\mathcal{L}_{calibration}$ is a calibration loss
+  \end{itemize}
+\end{equationbox}
+
+The DeepHit loss function combines multiple objectives to achieve both accurate probability estimation and good discriminative performance. The likelihood component ensures proper probability estimation, while the ranking component improves the model's ability to order patients by risk. The calibration component ensures that predicted probabilities match observed frequencies.
+
+A significant advantage of DeepHit is its flexibility in modeling arbitrary survival distributions without parametric assumptions. This makes it particularly suitable for scenarios with complex temporal patterns that may not be well-captured by standard parametric distributions.
+
+\subsection{Ranking Losses in Survival Analysis}
+\label{sec:ranking}
+
+Ranking losses focus on the relative ordering of survival times rather than their absolute values. This perspective is particularly relevant in clinical settings where prioritizing patients according to their risk level is often more important than predicting exact event times. This section explores the most important ranking losses used in survival analysis.
+
+\subsubsection{Motivation for Ranking in Survival Analysis}
+
+Ranking objectives offer several compelling advantages in survival analysis:
+
+\begin{itemize}
+\item Clinical decisions often depend more on relative risk than exact timing
+\item The concordance index (C-index), a standard evaluation metric in survival analysis, is ranking-based
+\item Ranking is more robust to time scale transformations and censoring patterns
+\item Ranking directly aligns with prioritization decisions (e.g., transplant waitlists)
+\item Ranking objectives improve the discrimination ability of models
+\end{itemize}
+
+The concordance index (C-index), introduced by \textcite{harrell1982}, serves as the fundamental ranking metric in survival analysis. It measures the proportion of pairs where the model correctly orders patients according to their risk \parencite{antolini2005}.
+
+\begin{definitionbox}[title=Concordance Index (C-index)]
+  The concordance index measures the proportion of comparable pairs that are correctly ordered by the model's risk scores:
+
+  \begin{equation}
+    \text{C-index} = \frac{\sum_{i,j} \mathbb{I}(y_i < y_j) \cdot \mathbb{I}(r_i > r_j) \cdot \mathbb{I}(\delta_i = 1)}{\sum_{i,j} \mathbb{I}(y_i < y_j) \cdot \mathbb{I}(\delta_i = 1)}
+  \end{equation}
+
+  where $y_i$ is the observed time for individual $i$, $r_i$ is the predicted risk score, $\delta_i$ is the event indicator, and $\mathbb{I}(\cdot)$ is the indicator function.
+\end{definitionbox}
+
+While the C-index provides a clear metric for evaluating ranking performance, it presents challenges for optimization:
+\begin{itemize}
+\item It is non-differentiable due to the indicator functions
+\item It has $O(n^2)$ computational complexity, making it expensive for large datasets
+\item It only considers pairs where both the order and event status are known
+\end{itemize}
+
+To address these challenges, various differentiable approximations of the C-index have been developed, leading to the ranking losses discussed in the following sections.
+
+\subsubsection{Pairwise Ranking: RankNet}
+
+RankNet, originally developed for information retrieval by \textcite{burges2005}, provides a differentiable approach to pairwise ranking that has been successfully adapted to survival analysis by researchers like \textcite{chapfuwa2018} and \textcite{kvamme2019}.
+
+\begin{definitionbox}[title=RankNet Loss]
+  RankNet formulates ranking as a binary classification problem on pairs, using the sigmoid function to convert score differences into probabilities:
+
+  \begin{align}
+    p_{ij} &= \sigma(s_i - s_j) = \frac{1}{1 + e^{-(s_i - s_j)}} \\
+    \mathcal{L}_{ranknet} &= -\sum_{i,j} \left[ y_{ij} \log p_{ij} + (1 - y_{ij}) \log (1 - p_{ij}) \right]
+  \end{align}
+
+  where $s_i$ and $s_j$ are the model's risk scores for individuals $i$ and $j$, and $y_{ij} = 1$ if individual $i$ should have higher risk than individual $j$ (i.e., $t_i < t_j$).
+\end{definitionbox}
+
+The RankNet loss essentially applies binary cross-entropy to the probability that individual $i$ has higher risk than individual $j$. This formulation provides a smooth, differentiable objective that approximates the concordance metric. The sigmoid function serves as a smooth approximation of the indicator function in the C-index calculation.
+
+For survival analysis, RankNet is typically applied to pairs where at least one individual experienced an event, allowing the model to learn from both uncensored and censored data. Various techniques have been developed to efficiently sample informative pairs during training, reducing the computational burden of considering all possible pairs.
+
+\subsubsection{SOAP: Statistically Optimal Accelerated Pairwise Loss}
+
+The Statistically Optimal Accelerated Pairwise (SOAP) loss, developed by \textcite{kvamme2019} specifically for survival analysis, represents an efficient margin-based approach to ranking that focuses on violations of the desired ordering.
+
+\begin{definitionbox}[title=SOAP Loss]
+  SOAP employs a margin-based hinge loss formulation:
+
+  \begin{equation}
+    \mathcal{L}_{soap} = \sum_{i,j} \max(0, m - (s_i - s_j) \cdot \text{sign}(t_i - t_j))
+  \end{equation}
+
+  where $m$ is a margin parameter (typically set to 1), $s_i$ and $s_j$ are risk scores, and $t_i$ and $t_j$ are observed times.
+\end{definitionbox}
+
+The SOAP loss only penalizes pairs where the margin constraint is violated, meaning that correctly ordered pairs with sufficient margin contribute zero to the loss. This property makes SOAP more computationally efficient than RankNet, as many pairs can be quickly identified as not contributing to the loss.
+
+Kvamme et al. demonstrated that SOAP is concordance-consistent, meaning that it optimizes the C-index asymptotically. They also developed efficient sampling strategies that reduce the computational complexity from $O(n^2)$ to approximately $O(n \log n)$, making it practical for large datasets.
+
+\subsubsection{ListMLE: Listwise Maximum Likelihood Estimation}
+
+While pairwise approaches like RankNet and SOAP consider pairs in isolation, ListMLE, introduced by \textcite{xia2008} and adapted to survival by \textcite{kvamme2019}, takes a more global approach by considering entire permutations of samples.
+
+\begin{definitionbox}[title=ListMLE Loss]
+  ListMLE uses the Plackett-Luce model to define a probability distribution over permutations:
+
+  \begin{align}
+    \mathcal{L}_{listmle} &= -\sum_i \log P(\pi_i | s_i) \\
+    &= -\sum_i \sum_{j=1}^{|\pi_i|} \log \frac{\exp(s_{\pi_i(j)})}{\sum_{k=j}^{|\pi_i|} \exp(s_{\pi_i(k)})}
+  \end{align}
+
+  where $\pi_i$ is an ordered list of samples, $\pi_i(j)$ is the index of the $j$-th item in the list, and $s_i$ are predicted risk scores.
+\end{definitionbox}
+
+The ListMLE loss is based on the Plackett-Luce model, which defines a probability distribution over permutations through a sequential selection process. The model considers the probability of selecting each item as the next in the permutation, given the items that have not yet been selected.
+
+Compared to pairwise approaches, ListMLE offers several advantages:
+\begin{itemize}
+\item It considers global ordering consistency rather than just pairwise relationships
+\item It avoids the issue of conflicting pairwise constraints
+\item It has better computational efficiency with $O(n \log n)$ complexity
+\item It often demonstrates superior empirical performance on benchmark datasets
+\end{itemize}
+
+For survival analysis, ListMLE typically uses the observed event times to define the ground truth ordering, with specific techniques to handle censored observations.
+
+\subsubsection{SurvRNC: Survival Rank-N-Contrast Loss}
+
+The Survival Rank-N-Contrast (SurvRNC) loss, introduced by \textcite{kvamme2021survrnc}, represents an innovative approach that combines ranking and contrastive learning principles to achieve both good performance and computational efficiency.
+
+\begin{definitionbox}[title=SurvRNC Loss]
+  SurvRNC applies contrastive learning to survival ranking:
+
+  \begin{equation}
+    \mathcal{L}_{survrnc} = -\frac{1}{N} \sum_i \log \frac{e^{sim(a_i, p_i)/\tau}}{\sum_j e^{sim(a_i, j)/\tau}}
+  \end{equation}
+
+  where $sim(a,b)$ is the similarity between embeddings, $a_i$ is an anchor sample, $p_i$ is a positive sample (similar time), and $\tau$ is a temperature parameter.
+\end{definitionbox}
+
+Inspired by the SimCLR framework in computer vision, SurvRNC applies contrastive learning principles to survival analysis. The core idea is to learn representations where patients with similar survival times are positioned close together in the embedding space, while those with different times are pushed apart.
+
+This approach offers several advantages:
+\begin{itemize}
+\item It reduces computational complexity from $O(n^2)$ to roughly linear in the number of samples
+\item It creates meaningful representations that capture the temporal structure of survival times
+\item It handles censoring naturally through the similarity definition
+\item It scales well to very large datasets where pairwise approaches become impractical
+\end{itemize}
+
+The SurvRNC loss demonstrates how principles from other areas of machine learning can be effectively adapted to survival analysis, providing new approaches to the ranking problem that offer both performance and computational benefits.
+
+\subsubsection{Efficient Ranking Implementations}
+
+The naive implementation of ranking losses involves comparing all possible pairs of samples, resulting in $O(n^2)$ complexity that becomes prohibitive for large datasets. Several techniques have been developed to improve the efficiency of ranking losses:
+
+\begin{itemize}
+\item \textbf{Sample-Based Ranking}: Using mini-batches to approximate the full ranking loss
+\item \textbf{Event-Specific Ranking}: Separating ranking by event type in competing risks settings
+\item \textbf{Stratified Sampling}: Focusing on informative pairs that are likely to contribute to the loss
+\item \textbf{Computational Tricks}: Utilizing vectorized operations and GPU acceleration
+\end{itemize}
+
+Recent optimizations have reduced the complexity of ranking losses to $O(n \log n)$ or even $O(n)$ in some cases, making them practical for large-scale applications. Benchmark studies show that these optimized implementations can achieve performance very close to the exact methods while requiring orders of magnitude less computation time.
+
+\subsection{Regression Losses for Survival Analysis}
+
+Regression losses directly target the prediction of time-to-event as a continuous value. These approaches provide interpretable outputs in time units, which can be valuable for clinical applications where precise timing estimates are needed. This section explores the adaptation of standard regression losses to handle censored survival data.
+
+\subsubsection{Motivation for Regression Approaches}
+
+Regression-based approaches to survival analysis offer several advantages:
+
+\begin{itemize}
+\item They provide direct predictions of time-to-event in interpretable units
+\item They facilitate comparison with traditional clinical risk models
+\item They offer straightforward implementation using standard machine learning frameworks
+\item They serve as building blocks for more complex survival models
+\item They can be easily combined with other loss functions in multi-task settings
+\end{itemize}
+
+The main challenge in applying regression losses to survival data is the handling of censored observations, where the true event time is unknown. Various strategies have been developed to address this challenge, leading to several adaptations of standard regression losses for survival analysis.
+
+\subsubsection{L1 Loss with Censoring}
+
+The L1 loss (mean absolute error) measures the absolute difference between predicted and true values. For survival analysis, several adaptations have been developed to handle censored observations \parencite{zhong2020,gensheimer2019}.
+
+\begin{definitionbox}[title=L1 Loss Variants for Survival]
+  Three main approaches for adapting L1 loss to censored data:
+
+  \begin{align}
+    \mathcal{L}_{uncensored} &= \frac{1}{N} \sum_{i=1}^N |t_i - \hat{y}_i| \cdot \mathbb{I}(\delta_i = 1) \\
+    \mathcal{L}_{hinge} &= \frac{1}{N} \sum_{i=1}^N \left[ |t_i - \hat{y}_i| \cdot \mathbb{I}(\delta_i = 1) + \max(0, t_i - \hat{y}_i) \cdot \mathbb{I}(\delta_i = 0) \right] \\
+    \mathcal{L}_{margin} &= \frac{1}{N} \left[ \sum_{i:\delta_i = 1} |t_i - \hat{y}_i| + \sum_{i:\delta_i = 0} w_i |\tilde{t}_i - \hat{y}_i| \right]
+  \end{align}
+
+  where $\delta_i$ is the event indicator, $w_i$ are weights based on Kaplan-Meier estimates, and $\tilde{t}_i$ is the expected event time given censoring at $t_i$.
+\end{definitionbox}
+
+The uncensored approach simply ignores censored observations, only calculating the loss for samples with observed events. This is the simplest approach but can lead to biased estimates, especially when censoring is informative.
+
+The hinge approach applies a one-sided penalty for censored observations, penalizing predictions that are smaller than the censoring time. This approach recognizes that for censored observations, we only know that the true event time is greater than the observed censoring time.
+
+The margin approach uses imputation and weighting to incorporate censored observations. It estimates the expected event time for censored observations based on the conditional survival distribution and assigns weights based on the uncertainty of these estimates.
+
+\subsubsection{MSE Loss for Survival Analysis}
+
+The Mean Squared Error (MSE) loss, which penalizes the squared difference between predicted and true values, has also been adapted for survival analysis using strategies similar to those for L1 loss \parencite{biganzoli2001}.
+
+\begin{definitionbox}[title=MSE Loss Variants for Survival]
+  Two common adaptations of MSE for censored data:
+
+  \begin{align}
+    \mathcal{L}_{MSE-uncensored} &= \frac{1}{N} \sum_{i=1}^N (t_i - \hat{y}_i)^2 \cdot \mathbb{I}(\delta_i = 1) \\
+    \mathcal{L}_{MSE-margin} &= \frac{1}{N} \left[ \sum_{i:\delta_i = 1} (t_i - \hat{y}_i)^2 + \sum_{i:\delta_i = 0} w_i (\tilde{t}_i - \hat{y}_i)^2 \right]
+  \end{align}
+
+  where the symbols have the same meaning as in the L1 variants.
+\end{definitionbox}
+
+Compared to L1 loss, MSE more heavily penalizes large deviations due to the squaring operation. This makes it more sensitive to outliers but often results in smoother gradients. MSE also has connections to maximum likelihood estimation under Gaussian noise assumptions.
+
+The choice between L1 and MSE depends on the specific application and the characteristics of the data. L1 is generally more robust to outliers, while MSE often leads to more stable optimization due to its smoother derivatives.
+
+\subsubsection{Quantile Loss for Survival}
+
+Quantile regression provides a richer description of the relationship between predictors and the response variable by modeling different quantiles of the conditional distribution \parencite{koenker2001}. This approach has been extended to survival analysis to provide prediction intervals rather than just point estimates \parencite{tagasovska2019}.
+
+\begin{definitionbox}[title=Quantile Loss for Survival]
+  The quantile loss function and its adaptations for survival:
+
+  \begin{align}
+    \rho_q(y, \hat{y}) &= q \cdot \max(0, y - \hat{y}) + (1-q) \cdot \max(0, \hat{y} - y) \\
+    \mathcal{L}_{q-uncensored} &= \frac{1}{N} \sum_{i=1}^N \rho_q(t_i, \hat{y}_i) \cdot \mathbb{I}(\delta_i = 1) \\
+    \mathcal{L}_{q-margin} &= \frac{1}{N} \left[ \sum_{i:\delta_i = 1} \rho_q(t_i, \hat{y}_i) + \sum_{i:\delta_i = 0} w_i \rho_q(\tilde{t}_i, \hat{y}_i) \right]
+  \end{align}
+
+  where $q$ is the quantile level (e.g., 0.5 for median), and other symbols follow previous definitions.
+\end{definitionbox}
+
+The quantile loss function applies asymmetric penalties for over-prediction and under-prediction, with the degree of asymmetry determined by the quantile level $q$. This property allows the model to target specific quantiles of the conditional distribution rather than just the mean or median.
+
+By training multiple quantile models (or a single model with multiple quantile outputs), practitioners can obtain prediction intervals for survival times. This provides a more complete picture of prediction uncertainty compared to point estimates, which is particularly valuable in clinical applications where understanding the range of possible outcomes is important.
+
+\subsubsection{Regression Losses: Applications and Limitations}
+
+Regression losses for survival analysis offer interpretable predictions in time units, but they come with both strengths and limitations that should be considered when choosing an approach.
+
+Strengths of regression-based approaches include:
+\begin{itemize}
+\item Interpretable outputs in familiar time units
+\item Direct comparisons with clinical estimates
+\item Well-established statistical properties
+\item Straightforward uncertainty quantification with quantile approaches
+\item Compatibility with standard neural architectures
+\end{itemize}
+
+Limitations include:
+\begin{itemize}
+\item They don't directly optimize ranking performance
+\item They can be sensitive to censoring patterns
+\item They may struggle to capture multi-modal distributions
+\item They often require careful handling of right-skewed distributions
+\item They may need to be combined with other losses for optimal performance
+\end{itemize}
+
+In practice, regression losses are often combined with ranking or likelihood-based losses in a multi-task learning framework to benefit from the strengths of each approach while mitigating their limitations.
+
+\subsection{Classification Losses for Survival Analysis}
+
+Classification approaches transform survival analysis into a classification problem, either predicting the probability of an event occurring before a specific time threshold or discretizing time into intervals and predicting the probability of an event in each interval. These approaches leverage the well-established classification literature while adapting it to handle censoring.
+
+\subsubsection{Binary Cross-Entropy for Survival}
+
+The binary cross-entropy (BCE) loss, fundamental to binary classification, has been adapted to survival analysis by defining the classification task as predicting whether an event occurs before a specified time threshold \parencite{graf1999}.
+
+\begin{definitionbox}[title=Binary Cross-Entropy for Survival]
+  The BCE loss and its adaptations for censored data:
+
+  \begin{align}
+    \mathcal{L}_{CE-uncensored} &= -\frac{1}{N} \sum_{i=1}^N \left[ y_i \log \hat{p}_i + (1 - y_i) \log (1 - \hat{p}_i) \right] \cdot v_i \\
+    \mathcal{L}_{CE-margin} &= -\frac{1}{N} \left[ \sum_{i:\delta_i = 1} \left( y_i \log \hat{p}_i + (1 - y_i) \log (1 - \hat{p}_i) \right) + \right. \\
+      &\left. \sum_{i:\delta_i = 0} w_i \left( \tilde{y}_i \log \hat{p}_i + (1 - \tilde{y}_i) \log (1 - \hat{p}_i) \right) \right]
+  \end{align}
+
+  where:
+  \begin{itemize}
+  \item $y_i = \mathbb{I}(t_i \leq T \text{ and } \delta_i = 1)$ is the binary target
+  \item $v_i = \mathbb{I}(t_i > T \text{ or } \delta_i = 1)$ identifies relevant samples
+  \item $\tilde{y}_i = P(T_i \leq T | T_i > t_i)$ is the conditional probability for censored samples
+  \item $w_i$ are weights for censored samples
+  \end{itemize}
+\end{definitionbox}
+
+The key challenge in applying BCE to survival data is handling censored observations. For uncensored observations with events, the target is clear: $y_i = 1$ if the event occurred before time $T$, and $y_i = 0$ otherwise. For censored observations, different strategies can be employed:
+
+1. The uncensored approach includes only samples where the binary outcome is known (either the event occurred before time $T$, or the individual was followed beyond time $T$ without an event)
+
+2. The margin approach uses imputation and weighting, estimating the conditional probability that an event would occur before time $T$ given that it hasn't occurred by the censoring time.
+
+Binary cross-entropy for survival is particularly useful for risk stratification at clinically meaningful timepoints, such as 1-year, 5-year, or 10-year risk. It also serves as a common auxiliary task in multi-task survival models.
+
+\subsubsection{Multi-Class Classification for Survival}
+
+Multi-class classification approaches to survival analysis divide the time axis into discrete intervals and predict the probability of an event occurring in each interval. This approach, exemplified by models like DeepHit, provides a flexible non-parametric representation of the survival distribution.
+
+\begin{definitionbox}[title=Multi-Class Classification for Survival]
+  The multi-class classification loss for survival:
+
+  \begin{align}
+    \mathcal{L}_{multi} &= -\frac{1}{N} \sum_{i=1}^N \sum_{k=1}^K y_{ik} \log \hat{p}_{ik} \\
+    y_{ik} &= \begin{cases}
+      1 & \text{if } t_i \in [t_{k-1}, t_k) \text{ and } \delta_i = 1 \\
+        0 & \text{otherwise}
+    \end{cases} \\
+    \mathcal{L}_{censored} &= -\frac{1}{N} \sum_{i=1}^N \left[ \delta_i \sum_{k=1}^K y_{ik} \log \hat{p}_{ik} + (1-\delta_i) \log \left( \sum_{j=k_i}^K \hat{p}_{ij} \right) \right]
+  \end{align}
+
+  where:
+  \begin{itemize}
+  \item $K$ is the number of time intervals
+  \item $\hat{p}_{ik}$ is predicted probability of event in interval $k$ for patient $i$
+  \item $k_i$ is the interval containing censoring time $t_i$
+  \end{itemize}
+\end{definitionbox}
+
+The multi-class approach assigns each uncensored observation to the interval containing its event time. For censored observations, the approach recognizes that the event could occur in any interval after the censoring time. The second formulation addresses this by summing the probabilities of all possible future intervals.
+
+This approach offers several advantages:
+\begin{itemize}
+\item It provides a flexible non-parametric representation of the survival distribution
+\item It naturally extends to competing risks by having separate outputs for each event type
+\item It preserves the ordering relationship between adjacent time periods
+\item It can be implemented using standard multi-class classification architectures
+\end{itemize}
+
+The main challenge is the selection of appropriate time intervals. Too few intervals may not capture the temporal dynamics accurately, while too many can lead to sparse data and overfitting. Various strategies have been proposed for optimal interval selection, including equal-width intervals, equal-frequency intervals, and data-driven approaches.
+
+\subsubsection{Classification for Survival: Advantages and Limitations}
+
+Classification-based approaches to survival analysis offer several advantages but also come with important limitations.
+
+Advantages include:
+\begin{itemize}
+\item Simpler implementation than full survival models
+\item Ability to leverage standard classification architectures and techniques
+\item Good compatibility with modern deep learning frameworks
+\item Direct addressing of clinically relevant time horizons
+\item Easier interpretation for non-statisticians
+\item Facilitating integration with other prediction tasks
+\end{itemize}
+
+Limitations include:
+\begin{itemize}
+\item Loss of continuous time information due to discretization
+\item Need for separate models or outputs for different time thresholds
+\item Sensitivity to the choice of time intervals
+\item Potential inefficiency for long-term predictions
+\item Challenges with heavily censored data
+\item Difficulties in comparison with traditional survival models
+\end{itemize}
+
+Despite these limitations, classification approaches remain popular in practice, especially for applications where risk stratification at specific timepoints is the primary goal or where integration with existing classification systems is important.
+
+\subsection{Auxiliary Losses and Loss Balancing}
+
+Beyond the core survival, ranking, regression, and classification losses, several auxiliary losses and techniques have been developed to address specific challenges in survival analysis, such as class imbalance and the combination of multiple loss components.
+
+\subsubsection{Focal Loss for Survival Analysis}
+
+Focal loss, introduced by \textcite{lin2017focal} for object detection in computer vision, addresses class imbalance by down-weighting the contribution of well-classified examples and focusing on difficult cases. This concept has been adapted to survival analysis to deal with rare events and imbalanced prediction problems \parencite{steiner2021,fotso2018,wiegrebe2023}.
+
+\begin{definitionbox}[title=Focal Loss for Survival]
+  The focal loss modifies standard losses by adding a modulating factor:
+
+  \begin{align}
+    \mathcal{L}_{focal} &= -\sum_{i=1}^N (1 - p_t)^\gamma \log(p_t) \\
+    p_t &= \begin{cases}
+      p_i & \text{if } y_i = 1 \\
+      1-p_i & \text{otherwise}
+    \end{cases}
+  \end{align}
+
+  where $\gamma \geq 0$ is the focusing parameter (typically $\gamma \in [1,5]$), and $p_t$ is the model's predicted probability for the correct class.
+\end{definitionbox}
+
+The focal loss introduces a modulating factor $(1 - p_t)^\gamma$ that reduces the contribution of examples that are already well-classified (high $p_t$) and increases the focus on hard examples (low $p_t$). The parameter $\gamma$ controls the extent of this modulation, with higher values placing more emphasis on hard examples.
+
+In survival analysis, focal loss can be applied to various base losses:
+
+\begin{itemize}
+\item \textbf{Focal NLL:} Modifying the negative log-likelihood to focus on uncertain predictions
+  \begin{align}
+    \mathcal{L}_{focal-NLL} = -\sum_{i=1}^N (1-p_{surv,i})^\gamma [\delta_i \log h(t_i|x_i) + \log S(t_i|x_i)]
+  \end{align}
+
+\item \textbf{Focal ranking:} Applying focal weighting to ranking losses
+  \begin{align}
+    \mathcal{L}_{focal-rank} = -\sum_{i,j \in \mathcal{P}} (1-\sigma(r_j - r_i))^\gamma \log \sigma(r_j - r_i)
+  \end{align}
+\end{itemize}
+
+Recent studies have shown that focal loss can improve performance for rare events in survival analysis, with improvements of 5-15\% reported in some benchmarks. The largest gains are typically observed for the rarest event types or time intervals, where standard losses might not provide sufficient learning signal.
+
+\subsubsection{Loss Balancing Strategies}
+
+Many survival models employ multiple loss components to capture different aspects of the prediction task. Balancing these components effectively is crucial for successful training and optimal performance.
+
+\begin{definitionbox}[title=Loss Balancing]
+  A weighted combination of multiple loss components:
+
+  \begin{equation}
+    \mathcal{L}_{total} = \sum_{i=1}^K w_i \mathcal{L}_i
+  \end{equation}
+
+  where $w_i$ are the weights for each loss component $\mathcal{L}_i$.
+\end{definitionbox}
+
+Several strategies exist for determining the weights in a multi-component loss:
+
+\begin{itemize}
+\item \textbf{Fixed Weights:} Using constant predefined weights (e.g., $w_i = \alpha_i$)
+\item \textbf{Adaptive Weights:} Adjusting weights based on training progress
+\item \textbf{Uncertainty Weights:} Weighting by the inverse of task uncertainty ($w_i = \frac{1}{2\sigma_i^2}$)
+\item \textbf{Gradient-Based:} Weighting based on gradient magnitudes ($w_i = f(||\nabla \mathcal{L}_i||)$)
+\item \textbf{Scale-Normalized:} Normalizing by the scale of each loss ($w_i = \frac{\alpha_i}{\text{scale}(\mathcal{L}_i)}$)
+\item \textbf{Learned Weights:} Treating weights as trainable parameters
+\end{itemize}
+
+Advanced methods like the uncertainty weighting proposed by \textcite{kendall2018} learn optimal weights during training by casting the problem as learning to optimize multiple objectives under uncertainty. These approaches can significantly improve performance compared to fixed weighting schemes, especially for complex models with multiple diverse loss components \parencite{fotso2018}.
+
+\subsection{Summary and Best Practices}
+
+Loss functions represent a critical component in survival analysis models, directly influencing both the learning process and the resulting model behavior \parencite{lee2018,kvamme2019,nagpal2021dsm}. This chapter has explored a wide range of loss functions, from traditional survival likelihoods to modern ranking and regression adaptations \parencite{harrell1982,ibrahim2001,kvamme2021survrnc}.
+
+When selecting a loss function for a survival analysis task, consider the following factors:
+
+\begin{itemize}
+\item \textbf{Task objectives:} Different losses target different aspects of survival prediction
+  \begin{itemize}
+  \item If accurate time prediction is the primary goal, consider regression losses or parametric survival models
+  \item If ranking patients by risk is most important, prioritize ranking losses
+  \item If calibrated probabilities are needed, ensure likelihood components are included
+  \end{itemize}
+
+\item \textbf{Data characteristics:}
+  \begin{itemize}
+  \item Heavy censoring may favor approaches like DSM or likelihood-based methods
+  \item Class imbalance might benefit from focal loss adaptations
+  \item Competing risks settings call for specialized approaches like MENSA or DeepHit
+  \end{itemize}
+
+\item \textbf{Computational considerations:}
+  \begin{itemize}
+  \item For large datasets, consider optimized implementations of ranking losses
+  \item Balance computational complexity against modeling power
+  \item Leverage efficient mini-batch approximations when appropriate
+  \end{itemize}
+
+\item \textbf{Combined approaches:}
+  \begin{itemize}
+  \item Often, the best performance comes from combining multiple loss components
+  \item Use appropriate loss balancing strategies when combining components
+  \item Consider multi-task learning frameworks that share representations across tasks
+  \end{itemize}
+\end{itemize}

@@ -1,0 +1,198 @@
+% Censoring section for the Survival Analysis book
+\section{Understanding Censoring}
+\label{sec:understanding-censoring}
+
+Censoring occurs when we have incomplete information about a subject's survival time. It is a fundamental concept in survival analysis as most real-world studies involve some form of censoring. Without accounting for censoring, survival estimates would be biased.
+
+\subsection{Types of Censoring}
+\label{subsec:types-of-censoring}
+
+\input{censoring-plot}
+
+\begin{definitionbox}[title=Censoring Types]
+Censoring occurs when the event time is not precisely observed but is known to occur within a certain time range. The three main types of censoring are:
+\begin{itemize}
+    \item \textbf{Right censoring:} The most common type, occurs when a subject has not experienced the event of interest by the end of the study, is lost to follow-up, or withdraws from the study. Right censoring gives us a lower bound on the true time-to-event.
+    
+    \item \textbf{Left censoring:} Occurs when the event is known to have occurred before the first observation time, but the exact time is unknown. We only know that $T < t_{first}$.
+    
+    \item \textbf{Interval censoring:} Occurs when we only know that the event occurred within a certain time interval, but not the exact time. This happens when subjects are assessed periodically, and the event is detected at a follow-up visit.
+\end{itemize}
+\end{definitionbox}
+
+The Kaplan-Meier estimator and Cox proportional hazards model both handle right censoring. Left truncation can be accommodated by modifying the risk sets in these methods. Interval censoring requires specialized techniques like the Turnbull estimator or parametric models.
+
+\subsection{Time-to-Event Data Visualization}
+\label{subsec:time-to-event}
+
+The following visualizations illustrate time-to-event data for individual subjects and specific examples of different censoring types:
+
+\input{time-to-event-plot}
+
+\subsection{Clinical Study Visualization}
+\label{subsec:clinical-censoring}
+
+The following visualization illustrates real-world patient follow-up patterns in a clinical trial setting:
+
+\input{clinical-censoring-plot}
+
+\subsection{Censoring Mechanisms and Their Implications}
+\label{subsec:censoring-mechanisms}
+
+The mechanism that causes censoring has important implications for statistical modeling and the validity of results. Different types of censoring mechanisms create different analytical challenges.
+
+\begin{definitionbox}[title=Censoring Mechanisms]
+Three types of censoring mechanisms are distinguished:
+
+\begin{itemize}
+    \item \textbf{Missing Completely At Random (MCAR):} Censoring is independent of both observed and unobserved factors. Examples include administrative end of study or random equipment failure in monitoring devices.
+    \begin{equation}
+        P(C = c | T = t, X = x) = P(C = c)
+    \end{equation}
+    
+    \item \textbf{Missing At Random (MAR):} Censoring depends on observed covariates but not on the event time itself. Examples include study withdrawal related to observed side effects.
+    \begin{equation}
+        P(C = c | T = t, X = x) = P(C = c | X = x)
+    \end{equation}
+    
+    \item \textbf{Missing Not At Random (MNAR):} Censoring depends on the unobserved event time. Examples include patients dropping out because of health deterioration not captured in observations.
+    \begin{equation}
+        P(C = c | T = t, X = x) \neq P(C = c | X = x)
+    \end{equation}
+\end{itemize}
+
+where $T$ is the event time, $C$ is the censoring time, and $X$ represents covariates.
+\end{definitionbox}
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}
+        % MCAR diagram
+        \begin{scope}[shift={(-3.5,0)}]
+            \node[draw, circle, fill=blue!10] (T1) at (0,0) {$T$};
+            \node[draw, circle, fill=red!10] (C1) at (1.5,0) {$C$};
+            \node[draw, circle, fill=green!10] (X1) at (0.75,-1.5) {$X$};
+            
+            \node[align=center, text width=2.5cm] at (0.75,1) {MCAR};
+        \end{scope}
+        
+        % MAR diagram
+        \begin{scope}[shift={(0,0)}]
+            \node[draw, circle, fill=blue!10] (T2) at (0,0) {$T$};
+            \node[draw, circle, fill=red!10] (C2) at (1.5,0) {$C$};
+            \node[draw, circle, fill=green!10] (X2) at (0.75,-1.5) {$X$};
+            
+            \draw[->, thick] (X2) -- (C2);
+            
+            \node[align=center, text width=2.5cm] at (0.75,1) {MAR};
+        \end{scope}
+        
+        % MNAR diagram
+        \begin{scope}[shift={(3.5,0)}]
+            \node[draw, circle, fill=blue!10] (T3) at (0,0) {$T$};
+            \node[draw, circle, fill=red!10] (C3) at (1.5,0) {$C$};
+            \node[draw, circle, fill=green!10] (X3) at (0.75,-1.5) {$X$};
+            
+            \draw[->, thick] (X3) -- (C3);
+            \draw[->, thick] (T3) -- (C3);
+            
+            \node[align=center, text width=2.5cm] at (0.75,1) {MNAR};
+        \end{scope}
+    \end{tikzpicture}
+    \caption{Directed acyclic graphs illustrating different censoring mechanisms. Arrows indicate dependencies between variables. Under MCAR, censoring is independent of other variables. Under MAR, censoring depends on observed covariates. Under MNAR, censoring depends on the unobserved event time.}
+    \label{fig:censoring-mechanisms}
+\end{figure}
+
+\begin{notebox}[title=Non-informative vs. Informative Censoring]
+A related distinction is between:
+\begin{itemize}
+    \item \textbf{Non-informative censoring:} The censoring process provides no information about the event time beyond what is available in the observed covariates (equivalent to MCAR or MAR)
+    \item \textbf{Informative censoring:} The censoring process itself provides information about the event time (equivalent to MNAR)
+\end{itemize}
+
+Most standard survival methods assume non-informative censoring. When censoring is informative, more complex joint modeling of the censoring and event processes may be required.
+\end{notebox}
+
+For survival analysis methods to produce valid results, censoring must typically be:
+
+\begin{itemize}
+    \item \textbf{Independent/non-informative:} The censoring mechanism should be unrelated to the event process. If subjects who are more likely to experience the event are also more likely to be censored, we have informative censoring, which can bias results.
+    
+    \item \textbf{Random:} The distribution of censoring times should be random and not systematically related to subject characteristics or study conditions.
+\end{itemize}
+
+These assumptions should be critically evaluated in any survival analysis. When they're violated, sensitivity analyses or models that account for informative censoring may be needed.
+
+\section{Competing Risks}
+\label{sec:competing-risks}
+
+Competing risks occur when subjects can experience multiple types of events, and the occurrence of one event precludes the occurrence of other events or changes their probability. Traditional survival analysis methods that treat competing events as censored can lead to biased estimates.
+
+\begin{figure}[htbp]
+    \centering
+    \begin{tikzpicture}[
+        node distance=2.5cm,
+        state/.style={circle, draw, minimum size=1.2cm},
+        arrow/.style={->, >=stealth, thick}
+    ]
+        % States
+        \node[state] (start) at (0,0) {Start};
+        \node[state, below left of=start] (event1) at (-2,-2) {Event 1};
+        \node[state, below of=start] (event2) at (0,-2) {Event 2};
+        \node[state, below right of=start] (event3) at (2,-2) {Event 3};
+        
+        % Transitions
+        \draw[arrow] (start) -- (event1) node[midway, left] {$h_1(t)$};
+        \draw[arrow] (start) -- (event2) node[midway, right] {$h_2(t)$};
+        \draw[arrow] (start) -- (event3) node[midway, right] {$h_3(t)$};
+    \end{tikzpicture}
+    \caption{Competing risks framework. From the initial state, a subject can transition to one of several possible event states, each with its own hazard function. Once one event occurs, the subject is no longer at risk for the other events.}
+    \label{fig:competing-risks}
+\end{figure}
+
+\subsection{Analyzing Competing Risks}
+\label{subsec:analyzing-competing-risks}
+
+When analyzing data with competing risks, we consider:
+
+\begin{itemize}
+    \item \textbf{Cause-specific hazards:} The instantaneous rate of occurrence of a specific event type among those still at risk.
+    
+    \item \textbf{Cumulative Incidence Function (CIF):} The probability of experiencing a specific event type before time $t$ and before experiencing any competing event.
+    
+    \item \textbf{Subdistribution hazard:} The instantaneous rate of occurrence of a specific event type among those who have not experienced that specific event yet (including those who have experienced competing events).
+\end{itemize}
+
+Unlike in the standard survival setting where the survival function is directly related to the hazard, in competing risks, the relationship between cause-specific hazards and CIFs is more complex. A reduction in one cause-specific hazard may not necessarily translate to an increase in the corresponding CIF due to the interplay with competing events.
+
+\subsection{Modeling Approaches for Competing Risks}
+\label{subsec:modeling-competing-risks}
+
+\begin{itemize}
+    \item \textbf{Cause-specific Cox models:} Fit separate Cox models for each cause, treating competing events as censored.
+    
+    \item \textbf{Fine and Gray model:} Models the subdistribution hazard directly, allowing for direct assessment of covariate effects on the CIF.
+    
+    \item \textbf{Multi-state models:} Consider transitions between different states (e.g., healthy, diseased, dead) and can model complex disease processes.
+    
+    \item \textbf{Joint modeling:} Simultaneously model multiple event types, accounting for their dependencies.
+    
+    \item \textbf{Neural approaches (e.g., MENSA):} Use neural networks to model complex relationships between covariates and multiple event types.
+\end{itemize}
+
+The choice of method depends on the research question—whether the interest is in etiology (cause-specific hazards) or absolute risk prediction (CIFs).
+
+\begin{examplebox}[title=Examples of Competing Risks]
+  \begin{itemize}
+  \item In medical studies: Death from cancer, heart disease, or other causes
+  \item In engineering: Component failure due to wear, corrosion, or manufacturing defect
+  \item In business: Customer churn due to price, service quality, or competitor offers
+  \item In employment: Job termination due to retirement, new job opportunity, or layoff
+  \end{itemize}
+\end{examplebox}
+
+\begin{notebox}[title=Important Note on Competing Risks]
+A critical point in competing risks analysis is that $1 - S_j(t) \neq F_j(t)$, where $S_j(t)$ is the cause-specific survival function obtained by treating other event types as censored.
+
+The Kaplan-Meier estimator applied to a single event type (treating others as censored) overestimates the probability of that event in the presence of competing risks.
+\end{notebox}
