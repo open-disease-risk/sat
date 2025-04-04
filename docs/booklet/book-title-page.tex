@@ -1,0 +1,256 @@
+% Custom title page with TikZ artwork for the book
+% This replaces the standard \maketitle command
+% Optimized for LuaLaTeX compilation - extra simplified version
+
+\begin{titlepage}
+    % First, add the background TikZ artwork
+    \begin{tikzpicture}[remember picture, overlay]
+        % Background gradient
+        \fill[left color=primaryLight!50, right color=quinaryLight!50] 
+            (current page.south west) rectangle (current page.north east);
+        
+        % Grid backdrop - ultra simplified with absolute coordinates
+        \foreach \x in {1,2,...,10} {
+            \foreach \y in {1,2,...,15} {
+                \fill[octonaryDark!30] 
+                    ($(current page.south west) + (\x*1cm, \y*1cm)$) circle (0.5mm);
+            }
+        }
+        
+        % Main survival curve using survivalFunctionColor
+        \draw[very thick, survivalFunctionColor] 
+            ($(current page.south west) + (3cm, 15cm)$)
+            .. controls ($(current page.south west) + (6cm, 14cm)$) 
+            and ($(current page.south west) + (10cm, 13cm)$) .. 
+            ($(current page.south west) + (13cm, 12cm)$)
+            .. controls ($(current page.south west) + (16cm, 11.5cm)$) 
+            and ($(current page.south west) + (18cm, 11cm)$) .. 
+            ($(current page.south west) + (19cm, 10.8cm)$);
+            
+        % Confidence interval - upper and lower bounds
+        \draw[dashed, survivalFunctionColor!80] 
+            ($(current page.south west) + (3cm, 15cm)$)
+            .. controls ($(current page.south west) + (6cm, 14.4cm)$) 
+            and ($(current page.south west) + (10cm, 13.4cm)$) .. 
+            ($(current page.south west) + (13cm, 12.5cm)$)
+            .. controls ($(current page.south west) + (16cm, 12cm)$) 
+            and ($(current page.south west) + (18cm, 11.6cm)$) .. 
+            ($(current page.south west) + (19cm, 11.4cm)$);
+            
+        \draw[dashed, survivalFunctionColor!80] 
+            ($(current page.south west) + (3cm, 15cm)$)
+            .. controls ($(current page.south west) + (6cm, 13.6cm)$) 
+            and ($(current page.south west) + (10cm, 12.6cm)$) .. 
+            ($(current page.south west) + (13cm, 11.5cm)$)
+            .. controls ($(current page.south west) + (16cm, 11cm)$) 
+            and ($(current page.south west) + (18cm, 10.5cm)$) .. 
+            ($(current page.south west) + (19cm, 10.2cm)$);
+            
+        % Fill between confidence bands
+        \fill[survivalFunctionColor!20, opacity=0.5]
+            ($(current page.south west) + (3cm, 15cm)$)
+            .. controls ($(current page.south west) + (6cm, 14.4cm)$) 
+            and ($(current page.south west) + (10cm, 13.4cm)$) .. 
+            ($(current page.south west) + (13cm, 12.5cm)$)
+            .. controls ($(current page.south west) + (16cm, 12cm)$) 
+            and ($(current page.south west) + (18cm, 11.6cm)$) .. 
+            ($(current page.south west) + (19cm, 11.4cm)$) --
+            ($(current page.south west) + (19cm, 10.2cm)$) --
+            ($(current page.south west) + (19cm, 10.2cm)$)
+            .. controls ($(current page.south west) + (16cm, 11cm)$) 
+            and ($(current page.south west) + (6cm, 13.6cm)$) .. 
+            ($(current page.south west) + (3cm, 15cm)$);
+        
+        % Competing risks curves
+        \draw[thick, event2Color] 
+            ($(current page.south west) + (3cm, 13cm)$)
+            .. controls ($(current page.south west) + (7cm, 11cm)$) 
+            and ($(current page.south west) + (12cm, 10cm)$) .. 
+            ($(current page.south west) + (16cm, 9.5cm)$)
+            .. controls ($(current page.south west) + (18cm, 9cm)$) 
+            and ($(current page.south west) + (19cm, 8.5cm)$) .. 
+            ($(current page.south west) + (19.5cm, 8.3cm)$);
+            
+        \draw[thick, event3Color] 
+            ($(current page.south west) + (3cm, 11cm)$)
+            .. controls ($(current page.south west) + (7cm, 9cm)$) 
+            and ($(current page.south west) + (12cm, 8cm)$) .. 
+            ($(current page.south west) + (16cm, 7.5cm)$)
+            .. controls ($(current page.south west) + (18cm, 7cm)$) 
+            and ($(current page.south west) + (19cm, 6.7cm)$) .. 
+            ($(current page.south west) + (19.5cm, 6.5cm)$);
+        
+        % Neural network nodes - simplified
+        % First layer
+        \node[circle, draw=dsmColor!80!black, fill=dsmColor!30, minimum size=8mm] 
+            at ($(current page.south west) + (5cm, 16cm)$) {};
+        \node[circle, draw=dsmColor!80!black, fill=dsmColor!30, minimum size=8mm] 
+            at ($(current page.south west) + (5cm, 17cm)$) {};
+        \node[circle, draw=dsmColor!80!black, fill=dsmColor!30, minimum size=8mm] 
+            at ($(current page.south west) + (5cm, 18cm)$) {};
+        \node[circle, draw=dsmColor!80!black, fill=dsmColor!30, minimum size=8mm] 
+            at ($(current page.south west) + (5cm, 19cm)$) {};
+        
+        % Hidden layer
+        \node[circle, draw=dsmColor!80!black, fill=dsmColor!30, minimum size=8mm] 
+            at ($(current page.south west) + (7cm, 15.5cm)$) {};
+        \node[circle, draw=dsmColor!80!black, fill=dsmColor!30, minimum size=8mm] 
+            at ($(current page.south west) + (7cm, 16.5cm)$) {};
+        \node[circle, draw=dsmColor!80!black, fill=dsmColor!30, minimum size=8mm] 
+            at ($(current page.south west) + (7cm, 17.5cm)$) {};
+        \node[circle, draw=dsmColor!80!black, fill=dsmColor!30, minimum size=8mm] 
+            at ($(current page.south west) + (7cm, 18.5cm)$) {};
+        \node[circle, draw=dsmColor!80!black, fill=dsmColor!30, minimum size=8mm] 
+            at ($(current page.south west) + (7cm, 19.5cm)$) {};
+        
+        % Output layer
+        \node[circle, draw=dsmColor!80!black, fill=dsmColor!30, minimum size=8mm] 
+            at ($(current page.south west) + (9cm, 16cm)$) {};
+        \node[circle, draw=dsmColor!80!black, fill=dsmColor!30, minimum size=8mm] 
+            at ($(current page.south west) + (9cm, 17cm)$) {};
+        \node[circle, draw=dsmColor!80!black, fill=dsmColor!30, minimum size=8mm] 
+            at ($(current page.south west) + (9cm, 18cm)$) {};
+        \node[circle, draw=dsmColor!80!black, fill=dsmColor!30, minimum size=8mm] 
+            at ($(current page.south west) + (9cm, 19cm)$) {};
+        
+        % Connect layers with key connections only to reduce calculation overhead
+        \draw[dsmColor!50, opacity=0.3] ($(current page.south west) + (5cm, 16cm)$) -- 
+            ($(current page.south west) + (7cm, 15.5cm)$);
+        \draw[dsmColor!50, opacity=0.3] ($(current page.south west) + (5cm, 16cm)$) -- 
+            ($(current page.south west) + (7cm, 17.5cm)$);
+        \draw[dsmColor!50, opacity=0.3] ($(current page.south west) + (5cm, 17cm)$) -- 
+            ($(current page.south west) + (7cm, 16.5cm)$);
+        \draw[dsmColor!50, opacity=0.3] ($(current page.south west) + (5cm, 17cm)$) -- 
+            ($(current page.south west) + (7cm, 18.5cm)$);
+        \draw[dsmColor!50, opacity=0.3] ($(current page.south west) + (5cm, 18cm)$) -- 
+            ($(current page.south west) + (7cm, 17.5cm)$);
+        \draw[dsmColor!50, opacity=0.3] ($(current page.south west) + (5cm, 18cm)$) -- 
+            ($(current page.south west) + (7cm, 19.5cm)$);
+        \draw[dsmColor!50, opacity=0.3] ($(current page.south west) + (5cm, 19cm)$) -- 
+            ($(current page.south west) + (7cm, 18.5cm)$);
+            
+        \draw[dsmColor!50, opacity=0.3] ($(current page.south west) + (7cm, 15.5cm)$) -- 
+            ($(current page.south west) + (9cm, 16cm)$);
+        \draw[dsmColor!50, opacity=0.3] ($(current page.south west) + (7cm, 15.5cm)$) -- 
+            ($(current page.south west) + (9cm, 18cm)$);
+        \draw[dsmColor!50, opacity=0.3] ($(current page.south west) + (7cm, 16.5cm)$) -- 
+            ($(current page.south west) + (9cm, 17cm)$);
+        \draw[dsmColor!50, opacity=0.3] ($(current page.south west) + (7cm, 17.5cm)$) -- 
+            ($(current page.south west) + (9cm, 16cm)$);
+        \draw[dsmColor!50, opacity=0.3] ($(current page.south west) + (7cm, 18.5cm)$) -- 
+            ($(current page.south west) + (9cm, 19cm)$);
+        \draw[dsmColor!50, opacity=0.3] ($(current page.south west) + (7cm, 19.5cm)$) -- 
+            ($(current page.south west) + (9cm, 18cm)$);
+        
+        % Event indicators along the curves
+        \node[circle, fill=event1Color, inner sep=2pt] 
+            at ($(current page.south west) + (5cm, 14.3cm)$) {};
+        \node[circle, fill=event1Color, inner sep=2pt] 
+            at ($(current page.south west) + (10cm, 12.8cm)$) {};
+        \node[circle, fill=event1Color, inner sep=2pt] 
+            at ($(current page.south west) + (15cm, 11.5cm)$) {};
+        \node[circle, fill=event1Color, inner sep=2pt] 
+            at ($(current page.south west) + (18cm, 10.9cm)$) {};
+        
+        \node[circle, fill=event2Color, inner sep=2pt] 
+            at ($(current page.south west) + (6cm, 12cm)$) {};
+        \node[circle, fill=event2Color, inner sep=2pt] 
+            at ($(current page.south west) + (12cm, 10cm)$) {};
+        \node[circle, fill=event2Color, inner sep=2pt] 
+            at ($(current page.south west) + (17cm, 9cm)$) {};
+        
+        % Add censoring marks
+        \draw[censoringColor, very thick] 
+            ($(current page.south west) + (7cm-2mm, 13.5cm+2mm)$) -- 
+            ($(current page.south west) + (7cm+2mm, 13.5cm-2mm)$);
+        \draw[censoringColor, very thick] 
+            ($(current page.south west) + (7cm-2mm, 13.5cm-2mm)$) -- 
+            ($(current page.south west) + (7cm+2mm, 13.5cm+2mm)$);
+            
+        \draw[censoringColor, very thick] 
+            ($(current page.south west) + (13cm-2mm, 12cm+2mm)$) -- 
+            ($(current page.south west) + (13cm+2mm, 12cm-2mm)$);
+        \draw[censoringColor, very thick] 
+            ($(current page.south west) + (13cm-2mm, 12cm-2mm)$) -- 
+            ($(current page.south west) + (13cm+2mm, 12cm+2mm)$);
+            
+        \draw[censoringColor, very thick] 
+            ($(current page.south west) + (16cm-2mm, 11.2cm+2mm)$) -- 
+            ($(current page.south west) + (16cm+2mm, 11.2cm-2mm)$);
+        \draw[censoringColor, very thick] 
+            ($(current page.south west) + (16cm-2mm, 11.2cm-2mm)$) -- 
+            ($(current page.south west) + (16cm+2mm, 11.2cm+2mm)$);
+        
+        % Bottom elements - mixture components visualization for DSM - simplified
+        \draw[likelihoodLossColor, thick] 
+            ($(current page.south west) + (3cm, 4cm)$)
+            .. controls ($(current page.south west) + (3.5cm, 5cm)$) 
+            and ($(current page.south west) + (4cm, 5.5cm)$) .. 
+            ($(current page.south west) + (5cm, 5.5cm)$)
+            .. controls ($(current page.south west) + (6cm, 5.5cm)$) 
+            and ($(current page.south west) + (6.5cm, 5cm)$) .. 
+            ($(current page.south west) + (7cm, 4cm)$);
+            
+        \draw[rankingLossColor, thick] 
+            ($(current page.south west) + (8cm, 4cm)$)
+            .. controls ($(current page.south west) + (8.5cm, 5cm)$) 
+            and ($(current page.south west) + (9cm, 5.3cm)$) .. 
+            ($(current page.south west) + (10cm, 5.3cm)$)
+            .. controls ($(current page.south west) + (11cm, 5.3cm)$) 
+            and ($(current page.south west) + (11.5cm, 5cm)$) .. 
+            ($(current page.south west) + (12cm, 4cm)$);
+            
+        \draw[regressionLossColor, thick] 
+            ($(current page.south west) + (13cm, 4cm)$)
+            .. controls ($(current page.south west) + (13.5cm, 4.7cm)$) 
+            and ($(current page.south west) + (14cm, 5cm)$) .. 
+            ($(current page.south west) + (15cm, 5cm)$)
+            .. controls ($(current page.south west) + (16cm, 5cm)$) 
+            and ($(current page.south west) + (16.5cm, 4.7cm)$) .. 
+            ($(current page.south west) + (17cm, 4cm)$);
+            
+        \draw[black, thick] 
+            ($(current page.south west) + (3cm, 4cm)$)
+            .. controls ($(current page.south west) + (7cm, 5.2cm)$) 
+            and ($(current page.south west) + (10cm, 5.4cm)$) .. 
+            ($(current page.south west) + (13cm, 5cm)$)
+            .. controls ($(current page.south west) + (15cm, 4.8cm)$) 
+            and ($(current page.south west) + (16cm, 4.5cm)$) .. 
+            ($(current page.south west) + (17cm, 4cm)$);
+        
+        % Logo elements for MENSA at top left corner
+        \begin{scope}[shift={($(current page.south west) + (2cm, 21cm)$)}]
+            \draw[thick, mensaColor] (0,0) circle (5mm);
+            \draw[thick, mensaColor] (-3.5mm,-3.5mm) -- (3.5mm,3.5mm);
+            \draw[thick, mensaColor] (-3.5mm,3.5mm) -- (3.5mm,-3.5mm);
+            \node[right, mensaColor] at (7mm, 0) {\small MENSA};
+        \end{scope}
+        
+        % Small DeepHit logo at top right
+        \begin{scope}[shift={($(current page.south west) + (18cm, 21cm)$)}]
+            \draw[thick, deephitColor] (0,0) circle (5mm);
+            \draw[thick, deephitColor] (-4mm,0) -- (4mm,0);
+            \draw[thick, deephitColor] (0,-4mm) -- (0,4mm);
+            \node[left, deephitColor] at (-7mm, 0) {\small DeepHit};
+        \end{scope}
+        
+        % DSM logo at bottom
+        \begin{scope}[shift={($(current page.south west) + (10cm, 2.5cm)$)}]
+            \draw[thick, dsmColor] (0,0) circle (7mm);
+            \node[dsmColor] at (0,0) {\small\textbf{DSM}};
+        \end{scope}
+    \end{tikzpicture}
+
+    % Title text overlay positioned with fixed values
+    \vspace*{7cm}
+    \begin{center}
+        {\huge\bfseries\sffamily Advanced Topics in\\Survival Analysis:\\
+        From Foundations to\\Deep Learning Applications\par}
+        \vspace{1.5cm}
+        {\Large\sffamily Neural Approaches to Time-to-Event Prediction\par}
+        \vspace{2cm}
+        {\large\sffamily\@author\par}
+        \vfill
+        {\large\sffamily\@date\par}
+    \end{center}
+\end{titlepage}

@@ -48,6 +48,14 @@ class SAOutput(ModelOutput):
             Scale parameters for DSM distribution mixtures.
         logits_g (`torch.FloatTensor`, *optional*):
             Logits for DSM mixture component weights.
+        event_dependency_matrix (`torch.FloatTensor`, *optional*):
+            Event dependency matrix for the MENSA model.
+        event_types (`list`, *optional*):
+            List of event type names for expert knowledge integration.
+        use_expert_priors (`bool`, *optional*):
+            Whether to use expert knowledge priors for distribution parameters.
+        constrain_params (`bool`, *optional*):
+            Whether to apply expert knowledge constraints to distribution parameters.
     """
 
     loss: Optional[torch.FloatTensor] = None
@@ -63,6 +71,11 @@ class SAOutput(ModelOutput):
     shape: Optional[torch.FloatTensor] = None
     scale: Optional[torch.FloatTensor] = None
     logits_g: Optional[torch.FloatTensor] = None
+    event_dependency_matrix: Optional[torch.FloatTensor] = None
+    # Expert knowledge fields
+    event_types: Optional[list] = None
+    use_expert_priors: Optional[bool] = None
+    constrain_params: Optional[bool] = None
 
 
 @dataclass

@@ -101,4 +101,30 @@ The SAT toolkit includes various other loss functions for different tasks:
 - Regression losses (L1, MSE, Quantile)
 - Classification losses (CrossEntropy)
 - Ranking losses (SampleRanking, MultiEventRanking)
-- Survival-specific losses (NLLPCHazard, Mismatch, DeepHit components)
+- Survival-specific losses (NLLPCHazard, Mismatch, DeepHit components, DSM loss, MENSA loss)
+
+### MENSA Loss
+
+The `MENSALoss` class implements a specialized loss function for the Multi-Event Neural Survival Analysis (MENSA) model. It combines:
+
+1. Negative log-likelihood for uncensored data
+2. Negative log-survival for censored data
+3. Regularization for the event dependency matrix
+
+This loss is particularly useful for multi-event scenarios where events may have dependencies on each other. For detailed information about MENSA, see the [MENSA Documentation](mensa.md).
+
+#### Usage Example
+
+```yaml
+# conf/tasks/losses/mensa.yaml
+_target_: sat.loss.survival.MENSALoss
+duration_cuts: ${paths.duration_cuts}
+importance_sample_weights: ${paths.importance_sample_weights}
+num_events: ${..num_events}
+distribution: "weibull"
+discount: 1.0
+elbo: false
+dependency_regularization: 0.01  # Controls the strength of dependency regularization
+```
+
+The `dependency_regularization` parameter controls how strongly the model is encouraged to use sparse dependencies between events. Higher values promote more independence, while lower values allow more complex dependency structures.

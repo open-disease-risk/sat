@@ -1,4 +1,4 @@
-sat-transformer:
+survival:
   _target_: sat.loss.MetaLoss
   losses:
     - _target_: sat.loss.SATNLLPCHazardLoss

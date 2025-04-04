@@ -10,6 +10,8 @@ import pandas as pd
 
 from sat.models.heads import SAOutput
 from sat.utils import logging
+from sat.distributions import WeibullDistribution, LogNormalDistribution
+from sat.distributions import WeibullMixtureDistribution, LogNormalMixtureDistribution
 from ..base import Loss
 
 logger = logging.get_default_logger()
@@ -92,6 +94,7 @@ class DSMLoss(Loss):
     ):
         """
         Compute negative log-likelihood for uncensored data.
+        Uses distribution classes for numerical stability.
 
         Args:
             time: Event times [batch_size]
@@ -105,34 +108,21 @@ class DSMLoss(Loss):
         batch_size, num_mixtures = shape.shape
         device = time.device
 
-        # Calculate log likelihood for each component distribution
-        time_expanded = time.unsqueeze(1).expand(-1, num_mixtures)
-
+        # Create the appropriate mixture distribution based on distribution type
         if self.distribution.lower() == "weibull":
-            # Compute PDF of Weibull: (shape/scale)*(t/scale)^(shape-1)*exp(-(t/scale)^shape)
-            # Log PDF is more stable numerically
-            term1 = torch.log(shape) - torch.log(scale)
-            term2 = (shape - 1) * (torch.log(time_expanded) - torch.log(scale))
-            term3 = -torch.pow(time_expanded / scale, shape)
-            log_pdf = term1 + term2 + term3
+            mixture_dist = WeibullMixtureDistribution(shape, scale, logits_g)
         elif self.distribution.lower() == "lognormal":
-            # Compute PDF of lognormal distribution
-            z = (torch.log(time_expanded) - scale) / shape
-            log_pdf = (
-                -torch.log(shape)
-                - torch.log(time_expanded)
-                - 0.5 * torch.log(2 * torch.tensor(np.pi, device=device))
-                - 0.5 * z * z
-            )
+            mixture_dist = LogNormalMixtureDistribution(
+                scale, shape, logits_g
+            )  # Note parameter order for lognormal: loc, scale
         else:
             raise ValueError(f"Unsupported distribution: {self.distribution}")
 
-        # Use logsumexp for numerical stability when calculating mixture log likelihood
-        log_weights = F.log_softmax(logits_g, dim=1)
-        mixture_ll = torch.logsumexp(log_weights + log_pdf, dim=1)
+        # Compute log-likelihood using the mixture distribution
+        log_likelihood = mixture_dist.log_likelihood(time)
 
         # Return negative log likelihood
-        return -mixture_ll
+        return -log_likelihood
 
     def _negative_log_survival(
         self,
@@ -143,6 +133,7 @@ class DSMLoss(Loss):
     ):
         """
         Compute negative log survival probability for censored data.
+        Uses distribution classes for numerical stability.
 
         Args:
             time: Censoring times [batch_size]
@@ -154,41 +145,28 @@ class DSMLoss(Loss):
             torch.Tensor: Negative log survival probability [batch_size]
         """
         batch_size, num_mixtures = shape.shape
-        device = time.device
 
-        # Calculate survival function for each component
-        time_expanded = time.unsqueeze(1).expand(-1, num_mixtures)
-
+        # Create the appropriate mixture distribution based on distribution type
         if self.distribution.lower() == "weibull":
-            # Weibull survival: exp(-(t/scale)^shape)
-            log_surv = -torch.pow(time_expanded / scale, shape)
+            mixture_dist = WeibullMixtureDistribution(shape, scale, logits_g)
         elif self.distribution.lower() == "lognormal":
-            # Log-normal survival function: 1 - CDF of normal distribution
-            z = (torch.log(time_expanded) - scale) / shape
-            surv = 0.5 - 0.5 * torch.erf(
-                z / torch.sqrt(torch.tensor(2.0, device=device))
-            )
-            # Avoid log(0)
-            surv = torch.clamp(surv, min=1e-7)
-            log_surv = torch.log(surv)
+            mixture_dist = LogNormalMixtureDistribution(
+                scale, shape, logits_g
+            )  # Note parameter order for lognormal: loc, scale
         else:
             raise ValueError(f"Unsupported distribution: {self.distribution}")
 
-        # Calculate mixture survival:
-        # S(t) = Σ_k w_k * S_k(t)
-        weights = F.softmax(logits_g, dim=1)
+        # Reshape time for distribution API which expects [batch_size, num_times]
+        time_reshaped = time.unsqueeze(-1)  # [batch_size, 1]
 
-        # Calculate weighted sum for survival - we can't use logsumexp here
-        # because survival is a weighted sum, not a product of components
-        surv_per_component = torch.exp(log_surv)
-        mixture_surv = torch.sum(weights * surv_per_component, dim=1)
+        # Compute log survival using the mixture distribution
+        log_survival = mixture_dist.log_survival(time_reshaped)
 
-        # Avoid log(0)
-        mixture_surv = torch.clamp(mixture_surv, min=1e-7)
-        log_mixture_surv = torch.log(mixture_surv)
+        # Squeeze to get [batch_size] tensor
+        log_survival = log_survival.squeeze(-1)
 
         # Return negative log survival
-        return -log_mixture_surv
+        return -log_survival
 
     def forward(self, predictions: SAOutput, references: torch.Tensor) -> torch.Tensor:
         """

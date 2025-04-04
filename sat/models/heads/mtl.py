@@ -13,8 +13,7 @@ from transformers import AutoModel
 from sat.models.nets import SimpleMLP
 from sat.utils import logging
 
-from .base import BaseConfig, MTLTask
-from .classification import EventClassificationTaskHead
+from .base import BaseConfig, MTLTask, SurvivalTask, ClassificationTask, RegressionTask
 from .embeddings import (
     SentenceEmbedder,
     SentenceEmbedding,
@@ -22,8 +21,6 @@ from .embeddings import (
     TokenEmbedding,
 )
 from .output import SAOutput
-from .regression import EventDurationTaskHead
-from .survival import SurvivalTaskHead
 
 logger = logging.get_default_logger()
 
@@ -200,13 +197,13 @@ class MTLForSurvival(MTLTask):
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug(f"{i}-th task configuration: {task_head_config}")
             model = AutoModel.from_config(task_head_config)
-            if isinstance(model, SurvivalTaskHead):
+            if isinstance(model, SurvivalTask):
                 logger.info("Survival task head initialized")
                 self.is_survival = True
-            elif isinstance(model, EventClassificationTaskHead):
+            elif isinstance(model, ClassificationTask):
                 logger.info("Event classification task head initialized")
                 self.is_classification = True
-            elif isinstance(model, EventDurationTaskHead):
+            elif isinstance(model, RegressionTask):
                 logger.info("Event regression task head initialized")
                 self.is_regression = True
             else:
@@ -338,7 +335,7 @@ class MTLForSurvival(MTLTask):
                 loss += outputs[i].loss * h.config.loss_weight
 
             # Save outputs based on task head type
-            if isinstance(h, SurvivalTaskHead):
+            if isinstance(h, SurvivalTask):
                 sa_output = outputs[i]
             elif isinstance(h, EventDurationTaskHead):
                 tte = outputs[i].predictions
@@ -357,6 +354,10 @@ class MTLForSurvival(MTLTask):
                 event=event,
                 hidden_states=sequence_output.hidden_states,
                 attentions=sequence_output.attentions,
+                shape=sa_output.shape,
+                scale=sa_output.scale,
+                logits_g=sa_output.logits_g,
+                event_dependency_matrix=sa_output.event_dependency_matrix,
             )
         else:
             sa_output = SAOutput(
