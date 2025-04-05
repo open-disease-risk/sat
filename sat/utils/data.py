@@ -4,22 +4,20 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 import warnings
-import numpy as np
-import pandas as pd
-
-from sklearn.model_selection import train_test_split
+from logging import DEBUG, ERROR
 from typing import Tuple
 
-from logdecorator import log_on_error, log_on_start, log_on_end
-from logging import DEBUG, ERROR
+import numpy as np
+import pandas as pd
+from logdecorator import log_on_end, log_on_error, log_on_start
+from sklearn.model_selection import train_test_split
 
 from sat.pycox.preprocessing.discretization import (
-    IdxDiscUnknownC,
-    _values_if_series,
     DiscretizeUnknownC,
     Duration2Idx,
+    IdxDiscUnknownC,
+    _values_if_series,
 )
-
 from sat.utils import logging
 
 logger = logging.get_default_logger()

@@ -4,11 +4,10 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 
-import torch
-
-from torch import nn
-
 from typing import Tuple
+
+import torch
+from torch import nn
 
 
 class Interpolator(nn.Module):

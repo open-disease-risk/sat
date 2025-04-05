@@ -3,17 +3,16 @@
 __authors__ = ["Dominik Dahlem", "Mahed Abroshan"]
 __status__ = "Development"
 
-import pandas as pd
+from typing import Dict, List, Optional, Union
 
+import pandas as pd
 import torch
 
-from typing import List, Dict, Optional, Union
+from sat.models.heads import TaskOutput
+from sat.utils import logging
+from sat.utils.km import KaplanMeierArea
 
 from ..balancing import BalancingStrategy
-
-from sat.utils import logging
-from sat.models.heads import TaskOutput
-from sat.utils.km import KaplanMeierArea
 from ..base import Loss
 
 logger = logging.get_default_logger()

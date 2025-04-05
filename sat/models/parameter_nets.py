@@ -381,7 +381,7 @@ class MENSAParameterNet(nn.Module):
     def _initialize_event_parameters(self, event_net, event_idx):
         """
         Initialize parameters for an event network to break symmetry.
-        
+
         Uses He initialization for weights and strategic bias initialization
         for better convergence in mixture models.
         """

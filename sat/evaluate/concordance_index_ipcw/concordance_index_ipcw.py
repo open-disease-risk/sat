@@ -4,11 +4,10 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 import datasets
-import numpy as np
-
 import evaluate
-
+import numpy as np
 from sksurv.metrics import concordance_index_ipcw
+
 from sat.utils import logging
 
 logger = logging.get_default_logger()

@@ -4,8 +4,9 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 import torch
-from torch import Tensor
 import torch.nn.functional as F
+from torch import Tensor
+
 from sat.pycox.models import utils
 
 

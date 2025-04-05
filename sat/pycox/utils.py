@@ -4,9 +4,9 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 
-import pandas as pd
-import numpy as np
 import numba
+import numpy as np
+import pandas as pd
 
 
 @numba.njit

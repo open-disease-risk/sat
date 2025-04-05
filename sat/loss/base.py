@@ -3,16 +3,16 @@
 __authors__ = ["Dominik Dahlem", "Mahed Abroshan"]
 __status__ = "Development"
 
-import pandas as pd
-from typing import Optional, Dict, Union, List
+from typing import Dict, List, Optional, Union
 
+import pandas as pd
 import torch
 import torch.nn.functional as F
-
 from torch import nn
 
 from sat.utils import logging
-from .balancing import LossBalancer, BalancingStrategy
+
+from .balancing import BalancingStrategy, LossBalancer
 
 logger = logging.get_default_logger()
 

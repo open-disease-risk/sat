@@ -1,27 +1,28 @@
 """Benchmark tests for measuring performance improvements"""
 
-import torch
-import time
-import pytest
 import logging
-import pandas as pd
-import matplotlib.pyplot as plt
-from torch import nn
-import numpy as np
 import os
+import time
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pytest
+import torch
 
 # Configure minimal logging to avoid debug messages during benchmarks
 logging.basicConfig(level=logging.WARNING)
 
-from sat.models.nets import CauseSpecificNet, CauseSpecificNetCompRisk
-from sat.models.heads.survival import SurvivalTaskHead, SurvivalConfig
-from sat.loss.survival.deephit import DeepHitLikelihoodLoss
+import os
+
+import matplotlib.pyplot as plt
+
 from sat.loss.ranking.sample import SampleRankingLoss
+from sat.loss.survival.deephit import DeepHitLikelihoodLoss
 
 # ObservationEventRankingLoss and DeepHitRankingLoss have been removed
 from sat.models.heads.output import SAOutput
-import matplotlib.pyplot as plt
-import os
+from sat.models.heads.survival import SurvivalConfig, SurvivalTaskHead
+from sat.models.nets import CauseSpecificNet, CauseSpecificNetCompRisk
 
 
 @pytest.fixture
@@ -204,8 +205,9 @@ def test_ranking_loss_performance(survival_data):
     duration_cuts = survival_data["duration_cuts"]
 
     # Create temporary file for duration cuts
-    import tempfile
     import os
+    import tempfile
+
     import pandas as pd
 
     # Create temp file for duration cuts
@@ -521,6 +523,7 @@ def test_ranking_loss_comparison(survival_data):
     """Compare performance between different ranking loss implementations with varying tensor sizes."""
     # Create temporary file for duration cuts
     import tempfile
+
     import pandas as pd
 
     # Get initial data
@@ -776,6 +779,7 @@ def test_ranking_loss_with_margin():
 
     # Create temp file for duration cuts
     import tempfile
+
     import pandas as pd
 
     duration_cuts = torch.linspace(0, 100, steps=num_time_bins).tolist()

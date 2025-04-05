@@ -5,10 +5,9 @@ __status__ = "Development"
 
 import json
 import logging
-import torch
 
 import numpy as np
-
+import torch
 
 # Add standard logging levels for convenient access
 DEBUG = logging.DEBUG
@@ -55,7 +54,7 @@ def log_gpu_utilization():
     log = get_default_logger()
 
     if torch.cuda.is_available():
-        from pynvml import nvmlInit, nvmlDeviceGetHandleByIndex, nvmlDeviceGetMemoryInfo
+        from pynvml import nvmlDeviceGetHandleByIndex, nvmlDeviceGetMemoryInfo, nvmlInit
 
         nvmlInit()
         handle = nvmlDeviceGetHandleByIndex(0)

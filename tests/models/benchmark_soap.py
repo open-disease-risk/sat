@@ -2,21 +2,21 @@
 
 import os
 import tempfile
+import time
+from collections import defaultdict
+from typing import Tuple
+
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import torch
-import time
-import numpy as np
-from typing import Tuple, Dict, List
-import matplotlib.pyplot as plt
-from collections import defaultdict
 
-from sat.models.heads import SAOutput
 from sat.loss.ranking.multievent import MultiEventRankingLoss
 from sat.loss.ranking.sample import SampleRankingLoss
 from sat.loss.ranking.sample_list_mle import SampleListMLELoss
-from sat.loss.ranking.survrnc import SurvRNCLoss
 from sat.loss.ranking.sample_soap import SampleSOAPLoss
-from sat.loss.base import RankingLoss
+from sat.loss.ranking.survrnc import SurvRNCLoss
+from sat.models.heads import SAOutput
 
 
 def create_fake_data(

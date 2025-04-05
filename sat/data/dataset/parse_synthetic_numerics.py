@@ -3,20 +3,18 @@
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
-import numpy as np
-import pandas as pd
-
 from dataclasses import dataclass
-from logdecorator import log_on_start, log_on_end, log_on_error
 from logging import DEBUG, ERROR
 from pathlib import Path
-from sklearn.preprocessing import MinMaxScaler, StandardScaler
+
+import numpy as np
+import pandas as pd
+from logdecorator import log_on_end, log_on_error, log_on_start
 from sklearn.model_selection import KFold
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 from sat.utils import logging
-
 from sat.utils.data import train_val_test
-
 
 logger = logging.get_default_logger()
 

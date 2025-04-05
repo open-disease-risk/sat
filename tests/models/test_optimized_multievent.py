@@ -2,19 +2,18 @@
 
 import os
 import tempfile
-import pandas as pd
-import torch
 import time
-import numpy as np
-from typing import Tuple, Dict, List
-import matplotlib.pyplot as plt
+from typing import List, Tuple
 
-from sat.models.heads import SAOutput
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
+
 from sat.loss.ranking.multievent import (
     MultiEventRankingLoss,
     OptimizedMultiEventRankingLoss,
 )
-from sat.loss.ranking.sample import SampleRankingLoss
+from sat.models.heads import SAOutput
 
 
 def create_fake_data(

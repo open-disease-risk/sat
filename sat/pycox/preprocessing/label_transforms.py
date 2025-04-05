@@ -4,13 +4,15 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 import warnings
+
 import numpy as np
+
 from sat.pycox.preprocessing.discretization import (
-    make_cuts,
-    IdxDiscUnknownC,
-    _values_if_series,
     DiscretizeUnknownC,
     Duration2Idx,
+    IdxDiscUnknownC,
+    _values_if_series,
+    make_cuts,
 )
 
 

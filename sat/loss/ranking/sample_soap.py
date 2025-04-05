@@ -4,10 +4,10 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 import torch
-import torch.nn.functional as F
 
 from sat.models.heads import SAOutput
 from sat.utils import logging
+
 from .soap import SOAPLoss
 
 logger = logging.get_default_logger()

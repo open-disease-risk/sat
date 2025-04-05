@@ -3,13 +3,14 @@
 __authors__ = ["Dominik Dahlem", "Mahed Abroshan"]
 __status__ = "Development"
 
-import torch
-from typing import List, Optional, Dict, Union
+from typing import Dict, List, Optional, Union
 
+import torch
 from torch import nn
 from transformers.utils import ModelOutput
 
 from sat.utils import logging
+
 from .balancing import BalancingStrategy
 from .base import Loss
 

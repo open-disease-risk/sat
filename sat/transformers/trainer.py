@@ -3,28 +3,16 @@
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
-import math
-import os
-import time
-import warnings
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
-
-import numpy as np
 import torch
+from typing import Optional, Tuple
+from accelerate import Accelerator
 from torch.optim import AdamW
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.dataloader import DataLoader
-from torch.utils.data.sampler import RandomSampler, SequentialSampler
-
 from transformers import Trainer, TrainingArguments
-from transformers.trainer_callback import TrainerCallback
-from transformers.trainer_utils import EvalPrediction, speed_metrics
-from transformers.trainer_pt_utils import get_parameter_names
 from transformers.optimization import get_scheduler
+from transformers.trainer_pt_utils import get_parameter_names
 from transformers.utils import logging
-
-from accelerate import Accelerator
-from accelerate.utils import find_batch_size, set_seed
 
 logger = logging.get_logger(__name__)
 

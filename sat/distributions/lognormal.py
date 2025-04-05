@@ -5,13 +5,16 @@ This module provides numerically stable implementations of LogNormal distributio
 and LogNormal mixture distribution for survival analysis tasks.
 """
 
+__authors__ = ["Dominik Dahlem"]
+__status__ = "Development"
+
+from typing import Tuple
+
+import numpy as np
 import torch
 import torch.nn.functional as F
-import numpy as np
-import math
-from typing import Tuple, Optional
 
-from .base import SurvivalDistribution, MixtureDistribution
+from .base import MixtureDistribution, SurvivalDistribution
 
 
 class LogNormalDistribution(SurvivalDistribution):

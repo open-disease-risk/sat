@@ -4,24 +4,17 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 from .base import Loss, RankingLoss
-from .meta import MetaLoss
-
 from .classification.bce import CrossEntropyLoss
-
-from .ranking.sample import SampleRankingLoss
+from .meta import MetaLoss
 from .ranking.multievent import MultiEventRankingLoss
-
+from .ranking.sample import SampleRankingLoss
 from .regression.l1 import L1Loss
 from .regression.mse import MSELoss
 from .regression.quantile import QuantileLoss
-
-from .survival.nllpchazard import SATNLLPCHazardLoss
-from .survival.focal import SurvivalFocalLoss
-from .survival.deephit import (
-    DeepHitLikelihoodLoss,
-    DeepHitCalibrationLoss,
-)
+from .survival.deephit import DeepHitCalibrationLoss, DeepHitLikelihoodLoss
 from .survival.dsm import DSMLoss
+from .survival.focal import SurvivalFocalLoss
+from .survival.nllpchazard import SATNLLPCHazardLoss
 
 __all__ = [
     "Loss",

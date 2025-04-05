@@ -10,8 +10,8 @@ __status__ = "Development"
 
 # Apply the lifelines patch to fix scipy.integrate.trapz import issue
 try:
-    import sys
     import os
+    import sys
 
     sys.path.insert(
         0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -23,14 +23,15 @@ except ImportError:
     pass
 
 import os
+from typing import Dict, Optional
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import seaborn as sns
-from typing import Dict, List, Tuple, Union, Optional
-from lifelines import KaplanMeierFitter, CoxPHFitter
+from lifelines import CoxPHFitter, KaplanMeierFitter
 from lifelines.statistics import logrank_test
-from scipy.stats import spearmanr, pearsonr
+from scipy.stats import pearsonr, spearmanr
 from sklearn.feature_selection import mutual_info_regression
 
 from sat.utils import logging

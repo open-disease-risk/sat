@@ -4,13 +4,12 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 import datasets
-import numpy as np
-
 import evaluate
-
+import numpy as np
 from sksurv.metrics import brier_score as sksurv_brier_score
 from sksurv.metrics import integrated_brier_score as sksurv_integrated_brier_score
 from sksurv.nonparametric import CensoringDistributionEstimator
+
 from sat.utils import logging
 
 logger = logging.get_default_logger()

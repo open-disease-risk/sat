@@ -138,3 +138,23 @@ regression_bias: true
 regression_num_hidden_layers: 0
 regression_num_labels: 1
 regression_loss_weight: 1.0
+
+# MoCo parameters
+moco_buffer_size: 1024
+moco_use_buffer: true
+moco_batch_weight: 1.0
+moco_buffer_weight: 1.0
+moco_dynamic_buffer: true
+moco_initial_buffer_size: 128
+
+moco_initial_batch_weight: 1.0
+moco_final_batch_weight: 0.5
+moco_initial_buffer_weight: 0.0
+moco_final_buffer_weight: 1.0
+moco_warmup_steps: 1000
+
+# Adaptive variance tracking parameters
+moco_variance_window: 10
+moco_variance_threshold: 0.1
+moco_min_buffer_ratio: 0.25
+moco_max_buffer_ratio: 1.0

@@ -4,10 +4,10 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 
-import datasets
-
-from logdecorator import log_on_start, log_on_end, log_on_error
 from logging import DEBUG, ERROR
+
+import datasets
+from logdecorator import log_on_end, log_on_error, log_on_start
 from omegaconf import DictConfig
 
 from sat.utils import logging

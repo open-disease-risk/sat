@@ -4,13 +4,12 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 import datasets
+import evaluate
 import torch
 
-import evaluate
-
-from sat.utils import logging
-from sat.models.tasks.loss import SATNLLPCHazardLoss
 from sat.models.tasks.heads import SAOutput
+from sat.models.tasks.loss import SATNLLPCHazardLoss
+from sat.utils import logging
 
 logger = logging.get_default_logger()
 

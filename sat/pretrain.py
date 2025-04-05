@@ -3,15 +3,11 @@
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
-import hydra
-import os
-import sys
-
-from logdecorator import log_on_start, log_on_end, log_on_error
 from logging import DEBUG, ERROR
 
+import hydra
+from logdecorator import log_on_end, log_on_error, log_on_start
 from omegaconf import DictConfig
-
 from transformers import (
     AutoModelForMaskedLM,
     DataCollatorForLanguageModeling,

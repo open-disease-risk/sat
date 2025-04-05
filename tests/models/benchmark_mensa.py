@@ -1,21 +1,20 @@
 """Benchmark script for MENSA model versus other survival models"""
 
-import os
-import sys
-import time
-import tempfile
-import pandas as pd
-import numpy as np
-import torch
-import matplotlib.pyplot as plt
-from typing import Dict, List, Tuple
 import argparse
+import os
+import tempfile
+import time
+from typing import Dict, List, Tuple
 
-from sat.models.heads.dsm import DSMConfig, DSMTaskHead
-from sat.models.heads.mensa import MENSAConfig, MENSATaskHead
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import torch
+
 from sat.loss.survival.dsm import DSMLoss
 from sat.loss.survival.mensa import MENSALoss
-from sat.models.heads import SAOutput
+from sat.models.heads.dsm import DSMConfig, DSMTaskHead
+from sat.models.heads.mensa import MENSAConfig, MENSATaskHead
 
 
 def create_duration_cuts_file(num_cuts: int = 10, max_duration: float = 600) -> str:

@@ -3,11 +3,9 @@
 import argparse
 import json
 import os
-import yaml
-from pathlib import Path
 
 import optuna
-from omegaconf import OmegaConf
+import yaml
 
 from sat.utils import logging
 

@@ -2,21 +2,18 @@
 
 import os
 import tempfile
+
+import pandas as pd
 import pytest
 import torch
-import numpy as np
-import pandas as pd
-from torch.utils.data import TensorDataset, DataLoader
 
-from transformers import TrainingArguments
-
+from sat.loss.survival.dsm import DSMLoss
 from sat.models.heads.dsm import DSMConfig, DSMTaskHead
+from sat.models.heads.output import SAOutput
 from sat.models.parameter_nets import (
     ParamCauseSpecificNet,
     ParamCauseSpecificNetCompRisk,
 )
-from sat.loss.survival.dsm import DSMLoss
-from sat.models.heads.output import SAOutput
 from sat.transformers.trainer import SATTrainer, TrainingArgumentsWithMPSSupport
 
 

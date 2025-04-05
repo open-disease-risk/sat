@@ -5,17 +5,17 @@ __status__ = "Development"
 
 import hydra
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 
-from sat.models.nets import MLP, CauseSpecificNet, CauseSpecificNetCompRisk
+from sat.distributions import (
+    LogNormalMixtureDistribution,
+    WeibullMixtureDistribution,
+)
 from sat.models.parameter_nets import (
     ParamCauseSpecificNet,
     ParamCauseSpecificNetCompRisk,
 )
 from sat.utils import logging
-from sat.distributions import WeibullDistribution, LogNormalDistribution
-from sat.distributions import WeibullMixtureDistribution, LogNormalMixtureDistribution
 
 from .base import SurvivalTask
 from .output import SAOutput  # Using SAOutput directly instead of a custom DSMOutput

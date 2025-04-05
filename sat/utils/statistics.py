@@ -4,13 +4,12 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 import multiprocessing as mp
+from dataclasses import dataclass
+
 import numpy as np
 import pandas as pd
 import scipy.stats as ss
-
 from bootstrap_stat import bootstrap_stat as bp
-from dataclasses import dataclass
-
 from pathos.multiprocessing import ProcessPool as Pool
 
 from sat.utils import logging

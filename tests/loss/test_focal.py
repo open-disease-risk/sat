@@ -2,11 +2,11 @@
 
 import os
 import tempfile
+
+import pandas as pd
 import pytest
 import torch
 import torch.nn.functional as F
-import pandas as pd
-from typing import Optional, Tuple
 
 from sat.loss.survival import SurvivalFocalLoss
 from sat.models.heads import SAOutput

@@ -8,15 +8,16 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from sat.distributions import (
+    LogNormalMixtureDistribution,
+    WeibullMixtureDistribution,
+)
 from sat.models.parameter_nets import MENSAParameterNet
 from sat.utils import logging
-from sat.distributions import WeibullDistribution, LogNormalDistribution
-from sat.distributions import WeibullMixtureDistribution, LogNormalMixtureDistribution
 
 from .base import SurvivalTask
 from .output import SAOutput
 from .survival import SurvivalConfig
-from .utils import pad_col  # For padding hazard with zeros at the start
 
 logger = logging.get_default_logger()
 

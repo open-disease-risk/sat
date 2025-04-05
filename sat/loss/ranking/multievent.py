@@ -4,8 +4,10 @@ __authors__ = ["Dominik Dahlem", "Mahed Abroshan"]
 __status__ = "Development"
 
 import torch
-from sat.utils import logging
+
 from sat.models.heads import SAOutput
+from sat.utils import logging
+
 from ..base import RankingLoss
 
 logger = logging.get_default_logger()

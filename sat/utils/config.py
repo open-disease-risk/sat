@@ -4,6 +4,7 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 from omegaconf import OmegaConf
+
 from sat.utils import logging
 
 logger = logging.get_default_logger("sat.utils.config")

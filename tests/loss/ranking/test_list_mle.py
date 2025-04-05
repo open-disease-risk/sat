@@ -2,13 +2,12 @@
 
 import os
 import tempfile
-import pandas as pd
-import numpy as np
-import torch
-from torch.testing import assert_close
 
+import pandas as pd
+import torch
+
+from sat.loss.ranking import EventListMLELoss, ListMLELoss, SampleListMLELoss
 from sat.models.heads import SAOutput
-from sat.loss.ranking import ListMLELoss, SampleListMLELoss, EventListMLELoss
 
 
 def create_temporary_csv(data):
