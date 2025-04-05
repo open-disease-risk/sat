@@ -1,0 +1,18 @@
+survival:
+  _target_: sat.loss.momentum_buffer.AdaptiveMoCoLoss
+  base_loss:
+    _target_: sat.loss.SATNLLPCHazardLoss
+    importance_sample_weights: ${data.label_transform.save_dir}/imp_sample.csv
+    num_events: ${data.num_events}
+  buffer_size: ${moco_buffer_size:2048}
+  num_events: ${data.num_events}
+  embedding_dim: ${data.label_transform.cuts}
+  use_buffer: ${moco_use_buffer:true}
+  current_batch_weight: ${moco_batch_weight:1.0}
+  buffer_weight: ${moco_buffer_weight:1.0}
+  dynamic_buffer: ${moco_dynamic_buffer:true}
+  initial_buffer_size: ${moco_initial_buffer_size:128}
+  variance_window: ${moco_variance_window:10}
+  variance_threshold: ${moco_variance_threshold:0.1}
+  min_buffer_ratio: ${moco_min_buffer_ratio:0.25}
+  max_buffer_ratio: ${moco_max_buffer_ratio:1.0}
