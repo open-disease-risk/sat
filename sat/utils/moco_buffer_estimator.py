@@ -37,56 +37,187 @@ def analyze_dataset_events(
         Dictionary with dataset statistics
     """
     stats = {}
+    stats["total_samples"] = len(dataframe)
 
-    # Handle multi-event datasets
-    if multi_event:
-        if not isinstance(event_column, list):
-            event_column = [event_column]
-        if not isinstance(time_column, list):
-            time_column = [time_column]
+    # Convert inputs to lists if they're not already
+    if not isinstance(event_column, list):
+        event_column = [event_column]
+    if not isinstance(time_column, list):
+        time_column = [time_column]
 
-        # Count samples with any event
-        event_mask = dataframe[event_column].any(axis=1)
-        stats["total_samples"] = len(dataframe)
-        stats["samples_with_events"] = event_mask.sum()
-        stats["censoring_rate"] = 1 - (
-            stats["samples_with_events"] / stats["total_samples"]
+    # Determine the event structure by examining the first row
+    # This handles both standard and complex event structures
+    try:
+        first_event_col = event_column[0]
+        first_event_val = dataframe[first_event_col].iloc[0]
+        is_array_event = hasattr(first_event_val, "__iter__") and not isinstance(
+            first_event_val, (str, bytes)
         )
+    except (IndexError, KeyError, AttributeError):
+        # Default to non-array events if we can't determine
+        is_array_event = False
+
+    # Process differently based on the event structure
+    if is_array_event:
+        # Complex event structure (arrays/lists in cells)
+
+        # Count samples with any event (across all event types)
+        has_event = []
+        for i in range(len(dataframe)):
+            row_has_event = False
+            for col in event_column:
+                val = dataframe[col].iloc[i]
+                if hasattr(val, "__iter__") and not isinstance(val, (str, bytes)):
+                    # It's an array/list
+                    if any(v > 0 for v in val if v is not None):
+                        row_has_event = True
+                        break
+                elif val > 0:
+                    # It's a scalar
+                    row_has_event = True
+                    break
+            has_event.append(row_has_event)
+
+        stats["samples_with_events"] = sum(has_event)
+
+        # Count events by type
+        event_counts = {}
+
+        # Try to determine number of event types from the first non-empty array
+        first_event_array = next(
+            (
+                val
+                for val in dataframe[first_event_col]
+                if hasattr(val, "__iter__")
+                and not isinstance(val, (str, bytes))
+                and len(val) > 0
+            ),
+            None,
+        )
+
+        if first_event_array is not None:
+            num_event_types = len(first_event_array)
+
+            # Count events for each type
+            for i in range(num_event_types):
+                count = 0
+                for _, row in dataframe.iterrows():
+                    for col in event_column:
+                        val = row[col]
+                        if (
+                            hasattr(val, "__iter__")
+                            and not isinstance(val, (str, bytes))
+                            and i < len(val)
+                            and val[i] > 0
+                        ):
+                            count += 1
+                            break
+                event_counts[f"event_type_{i}"] = count
+        else:
+            # Fallback - just one event type
+            count = sum(1 for has_event_val in has_event if has_event_val)
+            event_counts["event_type_0"] = count
+
+        # Collect time values
+        all_times = []
+        for _, row in dataframe.iterrows():
+            for col in time_column:
+                val = row[col]
+                if hasattr(val, "__iter__") and not isinstance(val, (str, bytes)):
+                    # It's an array/list of times
+                    all_times.extend([t for t in val if t is not None])
+                elif val is not None:
+                    # It's a scalar
+                    all_times.append(val)
+
+    elif multi_event:
+        # Standard multi-event structure (each event type in its own column)
+
+        # Count samples with any event across all columns
+        has_event = []
+        for i in range(len(dataframe)):
+            row_has_event = False
+            for col in event_column:
+                if dataframe[col].iloc[i] > 0:
+                    row_has_event = True
+                    break
+            has_event.append(row_has_event)
+
+        stats["samples_with_events"] = sum(has_event)
 
         # Count events by type
         event_counts = {}
         for i, col in enumerate(event_column):
             event_counts[f"event_type_{i}"] = dataframe[col].sum()
-        stats["event_counts"] = event_counts
-        stats["total_events"] = sum(event_counts.values())
-        stats["num_event_types"] = len(event_column)
 
-        # Time statistics
+        # Collect time values
         all_times = []
         for col in time_column:
-            all_times.extend(dataframe[col].tolist())
-        stats["min_time"] = min(all_times)
-        stats["max_time"] = max(all_times)
-        stats["mean_time"] = np.mean(all_times)
+            all_times.extend([t for t in dataframe[col].tolist() if t is not None])
+
     else:
-        # Single event dataset
-        if isinstance(event_column, list):
-            event_column = event_column[0]
-        if isinstance(time_column, list):
-            time_column = time_column[0]
+        # Simple single-event dataset
+        col = event_column[0]
 
-        stats["total_samples"] = len(dataframe)
-        stats["samples_with_events"] = dataframe[event_column].sum()
-        stats["censoring_rate"] = 1 - (
-            stats["samples_with_events"] / stats["total_samples"]
-        )
-        stats["total_events"] = stats["samples_with_events"]
-        stats["num_event_types"] = 1
+        # Handle possible complex event structure in single-event mode
+        if is_array_event:
+            # If we have arrays but are in single-event mode, treat as binary
+            has_event = []
+            for i in range(len(dataframe)):
+                val = dataframe[col].iloc[i]
+                if hasattr(val, "__iter__") and not isinstance(val, (str, bytes)):
+                    row_has_event = any(v > 0 for v in val if v is not None)
+                else:
+                    row_has_event = val > 0
+                has_event.append(row_has_event)
 
-        # Time statistics
-        stats["min_time"] = dataframe[time_column].min()
-        stats["max_time"] = dataframe[time_column].max()
-        stats["mean_time"] = dataframe[time_column].mean()
+            stats["samples_with_events"] = sum(has_event)
+        else:
+            # Standard scalar event indicator
+            stats["samples_with_events"] = dataframe[col].sum()
+
+        event_counts = {"event_type_0": stats["samples_with_events"]}
+
+        # Collect time values
+        all_times = []
+        time_col = time_column[0]
+        for i in range(len(dataframe)):
+            val = dataframe[time_col].iloc[i]
+            if hasattr(val, "__iter__") and not isinstance(val, (str, bytes)):
+                # It's an array/list of times
+                all_times.extend([t for t in val if t is not None])
+            elif val is not None:
+                # It's a scalar
+                all_times.append(val)
+
+    # Calculate censoring rate and set event counts
+    stats["censoring_rate"] = 1 - (
+        stats["samples_with_events"] / stats["total_samples"]
+    )
+    stats["event_counts"] = event_counts
+    stats["total_events"] = sum(event_counts.values())
+    stats["num_event_types"] = len(event_counts)
+
+    # Calculate time statistics
+    if all_times:
+        # Filter out potential None values or empty arrays
+        valid_times = [
+            t
+            for t in all_times
+            if t is not None and not (hasattr(t, "__iter__") and len(t) == 0)
+        ]
+        if valid_times:
+            stats["min_time"] = min(valid_times)
+            stats["max_time"] = max(valid_times)
+            stats["mean_time"] = float(np.mean(valid_times))
+        else:
+            stats["min_time"] = 0.0
+            stats["max_time"] = 0.0
+            stats["mean_time"] = 0.0
+    else:
+        stats["min_time"] = 0.0
+        stats["max_time"] = 0.0
+        stats["mean_time"] = 0.0
 
     return stats
 

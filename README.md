@@ -124,6 +124,7 @@ SAT features a comprehensive, composable loss framework that allows flexible com
 2. **MetaLoss**: A flexible container that combines multiple loss functions with dynamic weighting
 3. **Loss Balancing Strategies**: Methods to adjust weights between loss components (fixed, scale, gradient, uncertainty, adaptive)
 4. **Multi-level Balancing**: Support for balancing both within task heads and between task heads in multi-task learning
+5. **Momentum Contrast (MoCo)**: Buffer-based approach to enhance training stability, especially for highly censored datasets
 
 ### Key Loss Functions
 
@@ -131,6 +132,7 @@ SAT features a comprehensive, composable loss framework that allows flexible com
 - **NLLPCHazard**: Negative log-likelihood loss for piece-wise constant hazard models
 - **DeepHit Loss**: Combines likelihood, ranking, and calibration components for competing risks
 - **Survival Focal Loss**: Down-weights easily predicted examples to focus on harder cases
+- **MoCo-Enhanced Loss**: Wraps any survival loss with a memory buffer to improve training stability for highly censored data
 
 #### Ranking Loss Functions
 - **SampleRankingLoss**: Ensures proper ordering of different samples within the same event type

@@ -600,6 +600,10 @@ Several strategies exist for determining the weights in a multi-component loss:
 
 Advanced methods like the uncertainty weighting proposed by \textcite{kendall2018} learn optimal weights during training by casting the problem as learning to optimize multiple objectives under uncertainty. These approaches can significantly improve performance compared to fixed weighting schemes, especially for complex models with multiple diverse loss components \parencite{fotso2018}.
 
+\subsection{Momentum Contrast for Survival Analysis}
+
+\input{book-sections/moco}
+
 \subsection{Summary and Best Practices}
 
 Loss functions represent a critical component in survival analysis models, directly influencing both the learning process and the resulting model behavior \parencite{lee2018,kvamme2019,nagpal2021dsm}. This chapter has explored a wide range of loss functions, from traditional survival likelihoods to modern ranking and regression adaptations \parencite{harrell1982,ibrahim2001,kvamme2021survrnc}.

@@ -1,0 +1,40 @@
+# @package _global_
+dataset: hsa_synthetic
+modelname: survival-moco
+
+defaults:
+  - hsa_synthetic/defaults
+  - override /data/load: hsa_synthetic
+  - override /data/parse: ${data/load}
+  - override /data/transform: default
+  - override /tokenizers: hsa_synthetic
+  - override /transformers: numeric_bert
+  - override /tasks: survival
+  - override /tasks/losses: adaptive_moco_nllpch
+  - override /trainer: hsa_synthetic/default
+
+survival_intermediate_size: 16
+survival_batch_norm: false
+survival_hidden_dropout_prob: false
+survival_bias: true
+survival_num_hidden_layers: 0
+survival_loss_weight: 1.0
+
+survival_shared_intermediate_size: 32
+survival_shared_num_hidden_layers: 0
+
+moco_buffer_size: 256
+moco_initial_buffer_size: 256
+moco_use_buffer: true
+moco_dynamic_buffer: false
+moco_batch_weight: 1.0
+moco_buffer_weight: 1.0
+moco_initial_batch_weight: 1.0
+moco_final_batch_weight: 0.5
+moco_initial_buffer_weight: 0.0
+moco_final_buffer_weight: 1.0
+moco_warmup_steps: 1000
+moco_adaptive_buffer: true
+moco_track_variance: true
+moco_variance_window: 10
+moco_variance_threshold: 0.15

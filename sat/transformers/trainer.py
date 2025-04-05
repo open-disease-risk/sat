@@ -4,6 +4,7 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 import torch
+from typing import Optional, Tuple
 from accelerate import Accelerator
 from torch.optim import AdamW
 from torch.utils.data import DataLoader, Dataset
