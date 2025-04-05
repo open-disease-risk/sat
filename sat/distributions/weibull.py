@@ -5,12 +5,15 @@ This module provides numerically stable implementations of Weibull distribution
 and Weibull mixture distribution for survival analysis tasks.
 """
 
+__authors__ = ["Dominik Dahlem"]
+__status__ = "Development"
+
+from typing import Tuple
+
 import torch
 import torch.nn.functional as F
-import numpy as np
-from typing import Tuple, Optional
 
-from .base import SurvivalDistribution, MixtureDistribution
+from .base import MixtureDistribution, SurvivalDistribution
 
 
 class WeibullDistribution(SurvivalDistribution):
@@ -167,17 +170,17 @@ class WeibullDistribution(SurvivalDistribution):
         """
         # Debug flag to track NaN values
         debug_nans = False  # Disabled in production
-        
+
         # Apply the highly numerically stable approach - calculate through log_survival
         # This ensures consistency between survival and log_survival
         log_survival_values = self.log_survival(time)
-        
+
         # Exponentiate safely with bounds
         survival = torch.exp(log_survival_values)
-        
+
         # Ensure valid probabilities
         survival = torch.clamp(survival, min=0.0, max=1.0)
-        
+
         # Final NaN handling for safety
         if torch.isnan(survival).any():
             survival = torch.nan_to_num(survival, nan=1.0)
@@ -198,84 +201,96 @@ class WeibullDistribution(SurvivalDistribution):
         """
         # Debug flag to track NaN values
         debug_nans = False  # Disabled in production
-        
+
         # Check input tensor for NaN before any operations
         if debug_nans and torch.isnan(time).any():
-            print(f"\n*** DEBUG-LOG-SURV-START-NAN: Input time tensor has NaN values ***")
+            print(
+                f"\n*** DEBUG-LOG-SURV-START-NAN: Input time tensor has NaN values ***"
+            )
             print(f"  time shape: {time.shape}")
             print(f"  time NaNs: {torch.isnan(time).sum().item()}")
-            print(f"  time range: [{time[~torch.isnan(time)].min().item() if torch.any(~torch.isnan(time)) else 'all NaN'}, "
-                  f"{time[~torch.isnan(time)].max().item() if torch.any(~torch.isnan(time)) else 'all NaN'}]")
-            
+            print(
+                f"  time range: [{time[~torch.isnan(time)].min().item() if torch.any(~torch.isnan(time)) else 'all NaN'}, "
+                f"{time[~torch.isnan(time)].max().item() if torch.any(~torch.isnan(time)) else 'all NaN'}]"
+            )
+
         # Ensure time is positive with strict upper bound
         time_safe = torch.clamp(time, min=self.eps, max=1e8)
-        
+
         # Handle broadcasting with NaN checks
         shape_expanded = self.shape.unsqueeze(-1)  # [batch_size, 1]
         scale_expanded = self.scale.unsqueeze(-1)  # [batch_size, 1]
-        
+
         # Fix shape and scale if they contain NaNs
         if torch.isnan(shape_expanded).any():
             shape_expanded = torch.nan_to_num(shape_expanded, nan=1.0)
         if torch.isnan(scale_expanded).any():
             scale_expanded = torch.nan_to_num(scale_expanded, nan=1.0)
-        
+
         # Apply strict bounds to shape and scale to prevent instability
         shape_expanded = torch.clamp(shape_expanded, min=self.eps, max=100.0)
-        scale_expanded = torch.clamp(scale_expanded, min=self.eps*10, max=1000.0)  # Stronger lower bound
-        
+        scale_expanded = torch.clamp(
+            scale_expanded, min=self.eps * 10, max=1000.0
+        )  # Stronger lower bound
+
         # Compute ratio with additional checks
         ratio = time_safe / scale_expanded
         ratio_clamped = torch.clamp(ratio, min=self.eps, max=1e6)
-        
+
         if debug_nans and torch.isnan(ratio_clamped).any():
             print(f"*** DEBUG-LOG-SURV-NAN: NaN after ratio clamping ***")
             print(f"  ratio_clamped NaNs: {torch.isnan(ratio_clamped).sum().item()}")
-            
+
         # Log domain calculation with strict bounds
         log_ratio = torch.log(ratio_clamped)
-        log_ratio = torch.clamp(log_ratio, min=-30.0, max=30.0)  # Prevent extreme values
-        
+        log_ratio = torch.clamp(
+            log_ratio, min=-30.0, max=30.0
+        )  # Prevent extreme values
+
         # This multiplication can cause NaN gradients
         # Detect potentially problematic values - convert to float for weighted combination
-        unsafe_mask = (torch.isnan(shape_expanded) | 
-                      torch.isnan(log_ratio) | 
-                      (shape_expanded > 50.0) | 
-                      (log_ratio.abs() > 20.0)).to(torch.float32)
-        
+        unsafe_mask = (
+            torch.isnan(shape_expanded)
+            | torch.isnan(log_ratio)
+            | (shape_expanded > 50.0)
+            | (log_ratio.abs() > 20.0)
+        ).to(torch.float32)
+
         # Compute both normal and detached versions
         normal_result = shape_expanded * log_ratio
         detached_result = shape_expanded.detach() * log_ratio.detach()
-        
+
         # Safe mask is the complement of unsafe mask
         safe_mask = 1.0 - unsafe_mask
-        
+
         # Combine results using masks as weights
         log_term = safe_mask * normal_result + unsafe_mask * detached_result
-        
+
         # Apply strict bounds to prevent overflow in exp
         log_term_clamped = torch.clamp(log_term, min=-30.0, max=30.0)
-        
+
         # Compute exp with stability checks
         exp_term = torch.exp(log_term_clamped)
-        
+
         # Detect potential overflow/underflow in exp - convert to float for weighted combination
         unsafe_exp_mask = (torch.isnan(exp_term) | (exp_term > 1e6)).to(torch.float32)
-        
+
         # Compute normal result
         normal_result = -exp_term
-        
+
         # Use bounded fallback values for unsafe results
         fallback_result = torch.full_like(normal_result, -1e2)
-        
+
         # Safe mask is the complement of unsafe mask
         safe_exp_mask = 1.0 - unsafe_exp_mask
-        
+
         # Combine results using masks as weights
         log_survival = safe_exp_mask * normal_result + unsafe_exp_mask * fallback_result
-        
+
         # Final bounds and NaN handling
-        log_survival = torch.clamp(log_survival, min=-1e3, max=0.0)  # Log survival is always <= 0
+        log_survival = torch.clamp(
+            log_survival, min=-1e3, max=0.0
+        )  # Log survival is always <= 0
         log_survival = torch.nan_to_num(log_survival, nan=0.0, posinf=0.0, neginf=-1e3)
 
         return log_survival
@@ -292,20 +307,22 @@ class WeibullDistribution(SurvivalDistribution):
         """
         # Debug flag to track NaN values
         debug_nans = False  # Disabled in production
-        
+
         # Check input tensor for NaN before any operations
         if debug_nans and torch.isnan(time).any():
             print(f"\n*** DEBUG-HAZARD-START-NAN: Input time tensor has NaN values ***")
             print(f"  time shape: {time.shape}")
             print(f"  time NaNs: {torch.isnan(time).sum().item()}")
             if torch.any(~torch.isnan(time)):
-                print(f"  time range: [{time[~torch.isnan(time)].min().item()}, {time[~torch.isnan(time)].max().item()}]")
+                print(
+                    f"  time range: [{time[~torch.isnan(time)].min().item()}, {time[~torch.isnan(time)].max().item()}]"
+                )
             else:
                 print(f"  time range: all NaN")
-            
+
         # Ensure time is positive with strict bounds
         time_safe = torch.clamp(time, min=self.eps, max=1e8)
-        
+
         if debug_nans and torch.isnan(time_safe).any():
             print(f"*** DEBUG-HAZARD-NAN: NaN after time clamping ***")
             print(f"  time_safe NaNs: {torch.isnan(time_safe).sum().item()}")
@@ -313,97 +330,103 @@ class WeibullDistribution(SurvivalDistribution):
         # Handle broadcasting with NaN checks
         shape_expanded = self.shape.unsqueeze(-1)  # [batch_size, 1]
         scale_expanded = self.scale.unsqueeze(-1)  # [batch_size, 1]
-        
+
         # Fix shape and scale if they contain NaNs
         if torch.isnan(shape_expanded).any():
             shape_expanded = torch.nan_to_num(shape_expanded, nan=1.0)
         if torch.isnan(scale_expanded).any():
             scale_expanded = torch.nan_to_num(scale_expanded, nan=1.0)
-        
+
         # Apply strict bounds to shape and scale to prevent instability
         shape_expanded = torch.clamp(shape_expanded, min=self.eps, max=100.0)
         scale_expanded = torch.clamp(scale_expanded, min=self.eps, max=1000.0)
-        
+
         # Compute ratio with additional checks for scale = 0
         # Apply strict bounds to ensure scale is well away from zero
-        scale_safe = torch.clamp(scale_expanded, min=self.eps*10, max=1000.0)
+        scale_safe = torch.clamp(scale_expanded, min=self.eps * 10, max=1000.0)
         ratio = time_safe / scale_safe
-        
+
         if debug_nans and torch.isnan(ratio).any():
             print(f"\n*** DEBUG-HAZARD-NAN: NaN in ratio = time/scale ***")
             print(f"  ratio NaNs: {torch.isnan(ratio).sum().item()}")
             print(f"  scale_safe zeros: {(scale_safe == 0).sum().item()}")
-            
+
         # Apply strict bounds to ratio to prevent extreme values
         ratio_clamped = torch.clamp(ratio, min=self.eps, max=1e6)
-        
+
         # Compute k/λ term carefully with bounded values
         # Critical: This division causes gradient issues
         # We need to ensure scale is sufficiently away from zero
-        scale_denom = torch.clamp(scale_safe, min=self.eps*100)  # More aggressive minimum
+        scale_denom = torch.clamp(
+            scale_safe, min=self.eps * 100
+        )  # More aggressive minimum
         shape_scale_ratio = shape_expanded / scale_denom
-        
+
         # Apply strict bounds to shape/scale ratio
         shape_scale_ratio = torch.clamp(shape_scale_ratio, min=0.0, max=1e4)
-        
+
         # Check if we have any shapes below 1.0 which need special handling
         any_shape_below_one = torch.any(shape_expanded < 1.0)
-        
+
         # For debugging purposes
         if debug_nans:
             num_shapes_below_one = (shape_expanded < 1.0).sum().item()
             if num_shapes_below_one > 0:
-                print(f"  {num_shapes_below_one} shapes are below 1.0, requiring special log-domain handling")
-        
+                print(
+                    f"  {num_shapes_below_one} shapes are below 1.0, requiring special log-domain handling"
+                )
+
         # Compute power term based on shape values
         # Critical: This is where gradients often become unstable
         power_term = None
-        
+
         # Always use the log domain approach for increased stability
         # This is safer but marginally slower
         log_ratio = torch.log(ratio_clamped)
-        
+
         # Apply bounds to log ratio to prevent extreme values
         log_ratio = torch.clamp(log_ratio, min=-30.0, max=30.0)
-        
+
         # Compute (k-1) with safe bounds to prevent extreme negative values
         shape_m1 = torch.clamp(shape_expanded - 1.0, min=-0.95)
-        
+
         # Compute log power term with bounded values
         log_power_term = shape_m1 * log_ratio
-        
+
         # Apply bounds to log power term
         log_power_term = torch.clamp(log_power_term, min=-30.0, max=30.0)
-        
+
         # Get power term by exponentiating safely
         power_term = torch.exp(log_power_term)
-        
+
         # Apply bounds to power term
         power_term = torch.clamp(power_term, min=0.0, max=1e6)
-            
+
         # This multiplication is where NaNs are appearing in backpropagation
         # Instead of using boolean indexing which can cause shape mismatches,
         # we'll use a more robust approach with masks as multipliers
-        
+
         # First detect any potentially unsafe values that might cause NaN gradients
-        unsafe_mask = ((shape_scale_ratio > 1e2) | 
-                      (power_term > 1e3) | 
-                      torch.isnan(shape_scale_ratio) | 
-                      torch.isnan(power_term)).to(torch.float32)
-        
+        unsafe_mask = (
+            (shape_scale_ratio > 1e2)
+            | (power_term > 1e3)
+            | torch.isnan(shape_scale_ratio)
+            | torch.isnan(power_term)
+        ).to(torch.float32)
+
         # Compute both the normal and detached versions
         normal_result = shape_scale_ratio * power_term
-        
+
         # Detach gradients for unsafe values
         detached_result = shape_scale_ratio.detach() * power_term.detach()
-        
+
         # Use the mask as a weight (1.0 for unsafe, 0.0 for safe)
         # This avoids any indexing issues with different dimensions
         safe_mask = 1.0 - unsafe_mask  # Reverse the mask for safe values
-        
+
         # Combine results using the masks as weights
         hazard = safe_mask * normal_result + unsafe_mask * detached_result
-        
+
         # Final clamping and NaN handling
         hazard = torch.clamp(hazard, min=0.0, max=1e4)
         hazard = torch.nan_to_num(hazard, nan=0.0, posinf=1e4, neginf=0.0)
@@ -424,29 +447,37 @@ class WeibullDistribution(SurvivalDistribution):
         """
         # Debug flag to track NaN values
         debug_nans = False  # Disabled in production
-        
+
         # Check input tensor for NaN before any operations
         if debug_nans and torch.isnan(time).any():
             print(f"\n*** DEBUG-LOGLIK-START-NAN: Input time tensor has NaN values ***")
             print(f"  time shape: {time.shape}")
             print(f"  time NaNs: {torch.isnan(time).sum().item()}")
             if torch.any(~torch.isnan(time)):
-                print(f"  time range: [{time[~torch.isnan(time)].min().item()}, {time[~torch.isnan(time)].max().item()}]")
+                print(
+                    f"  time range: [{time[~torch.isnan(time)].min().item()}, {time[~torch.isnan(time)].max().item()}]"
+                )
             else:
                 print(f"  time range: all NaN")
-            print(f"  shape range: [{self.shape.min().item()}, {self.shape.max().item()}]")
-            print(f"  scale range: [{self.scale.min().item()}, {self.scale.max().item()}]")
-        
+            print(
+                f"  shape range: [{self.shape.min().item()}, {self.shape.max().item()}]"
+            )
+            print(
+                f"  scale range: [{self.scale.min().item()}, {self.scale.max().item()}]"
+            )
+
         # Debug parameter information
         if debug_nans:
-            print(f"\n*** DEBUG-LOGLIK-PARAMS: Parameter information for log_likelihood ***")
+            print(
+                f"\n*** DEBUG-LOGLIK-PARAMS: Parameter information for log_likelihood ***"
+            )
             print(f"  time shape: {time.shape}")
             print(f"  shape parameter shape: {self.shape.shape}")
             print(f"  scale parameter shape: {self.scale.shape}")
-            
+
         # Ensure time is positive and bounded with stricter limits
         time_safe = torch.clamp(time, min=self.eps, max=1e8)
-        
+
         # Fix time if it contains NaNs
         if torch.isnan(time_safe).any():
             time_safe = torch.nan_to_num(time_safe, nan=1.0)
@@ -455,56 +486,68 @@ class WeibullDistribution(SurvivalDistribution):
 
         # Reshape time for survival/hazard functions
         time_reshaped = time_safe.unsqueeze(-1)  # [batch_size, 1]
-        
+
         # Compute hazard and log_survival with robust numerical stability measures
         # These functions already have enhanced NaN detection and handling
         hazard = self.hazard_function(time_reshaped).squeeze(-1)  # [batch_size]
         log_survival = self.log_survival(time_reshaped).squeeze(-1)  # [batch_size]
-        
+
         # Additional bounds for hazard and log survival
         hazard_safe = torch.clamp(hazard, min=self.eps, max=1e5)
         log_survival_safe = torch.clamp(log_survival, min=-100.0, max=0.0)
-        
+
         # Handle any NaN or Inf values more aggressively
-        hazard_safe = torch.nan_to_num(hazard_safe, nan=1.0, posinf=1e5, neginf=self.eps)
-        log_survival_safe = torch.nan_to_num(log_survival_safe, nan=-1.0, posinf=0.0, neginf=-100.0)
-        
+        hazard_safe = torch.nan_to_num(
+            hazard_safe, nan=1.0, posinf=1e5, neginf=self.eps
+        )
+        log_survival_safe = torch.nan_to_num(
+            log_survival_safe, nan=-1.0, posinf=0.0, neginf=-100.0
+        )
+
         # Compute log hazard with checks for zero/negative hazard
         # Use a safer log implementation
-        log_hazard = torch.log(torch.clamp(hazard_safe, min=self.eps*100))
+        log_hazard = torch.log(torch.clamp(hazard_safe, min=self.eps * 100))
         log_hazard = torch.clamp(log_hazard, min=-100.0, max=100.0)
-        
+
         # Identify potentially problematic values for gradient detachment
         # Convert boolean mask to float for weighted combination
-        unsafe_mask = (torch.isnan(log_hazard) | 
-                      torch.isnan(log_survival_safe) | 
-                      (log_hazard < -50.0) | 
-                      (log_hazard > 50.0) | 
-                      (log_survival_safe < -50.0)).to(torch.float32)
-        
+        unsafe_mask = (
+            torch.isnan(log_hazard)
+            | torch.isnan(log_survival_safe)
+            | (log_hazard < -50.0)
+            | (log_hazard > 50.0)
+            | (log_survival_safe < -50.0)
+        ).to(torch.float32)
+
         # Compute both normal and fallback values
         normal_result = log_hazard + log_survival_safe
-        
+
         # Fallback to a reasonable negative value for unsafe elements
         fallback_result = torch.full_like(normal_result, -10.0)
-        
+
         # Safe mask is the complement of unsafe mask
         safe_mask = 1.0 - unsafe_mask
-        
+
         # Combine results using masks as weights
         log_likelihood = safe_mask * normal_result + unsafe_mask * fallback_result
-        
+
         # Final safety bounds and NaN handling
-        log_likelihood = torch.clamp(log_likelihood, min=-100.0, max=0.0)  # Log-likelihood is typically negative
-        log_likelihood = torch.nan_to_num(log_likelihood, nan=-10.0, posinf=0.0, neginf=-100.0)
-        
+        log_likelihood = torch.clamp(
+            log_likelihood, min=-100.0, max=0.0
+        )  # Log-likelihood is typically negative
+        log_likelihood = torch.nan_to_num(
+            log_likelihood, nan=-10.0, posinf=0.0, neginf=-100.0
+        )
+
         # Final check for any remaining NaNs - this shouldn't happen with all the safeguards
         if torch.isnan(log_likelihood).any():
-            print(f"*** CRITICAL ERROR: NaNs still present in final log_likelihood despite all safeguards ***")
+            print(
+                f"*** CRITICAL ERROR: NaNs still present in final log_likelihood despite all safeguards ***"
+            )
             print(f"  Number of NaNs: {torch.isnan(log_likelihood).sum().item()}")
             # Replace with a moderate negative value as last resort
             log_likelihood = torch.nan_to_num(log_likelihood, nan=-10.0)
-        
+
         # For debugging only
         if debug_nans:
             print(f"\n*** DEBUG-LOGLIK-FINAL: Final log-likelihood range ***")
@@ -664,13 +707,17 @@ class WeibullMixtureDistribution(MixtureDistribution):
         """
         batch_size, num_mixtures = self.shape.shape
         distributions = []
-        
+
         # Debug flag to track NaN values
         debug_nans = False
-        
+
         if debug_nans:
-            print(f"\n*** DEBUG-GET-COMPONENTS: Creating mixture component distributions ***")
-            print(f"  shape tensor: {self.shape.shape}, scale tensor: {self.scale.shape}")
+            print(
+                f"\n*** DEBUG-GET-COMPONENTS: Creating mixture component distributions ***"
+            )
+            print(
+                f"  shape tensor: {self.shape.shape}, scale tensor: {self.scale.shape}"
+            )
             if torch.isnan(self.shape).any() or torch.isnan(self.scale).any():
                 print(f"  shape NaNs: {torch.isnan(self.shape).sum().item()}")
                 print(f"  scale NaNs: {torch.isnan(self.scale).sum().item()}")
@@ -678,28 +725,46 @@ class WeibullMixtureDistribution(MixtureDistribution):
         for i in range(num_mixtures):
             component_shape = self.shape[:, i]  # [batch_size]
             component_scale = self.scale[:, i]  # [batch_size]
-            
-            if debug_nans and (torch.isnan(component_shape).any() or torch.isnan(component_scale).any()):
-                print(f"*** DEBUG-GET-COMPONENTS-NAN: NaN in component {i} parameters ***")
-                print(f"  component_shape NaNs: {torch.isnan(component_shape).sum().item()}")
-                print(f"  component_scale NaNs: {torch.isnan(component_scale).sum().item()}")
-                
+
+            if debug_nans and (
+                torch.isnan(component_shape).any() or torch.isnan(component_scale).any()
+            ):
+                print(
+                    f"*** DEBUG-GET-COMPONENTS-NAN: NaN in component {i} parameters ***"
+                )
+                print(
+                    f"  component_shape NaNs: {torch.isnan(component_shape).sum().item()}"
+                )
+                print(
+                    f"  component_scale NaNs: {torch.isnan(component_scale).sum().item()}"
+                )
+
                 # Print locations of NaNs if they exist
                 if torch.isnan(component_shape).any():
-                    nan_indices = torch.nonzero(torch.isnan(component_shape)).squeeze().tolist()
-                    print(f"  shape NaN indices: {nan_indices[:10]} {'...' if len(nan_indices) > 10 else ''}")
-                    
+                    nan_indices = (
+                        torch.nonzero(torch.isnan(component_shape)).squeeze().tolist()
+                    )
+                    print(
+                        f"  shape NaN indices: {nan_indices[:10]} {'...' if len(nan_indices) > 10 else ''}"
+                    )
+
                 if torch.isnan(component_scale).any():
-                    nan_indices = torch.nonzero(torch.isnan(component_scale)).squeeze().tolist()
-                    print(f"  scale NaN indices: {nan_indices[:10]} {'...' if len(nan_indices) > 10 else ''}")
-            
+                    nan_indices = (
+                        torch.nonzero(torch.isnan(component_scale)).squeeze().tolist()
+                    )
+                    print(
+                        f"  scale NaN indices: {nan_indices[:10]} {'...' if len(nan_indices) > 10 else ''}"
+                    )
+
             # Create distribution with NaN handling
             if torch.isnan(component_shape).any() or torch.isnan(component_scale).any():
                 if debug_nans:
-                    print(f"  Replacing NaNs in component {i} parameters before creating distribution")
+                    print(
+                        f"  Replacing NaNs in component {i} parameters before creating distribution"
+                    )
                 component_shape = torch.nan_to_num(component_shape, nan=1.0)
                 component_scale = torch.nan_to_num(component_scale, nan=1.0)
-                
+
             dist = WeibullDistribution(
                 shape=component_shape,
                 scale=component_scale,
@@ -721,20 +786,22 @@ class WeibullMixtureDistribution(MixtureDistribution):
         """
         # Debug flag to track NaN values
         debug_nans = False
-        
+
         if debug_nans:
             print(f"\n*** DEBUG-GET-WEIGHTS: Computing mixture weights from logits ***")
             print(f"  logits shape: {logits.shape}")
             if torch.isnan(logits).any():
                 print(f"  logits NaNs: {torch.isnan(logits).sum().item()}")
-                print(f"  logits range: [{logits[~torch.isnan(logits)].min().item() if torch.any(~torch.isnan(logits)) else 'all NaN'}, "
-                      f"{logits[~torch.isnan(logits)].max().item() if torch.any(~torch.isnan(logits)) else 'all NaN'}]")
-                
+                print(
+                    f"  logits range: [{logits[~torch.isnan(logits)].min().item() if torch.any(~torch.isnan(logits)) else 'all NaN'}, "
+                    f"{logits[~torch.isnan(logits)].max().item() if torch.any(~torch.isnan(logits)) else 'all NaN'}]"
+                )
+
                 # Show some of the NaN indices if they exist
                 nan_indices = torch.nonzero(torch.isnan(logits))
                 if len(nan_indices) > 0:
                     print(f"  First few NaN indices: {nan_indices[:5].tolist()}")
-                    
+
         # Replace NaNs in logits with a neutral value (0) before softmax
         if torch.isnan(logits).any():
             if debug_nans:
@@ -742,44 +809,50 @@ class WeibullMixtureDistribution(MixtureDistribution):
             logits_safe = torch.nan_to_num(logits, nan=0.0)
         else:
             logits_safe = logits
-            
+
         # Apply softmax to get normalized weights
         weights = F.softmax(logits_safe, dim=1)
-        
+
         if debug_nans and torch.isnan(weights).any():
             print(f"\n*** DEBUG-GET-WEIGHTS-NAN: NaN in weights after softmax ***")
             print(f"  weights NaNs: {torch.isnan(weights).sum().item()}")
-            print(f"  Any -inf in logits_safe: {(logits_safe == float('-inf')).sum().item()}")
-            print(f"  Any +inf in logits_safe: {(logits_safe == float('inf')).sum().item()}")
+            print(
+                f"  Any -inf in logits_safe: {(logits_safe == float('-inf')).sum().item()}"
+            )
+            print(
+                f"  Any +inf in logits_safe: {(logits_safe == float('inf')).sum().item()}"
+            )
 
         # Ensure weights sum to 1 and are non-negative
         weights = torch.clamp(weights, min=self.eps)
-        
+
         if debug_nans and torch.isnan(weights).any():
             print(f"*** DEBUG-GET-WEIGHTS-NAN: NaN after weights clamping ***")
             print(f"  weights NaNs: {torch.isnan(weights).sum().item()}")
-            
+
         # Normalize weights to sum to 1 for numerical stability
         weight_sums = weights.sum(dim=1, keepdim=True)
-        
+
         if debug_nans and torch.isnan(weight_sums).any():
             print(f"\n*** DEBUG-GET-WEIGHTS-NAN: NaN in weight_sums ***")
             print(f"  weight_sums NaNs: {torch.isnan(weight_sums).sum().item()}")
-            
+
         # Check if any row sums to 0, which would cause division by zero
         if (weight_sums == 0).any():
             if debug_nans:
-                print(f"  WARNING: Found {(weight_sums == 0).sum().item()} rows where all weights are 0")
+                print(
+                    f"  WARNING: Found {(weight_sums == 0).sum().item()} rows where all weights are 0"
+                )
             # Add epsilon to avoid division by zero
             weight_sums = torch.clamp(weight_sums, min=self.eps)
-            
+
         weights = weights / weight_sums
-        
+
         if debug_nans and torch.isnan(weights).any():
             print(f"\n*** DEBUG-GET-WEIGHTS-NAN: NaN in final normalized weights ***")
             print(f"  weights NaNs: {torch.isnan(weights).sum().item()}")
             print(f"  weight_sums zeros: {(weight_sums == 0).sum().item()}")
-            
+
         # Final safety check: replace any remaining NaNs with equal weights
         if torch.isnan(weights).any():
             if debug_nans:
@@ -792,12 +865,14 @@ class WeibullMixtureDistribution(MixtureDistribution):
             equal_weights = torch.ones_like(weights[nan_mask]) / num_mixtures
             # Replace NaN rows with equal weights
             weights[nan_mask] = equal_weights
-            
+
         if debug_nans:
             print(f"  Final weights shape: {weights.shape}")
             print(f"  Final weights min: {weights.min().item()}")
             print(f"  Final weights max: {weights.max().item()}")
-            print(f"  Row sums close to 1: {torch.isclose(weights.sum(dim=1), torch.ones(weights.shape[0], device=weights.device)).all().item()}")
+            print(
+                f"  Row sums close to 1: {torch.isclose(weights.sum(dim=1), torch.ones(weights.shape[0], device=weights.device)).all().item()}"
+            )
 
         return weights
 
@@ -923,77 +998,91 @@ class WeibullMixtureDistribution(MixtureDistribution):
         """
         # Debug flag to track NaN values
         debug_nans = False
-        
+
         if debug_nans:
-            print(f"\n*** DEBUG-MIX-LOGLIK-START: Starting mixture log likelihood computation ***")
+            print(
+                f"\n*** DEBUG-MIX-LOGLIK-START: Starting mixture log likelihood computation ***"
+            )
             print(f"  time shape: {time.shape}")
             if torch.isnan(time).any():
                 print(f"  time NaNs: {torch.isnan(time).sum().item()}")
-                
+
         distributions = self.get_component_distributions()
         batch_size = time.shape[0]
 
         # Ensure time is positive and within reasonable bounds
         time_safe = torch.clamp(time, min=self.eps, max=1e10)
-        
+
         if debug_nans and torch.isnan(time_safe).any():
             print(f"*** DEBUG-MIX-LOGLIK-NAN: NaN after time clamping ***")
             print(f"  time_safe NaNs: {torch.isnan(time_safe).sum().item()}")
 
         # Initialize log weights with careful clamping
         weights_safe = torch.clamp(self.weights, min=self.eps, max=1.0 - self.eps)
-        
+
         if debug_nans and torch.isnan(weights_safe).any():
             print(f"\n*** DEBUG-MIX-LOGLIK-NAN: NaN in weights_safe ***")
             print(f"  weights_safe NaNs: {torch.isnan(weights_safe).sum().item()}")
-            print(f"  original weights NaNs: {torch.isnan(self.weights).sum().item() if self.weights is not None else 'None'}")
-            
+            print(
+                f"  original weights NaNs: {torch.isnan(self.weights).sum().item() if self.weights is not None else 'None'}"
+            )
+
         weights_sum = weights_safe.sum(dim=1, keepdim=True)
-        
+
         if debug_nans and torch.isnan(weights_sum).any():
             print(f"*** DEBUG-MIX-LOGLIK-NAN: NaN in weights_sum ***")
             print(f"  weights_sum NaNs: {torch.isnan(weights_sum).sum().item()}")
-            
+
         weights_normalized = weights_safe / weights_sum
-        
+
         if debug_nans and torch.isnan(weights_normalized).any():
             print(f"*** DEBUG-MIX-LOGLIK-NAN: NaN in weights_normalized ***")
-            print(f"  weights_normalized NaNs: {torch.isnan(weights_normalized).sum().item()}")
+            print(
+                f"  weights_normalized NaNs: {torch.isnan(weights_normalized).sum().item()}"
+            )
             print(f"  weights_sum zeros: {(weights_sum == 0).sum().item()}")
-            
+
         log_weights = torch.log(weights_normalized)
-        
+
         if debug_nans and torch.isnan(log_weights).any():
             print(f"*** DEBUG-MIX-LOGLIK-NAN: NaN in log_weights ***")
             print(f"  log_weights NaNs: {torch.isnan(log_weights).sum().item()}")
-            print(f"  weights_normalized zeros: {(weights_normalized == 0).sum().item()}")
+            print(
+                f"  weights_normalized zeros: {(weights_normalized == 0).sum().item()}"
+            )
 
         # Compute component log likelihoods with careful handling of extreme values
         component_log_likelihoods = []
         for i, dist in enumerate(distributions):
             if debug_nans:
-                print(f"\n*** DEBUG-MIX-LOGLIK-COMPONENT: Computing log likelihood for component {i} ***")
-                
+                print(
+                    f"\n*** DEBUG-MIX-LOGLIK-COMPONENT: Computing log likelihood for component {i} ***"
+                )
+
             component_ll = dist.log_likelihood(time_safe)  # [batch_size]
-            
+
             if debug_nans and torch.isnan(component_ll).any():
-                print(f"*** DEBUG-MIX-LOGLIK-NAN: NaN in component {i} log likelihood ***")
+                print(
+                    f"*** DEBUG-MIX-LOGLIK-NAN: NaN in component {i} log likelihood ***"
+                )
                 print(f"  component_ll NaNs: {torch.isnan(component_ll).sum().item()}")
-                
+
             # Apply reasonable bounds to log-likelihood to prevent extreme values
             component_ll = torch.clamp(component_ll, min=-100.0, max=100.0)
-            
+
             if debug_nans and torch.isnan(component_ll).any():
-                print(f"*** DEBUG-MIX-LOGLIK-NAN: NaN after component {i} log likelihood clamping ***")
+                print(
+                    f"*** DEBUG-MIX-LOGLIK-NAN: NaN after component {i} log likelihood clamping ***"
+                )
                 print(f"  component_ll NaNs: {torch.isnan(component_ll).sum().item()}")
-                
+
             component_log_likelihoods.append(component_ll)
 
         # Stack component log likelihoods
         stacked_lls = torch.stack(
             component_log_likelihoods, dim=1
         )  # [batch_size, num_mixtures]
-        
+
         if debug_nans and torch.isnan(stacked_lls).any():
             print(f"\n*** DEBUG-MIX-LOGLIK-NAN: NaN in stacked_lls ***")
             print(f"  stacked_lls NaNs: {torch.isnan(stacked_lls).sum().item()}")
@@ -1001,52 +1090,72 @@ class WeibullMixtureDistribution(MixtureDistribution):
 
         # Combine log weights and log likelihoods with careful handling of extreme values
         combined_values = log_weights + stacked_lls
-        
+
         if debug_nans and torch.isnan(combined_values).any():
-            print(f"\n*** DEBUG-MIX-LOGLIK-NAN: NaN in combined_values = log_weights + stacked_lls ***")
-            print(f"  combined_values NaNs: {torch.isnan(combined_values).sum().item()}")
-            
+            print(
+                f"\n*** DEBUG-MIX-LOGLIK-NAN: NaN in combined_values = log_weights + stacked_lls ***"
+            )
+            print(
+                f"  combined_values NaNs: {torch.isnan(combined_values).sum().item()}"
+            )
+
         # Remove any NaN or Inf values before logsumexp
         combined_values_safe = torch.where(
             torch.isfinite(combined_values),
             combined_values,
             torch.tensor(-100.0, device=combined_values.device),
         )
-        
+
         if debug_nans and torch.isnan(combined_values_safe).any():
-            print(f"*** DEBUG-MIX-LOGLIK-NAN: NaN after combined_values_safe where replacement ***")
-            print(f"  combined_values_safe NaNs: {torch.isnan(combined_values_safe).sum().item()}")
+            print(
+                f"*** DEBUG-MIX-LOGLIK-NAN: NaN after combined_values_safe where replacement ***"
+            )
+            print(
+                f"  combined_values_safe NaNs: {torch.isnan(combined_values_safe).sum().item()}"
+            )
 
         # Calculate max value for stability in logsumexp
         max_values, _ = torch.max(combined_values_safe, dim=1, keepdim=True)
-        
+
         if debug_nans and torch.isnan(max_values).any():
             print(f"\n*** DEBUG-MIX-LOGLIK-NAN: NaN in max_values ***")
             print(f"  max_values NaNs: {torch.isnan(max_values).sum().item()}")
-            print(f"  Are all rows NaN in combined_values_safe: {torch.isnan(combined_values_safe).all(dim=1).sum().item()}")
+            print(
+                f"  Are all rows NaN in combined_values_safe: {torch.isnan(combined_values_safe).all(dim=1).sum().item()}"
+            )
 
         # Avoid underflow in exp by subtracting max values
         exp_values = torch.exp(combined_values_safe - max_values)
-        
+
         if debug_nans and torch.isnan(exp_values).any():
-            print(f"\n*** DEBUG-MIX-LOGLIK-NAN: NaN in exp_values = exp(combined_values_safe - max_values) ***")
+            print(
+                f"\n*** DEBUG-MIX-LOGLIK-NAN: NaN in exp_values = exp(combined_values_safe - max_values) ***"
+            )
             print(f"  exp_values NaNs: {torch.isnan(exp_values).sum().item()}")
-            print(f"  combined_values_safe - max_values min: {(combined_values_safe - max_values).min().item()}")
-            print(f"  combined_values_safe - max_values max: {(combined_values_safe - max_values).max().item()}")
+            print(
+                f"  combined_values_safe - max_values min: {(combined_values_safe - max_values).min().item()}"
+            )
+            print(
+                f"  combined_values_safe - max_values max: {(combined_values_safe - max_values).max().item()}"
+            )
 
         # Sum of exponentials
         sum_exp = torch.sum(exp_values, dim=1)
-        
+
         if debug_nans and torch.isnan(sum_exp).any():
-            print(f"\n*** DEBUG-MIX-LOGLIK-NAN: NaN in sum_exp = sum(exp_values, dim=1) ***")
+            print(
+                f"\n*** DEBUG-MIX-LOGLIK-NAN: NaN in sum_exp = sum(exp_values, dim=1) ***"
+            )
             print(f"  sum_exp NaNs: {torch.isnan(sum_exp).sum().item()}")
             print(f"  sum_exp zeros: {(sum_exp == 0).sum().item()}")
 
         # Compute stable log-likelihood
         log_likelihood = max_values.squeeze(1) + torch.log(sum_exp)
-        
+
         if debug_nans and torch.isnan(log_likelihood).any():
-            print(f"\n*** DEBUG-MIX-LOGLIK-NAN: NaN in log_likelihood = max_values + log(sum_exp) ***")
+            print(
+                f"\n*** DEBUG-MIX-LOGLIK-NAN: NaN in log_likelihood = max_values + log(sum_exp) ***"
+            )
             print(f"  log_likelihood NaNs: {torch.isnan(log_likelihood).sum().item()}")
             print(f"  sum_exp zeros: {(sum_exp == 0).sum().item()}")
 
@@ -1054,14 +1163,16 @@ class WeibullMixtureDistribution(MixtureDistribution):
         log_likelihood = torch.nan_to_num(
             log_likelihood, nan=-10.0, posinf=10.0, neginf=-10.0
         )
-        
+
         if debug_nans:
             print(f"\n*** DEBUG-MIX-LOGLIK-FINAL: Final mixture log likelihood ***")
             print(f"  log_likelihood min: {log_likelihood.min().item()}")
             print(f"  log_likelihood max: {log_likelihood.max().item()}")
             print(f"  log_likelihood mean: {log_likelihood.mean().item()}")
             if torch.isnan(log_likelihood).any():
-                print(f"  WARNING: Still have {torch.isnan(log_likelihood).sum().item()} NaNs after nan_to_num!")
+                print(
+                    f"  WARNING: Still have {torch.isnan(log_likelihood).sum().item()} NaNs after nan_to_num!"
+                )
 
         return log_likelihood
 

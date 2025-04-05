@@ -1,16 +1,17 @@
 """Analyze HSA synthetic dataset with MultiEventRankingLoss."""
 
 import os
-import pandas as pd
-import numpy as np
-import torch
-import matplotlib.pyplot as plt
-from typing import Dict, Tuple
 import tempfile
+from typing import Dict, Tuple
 
-from sat.models.heads import SAOutput
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import torch
+
 from sat.loss.ranking.multievent import MultiEventRankingLoss
 from sat.loss.ranking.sample import SampleRankingLoss
+from sat.models.heads import SAOutput
 
 
 def load_hsa_synthetic_data(file_path: str) -> pd.DataFrame:

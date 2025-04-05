@@ -3,14 +3,12 @@
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
-import hydra
 import json
-import os
-import sys
-
-from logdecorator import log_on_start, log_on_end, log_on_error
 from logging import DEBUG, ERROR
 from pathlib import Path
+
+import hydra
+from logdecorator import log_on_end, log_on_error, log_on_start
 from omegaconf import DictConfig
 
 from sat.data import load

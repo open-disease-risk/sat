@@ -14,19 +14,19 @@ Usage:
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
-import torch
-import time
-import numpy as np
 import argparse
-import matplotlib.pyplot as plt
+import time
 from pathlib import Path
+from typing import Dict, List, Optional
+
+import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
-from typing import Dict, List, Optional, Union
-
+import torch
 from transformers.utils import ModelOutput
-from sat.loss.momentum_buffer import MomentumBuffer, MoCoSurvivalLoss
-from sat.loss import SATNLLPCHazardLoss
 
+from sat.loss import SATNLLPCHazardLoss
+from sat.loss.momentum_buffer import MoCoSurvivalLoss, MomentumBuffer
 from sat.utils import logging
 
 logger = logging.get_default_logger()

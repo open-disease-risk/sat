@@ -1,18 +1,16 @@
 """Tests for DeepHit loss components."""
 
-import pytest
 import os
+
+import numpy as np
+import pandas as pd
+import pytest
 import torch
 import torch.nn.functional as F
-import pandas as pd
-import numpy as np
 
-from sat.loss.survival.deephit import (
-    DeepHitLikelihoodLoss,
-    DeepHitCalibrationLoss,
-)
-from sat.loss.ranking.sample import SampleRankingLoss
 from sat.loss.meta import MetaLoss
+from sat.loss.ranking.sample import SampleRankingLoss
+from sat.loss.survival.deephit import DeepHitCalibrationLoss, DeepHitLikelihoodLoss
 from sat.models.heads import SAOutput
 
 

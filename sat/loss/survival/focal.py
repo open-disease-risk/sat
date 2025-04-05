@@ -3,13 +3,15 @@
 __authors__ = ["Dominik Dahlem", "Mahed Abroshan"]
 __status__ = "Development"
 
+import collections.abc
+from typing import Dict, List, Optional, Union
+
 import pandas as pd
 import torch
-import collections.abc
-from typing import Dict, Optional, Union, List
 
-from sat.utils import logging
 from sat.models.heads import SAOutput
+from sat.utils import logging
+
 from ..balancing import BalancingStrategy
 from ..base import Loss
 

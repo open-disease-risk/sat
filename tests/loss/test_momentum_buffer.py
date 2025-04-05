@@ -3,21 +3,20 @@
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
-import torch
-import pytest
-import numpy as np
 from collections import deque
-from unittest import mock
 
+import numpy as np
+import pytest
+import torch
 from transformers.utils import ModelOutput
 
-from sat.loss.momentum_buffer import (
-    MomentumBuffer,
-    MoCoSurvivalLoss,
-    DynamicWeightMoCoLoss,
-    AdaptiveMoCoLoss,
-)
 from sat.loss.base import Loss
+from sat.loss.momentum_buffer import (
+    AdaptiveMoCoLoss,
+    DynamicWeightMoCoLoss,
+    MoCoSurvivalLoss,
+    MomentumBuffer,
+)
 
 
 class MockSurvivalLoss(Loss):

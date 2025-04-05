@@ -3,13 +3,12 @@
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
+from logging import DEBUG, ERROR
 from typing import Dict
 
-
-from logdecorator import log_on_start, log_on_end, log_on_error
-from logging import DEBUG, ERROR
-from transformers.utils import add_end_docstrings
+from logdecorator import log_on_end, log_on_error, log_on_start
 from transformers.pipelines.base import PIPELINE_INIT_ARGS, GenericTensor, Pipeline
+from transformers.utils import add_end_docstrings
 
 from sat.utils import logging
 

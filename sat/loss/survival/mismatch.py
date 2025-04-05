@@ -5,10 +5,9 @@ __status__ = "Development"
 
 import torch
 
-from torch import nn
-
-from sat.utils import logging
 from sat.models.heads import SAOutput
+from sat.utils import logging
+
 from ..base import Loss
 
 logger = logging.get_default_logger()

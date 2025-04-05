@@ -4,8 +4,9 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 from dataclasses import dataclass
-from omegaconf import OmegaConf
 from typing import Optional
+
+from omegaconf import OmegaConf
 
 from sat.utils import rand
 

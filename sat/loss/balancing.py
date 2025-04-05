@@ -3,10 +3,11 @@
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
-import torch
-import torch.nn as nn
 from enum import Enum
 from typing import List, Optional, Union
+
+import torch
+import torch.nn as nn
 
 from sat.utils import logging
 

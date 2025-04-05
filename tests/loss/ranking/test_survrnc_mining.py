@@ -2,13 +2,12 @@
 
 import os
 import tempfile
-import pandas as pd
-import numpy as np
-import torch
-from torch.testing import assert_close
 
-from sat.models.heads import SAOutput
+import pandas as pd
+import torch
+
 from sat.loss.ranking import SurvRNCLoss
+from sat.models.heads import SAOutput
 
 
 def create_temporary_csv(data):
@@ -263,8 +262,9 @@ def test_survrnc_mining_efficiency():
         return
 
     # Import the implementation
-    from sat.loss.ranking import SurvRNCLoss
     import time
+
+    from sat.loss.ranking import SurvRNCLoss
 
     # Create temporary files
     duration_cuts = create_temporary_csv([0, 1, 2, 3, 4, 5])

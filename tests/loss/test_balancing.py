@@ -1,15 +1,14 @@
 """Tests for loss balancing strategies."""
 
 import torch
-import pytest
 
 from sat.loss.balancing import (
-    LossBalancer,
+    AdaptiveWeightBalancer,
     BalancingStrategy,
     FixedWeightBalancer,
+    LossBalancer,
     ScaleNormalizationBalancer,
     UncertaintyWeightBalancer,
-    AdaptiveWeightBalancer,
 )
 
 

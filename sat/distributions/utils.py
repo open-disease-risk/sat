@@ -11,14 +11,16 @@ and statistical theory into survival models through:
 4. Event-specific parameter initialization
 """
 
-import torch
-import math
-import numpy as np
-from typing import Dict, Union, Tuple, List, Optional, Callable
+__authors__ = ["Dominik Dahlem"]
+__status__ = "Development"
 
-from .base import SurvivalDistribution, MixtureDistribution
-from .weibull import WeibullDistribution, WeibullMixtureDistribution
+from typing import Dict, List, Optional, Union
+
+import torch
+
+from .base import MixtureDistribution, SurvivalDistribution
 from .lognormal import LogNormalDistribution, LogNormalMixtureDistribution
+from .weibull import WeibullDistribution, WeibullMixtureDistribution
 
 
 def create_distribution(

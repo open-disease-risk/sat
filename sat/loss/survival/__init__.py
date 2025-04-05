@@ -3,15 +3,12 @@
 __authors__ = ["Dominik Dahlem", "Mahed Abroshan"]
 __status__ = "Development"
 
-from .nllpchazard import SATNLLPCHazardLoss
-from .mismatch import MismatchLoss
-from .focal import SurvivalFocalLoss
-from .deephit import (
-    DeepHitLikelihoodLoss,
-    DeepHitCalibrationLoss,
-)
+from .deephit import DeepHitCalibrationLoss, DeepHitLikelihoodLoss
 from .dsm import DSMLoss
+from .focal import SurvivalFocalLoss
 from .mensa import MENSALoss
+from .mismatch import MismatchLoss
+from .nllpchazard import SATNLLPCHazardLoss
 
 __all__ = [
     "SATNLLPCHazardLoss",

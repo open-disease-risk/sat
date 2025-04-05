@@ -2,14 +2,11 @@
 
 import argparse
 import os
-from pathlib import Path
 
-import optuna
-import plotly
 import matplotlib.pyplot as plt
 import numpy as np
+import optuna
 import pandas as pd
-from IPython.display import display
 
 from sat.utils import logging
 

@@ -3,7 +3,7 @@
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
-from typing import List, Dict, Any
+from typing import Any, Dict, List
 
 from transformers import DefaultDataCollator
 

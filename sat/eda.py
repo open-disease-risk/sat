@@ -8,8 +8,8 @@ __status__ = "Development"
 
 # Apply the lifelines patch to fix scipy.integrate.trapz import issue
 try:
-    import sys
     import os
+    import sys
 
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
     from fix_lifelines_import import apply_lifelines_patch
@@ -18,19 +18,20 @@ try:
 except ImportError:
     pass
 
-import hydra
-import os
 import json
+import os
+import re
+from logging import DEBUG, ERROR
+from typing import Dict, List, Optional, Tuple
+
+import hydra
+import numpy as np
 import pandas as pd
 import polars as pl
-import numpy as np
-import re
+from logdecorator import log_on_end, log_on_error, log_on_start
 from omegaconf import DictConfig
-from logdecorator import log_on_start, log_on_end, log_on_error
-from logging import DEBUG, ERROR
-from typing import Dict, List, Tuple, Optional
 
-from sat.analysis import distribution_fitting, censoring
+from sat.analysis import censoring, distribution_fitting
 from sat.utils import logging, rand
 
 logger = logging.get_default_logger()

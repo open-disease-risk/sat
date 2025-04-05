@@ -7,19 +7,13 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 import datasets
-
+import evaluate
 import numpy as np
-
 from scipy.stats import chi2
 
-import evaluate
-
 from sat.utils import logging
+from sat.utils.km import KaplanMeier, to_array
 from sat.utils.types import NumericArrayLike
-from sat.utils.km import (
-    KaplanMeier,
-    to_array,
-)
 
 logger = logging.get_default_logger()
 

@@ -7,6 +7,7 @@ import torch
 
 from sat.models.heads import SAOutput
 from sat.utils import logging
+
 from .list_mle import ListMLELoss
 
 logger = logging.get_default_logger()

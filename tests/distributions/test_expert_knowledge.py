@@ -1,22 +1,21 @@
 """Unit tests for expert knowledge integration in survival distributions."""
 
-import torch
-import numpy as np
 import pytest
+import torch
 
-from sat.distributions.weibull import WeibullDistribution, WeibullMixtureDistribution
 from sat.distributions.lognormal import (
     LogNormalDistribution,
     LogNormalMixtureDistribution,
 )
 from sat.distributions.utils import (
+    apply_event_specific_constraints,
+    apply_informative_prior,
+    create_clinically_informed_distribution,
+    create_conditional_dsm_distribution,
     create_distribution,
     create_dsm_distribution,
-    create_conditional_dsm_distribution,
-    apply_informative_prior,
-    apply_event_specific_constraints,
-    create_clinically_informed_distribution,
 )
+from sat.distributions.weibull import WeibullDistribution, WeibullMixtureDistribution
 
 
 @pytest.fixture

@@ -3,26 +3,21 @@
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
-import hydra
-import os
-import sys
-
-from logdecorator import log_on_start, log_on_end, log_on_error
 from logging import DEBUG, ERROR
-from omegaconf import DictConfig
 from pathlib import Path
 
+import hydra
 from datasets import load_dataset
-
+from logdecorator import log_on_end, log_on_error, log_on_start
+from omegaconf import DictConfig
 from transformers import PreTrainedTokenizerFast
 from transformers.pipelines import pipeline
 
-from sat.utils import config, logging, rand
-from sat.utils.output import write_output, write_interpolation
+import sat.transformers.pipelines  # keep this import for pipeline registration to happen
 from sat.models.tasks import heads
 from sat.models.utils import get_device, load_model
-
-import sat.transformers.pipelines  # keep this import for pipeline registration to happen
+from sat.utils import config, logging, rand
+from sat.utils.output import write_interpolation, write_output
 
 logger = logging.get_default_logger()
 

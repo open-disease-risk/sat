@@ -3,21 +3,20 @@
 import os
 import tempfile
 import time
-import torch
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
 from collections import defaultdict
 
-from sat.models.heads import SAOutput
-from sat.loss.ranking.sample import SampleRankingLoss
-from sat.loss.ranking.multievent import MultiEventRankingLoss
-from sat.loss.ranking.sample_list_mle import SampleListMLELoss
-from sat.loss.ranking.soap import SOAPLoss
-from sat.loss.ranking.sample_soap import SampleSOAPLoss
-from sat.loss.ranking.ranknet import RankNetLoss
-from sat.loss.ranking.sample_ranknet import SampleRankNetLoss
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import torch
+
 from sat.loss.ranking.event_ranknet import EventRankNetLoss
+from sat.loss.ranking.multievent import MultiEventRankingLoss
+from sat.loss.ranking.sample import SampleRankingLoss
+from sat.loss.ranking.sample_list_mle import SampleListMLELoss
+from sat.loss.ranking.sample_ranknet import SampleRankNetLoss
+from sat.loss.ranking.sample_soap import SampleSOAPLoss
+from sat.models.heads import SAOutput
 
 
 def create_test_data(batch_size=32, num_events=2, num_time_bins=10):

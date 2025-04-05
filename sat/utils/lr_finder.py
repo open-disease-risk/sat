@@ -3,13 +3,12 @@
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
-import math
-import numpy as np
+from pathlib import Path
+from typing import Optional
+
+import matplotlib.pyplot as plt
 import torch
 from torch.optim import AdamW
-import matplotlib.pyplot as plt
-from pathlib import Path
-from typing import Callable, Dict, List, Optional, Tuple, Union
 
 from sat.utils import logging
 

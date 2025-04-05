@@ -3,21 +3,18 @@ Tests for the specialized survival distributions.
 """
 
 import torch
-import pytest
-import numpy as np
 
 from sat.distributions import (
-    SurvivalDistribution,
+    LogNormalDistribution,
+    LogNormalMixtureDistribution,
     MixtureDistribution,
     WeibullDistribution,
     WeibullMixtureDistribution,
-    LogNormalDistribution,
-    LogNormalMixtureDistribution,
 )
 from sat.distributions.utils import (
+    create_conditional_dsm_distribution,
     create_distribution,
     create_dsm_distribution,
-    create_conditional_dsm_distribution,
 )
 
 

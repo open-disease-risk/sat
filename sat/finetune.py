@@ -18,8 +18,8 @@ from tokenizers.processors import TemplateProcessing
 from transformers import PreTrainedTokenizerFast, Trainer, TrainingArguments
 from transformers.integrations import TensorBoardCallback
 
-from sat.data import collator, load
 from sat.callbacks import LossWeightLoggerCallback
+from sat.data import collator, load
 from sat.models import heads
 from sat.models.heads.embeddings import TokenEmbedding
 from sat.models.utils import get_device
@@ -240,9 +240,9 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
     # If we have an Optuna trial, add a pruning callback
     if is_optuna_trial and hasattr(cfg, "optuna"):
         try:
-            from optuna.integration import PyTorchLightningPruningCallback
             import optuna
             from hydra.utils import instantiate
+            from optuna.integration import PyTorchLightningPruningCallback
 
             logger.info("Optuna trial detected - adding pruning callback")
 

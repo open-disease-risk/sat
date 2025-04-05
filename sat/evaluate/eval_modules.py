@@ -4,11 +4,9 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 import evaluate
-import torch
-
 import numpy as np
 import pandas as pd
-
+import torch
 from evaluate import EvaluationModule
 
 from sat.utils import logging

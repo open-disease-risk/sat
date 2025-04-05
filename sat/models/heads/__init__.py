@@ -13,10 +13,10 @@ from transformers.models.bert.configuration_bert import BertConfig
 # Task heads
 from .base import BaseConfig
 from .classification import EventClassificationTaskConfig, EventClassificationTaskHead
-from .embeddings import SentenceEmbedding, TokenEmbedding
-from .mtl import MTLConfig, MTLForSurvival
-from .mensa import MENSAConfig, MENSATaskHead
 from .dsm import DSMConfig, DSMTaskHead
+from .embeddings import SentenceEmbedding, TokenEmbedding
+from .mensa import MENSAConfig, MENSATaskHead
+from .mtl import MTLConfig, MTLForSurvival
 
 # Base classes and utilities
 from .output import SAOutput, TaskOutput

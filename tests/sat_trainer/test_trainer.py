@@ -2,9 +2,8 @@
 
 import os
 import shutil
-import sys
 import unittest
-from unittest.mock import MagicMock, patch, ANY
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import torch

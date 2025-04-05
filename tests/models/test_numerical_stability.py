@@ -1,16 +1,16 @@
 """Tests for numerical stability of survival models."""
 
-import torch
-import pytest
-import tempfile
 import os
-import pandas as pd
+import tempfile
 
-from sat.models.heads.dsm import DSMTaskHead, DSMConfig
-from sat.models.heads.mensa import MENSATaskHead, MENSAConfig
+import pandas as pd
+import pytest
+import torch
+
 from sat.loss.survival.dsm import DSMLoss
 from sat.loss.survival.mensa import MENSALoss
-from sat.models.heads.output import SAOutput
+from sat.models.heads.dsm import DSMConfig, DSMTaskHead
+from sat.models.heads.mensa import MENSAConfig, MENSATaskHead
 
 
 # Create temporary files needed for tests

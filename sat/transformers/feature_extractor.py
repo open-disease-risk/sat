@@ -4,14 +4,13 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 import pickle
-
-import numpy as np
-
-from logdecorator import log_on_start, log_on_end, log_on_error
 from logging import DEBUG, ERROR
 from pathlib import Path
+from typing import List, Union
+
+import numpy as np
+from logdecorator import log_on_end, log_on_error, log_on_start
 from transformers.feature_extraction_utils import BatchFeature, FeatureExtractionMixin
-from typing import Union, List
 
 from sat.utils import logging
 

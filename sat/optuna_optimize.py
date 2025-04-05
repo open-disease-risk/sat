@@ -4,15 +4,15 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 import os
+from logging import DEBUG, ERROR
 from pathlib import Path
 
 import hydra
+from logdecorator import log_on_end, log_on_error, log_on_start
 from omegaconf import DictConfig, OmegaConf
-from logdecorator import log_on_start, log_on_end, log_on_error
-from logging import DEBUG, ERROR
 
 from sat.pipeline import _pipeline
-from sat.utils import config, logging, rand
+from sat.utils import logging, rand
 
 # Set up default logger
 logger = logging.get_default_logger()
@@ -58,8 +58,8 @@ def objective(cfg: DictConfig) -> float or tuple:
 
     # If still not found, create a unique trial number based on timestamp and random digits
     if trial_number is None:
-        import time
         import random
+        import time
 
         timestamp = int(time.time())
         rand_digits = random.randint(1000, 9999)

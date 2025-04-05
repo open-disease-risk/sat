@@ -4,10 +4,8 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 import unittest
-from sat.utils.output import (
-    log_metrics,
-    log_metrics_from_replications,
-)
+
+from sat.utils.output import log_metrics_from_replications
 
 
 class TestLogMetricsFromReplications(unittest.TestCase):

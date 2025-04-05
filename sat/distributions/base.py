@@ -5,10 +5,13 @@ This module defines the interface for survival distributions and mixture models.
 All specialized distributions should inherit from these base classes.
 """
 
-import torch
-import torch.nn as nn
+__authors__ = ["Dominik Dahlem"]
+__status__ = "Development"
+
 from abc import ABC, abstractmethod
-from typing import Tuple, Dict, Optional, Union, Any
+from typing import Tuple
+
+import torch
 
 
 class SurvivalDistribution(ABC):

@@ -13,7 +13,7 @@ from transformers import AutoModel
 from sat.models.nets import SimpleMLP
 from sat.utils import logging
 
-from .base import BaseConfig, MTLTask, SurvivalTask, ClassificationTask, RegressionTask
+from .base import BaseConfig, ClassificationTask, MTLTask, RegressionTask, SurvivalTask
 from .embeddings import (
     SentenceEmbedder,
     SentenceEmbedding,

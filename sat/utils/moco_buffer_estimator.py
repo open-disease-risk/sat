@@ -8,11 +8,12 @@ survival analysis based on dataset characteristics and training configuration.
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
+import logging
 import math
+from typing import Dict, Union
+
 import numpy as np
 import pandas as pd
-from typing import Dict, Optional, Union, Tuple
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -412,8 +413,8 @@ def suggest_buffer_from_dataset(
 
 if __name__ == "__main__":
     # Example usage
-    import pandas as pd
     import numpy as np
+    import pandas as pd
 
     # Create a sample dataset
     np.random.seed(42)

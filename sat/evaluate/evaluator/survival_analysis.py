@@ -3,10 +3,11 @@
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
+from numbers import Number
+from typing import Any, Callable, Dict, List, Optional, Union
+
 import numpy as np
-
 from datasets import Dataset, load_dataset
-
 from evaluate.evaluator.base import (
     EVALUATOR_COMPUTE_RETURN_DOCSTRING,
     EVALUTOR_COMPUTE_START_DOCSTRING,
@@ -15,10 +16,6 @@ from evaluate.evaluator.base import (
 from evaluate.evaluator.utils import DatasetColumn
 from evaluate.module import EvaluationModule
 from evaluate.utils.file_utils import add_end_docstrings, add_start_docstrings
-
-from numbers import Number
-
-from typing import Any, Callable, Dict, Optional, Union, List
 from transformers.utils.generic import ModelOutput
 from typing_extensions import Literal
 

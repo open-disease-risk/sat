@@ -3,17 +3,16 @@
 __authors__ = ["Dominik Dahlem", "Mahed Abroshan"]
 __status__ = "Development"
 
-import pandas as pd
-
-import torch
 from typing import Dict, Optional, Union
 
-from ..balancing import BalancingStrategy
+import pandas as pd
+import torch
 
-from sat.pycox.models.loss import NLLPCHazardLoss
 from sat.models.heads import SAOutput
+from sat.pycox.models.loss import NLLPCHazardLoss
 from sat.utils import logging
 
+from ..balancing import BalancingStrategy
 from ..base import Loss
 
 logger = logging.get_default_logger()

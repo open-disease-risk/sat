@@ -14,8 +14,8 @@ except ImportError:
 from typing import Dict, List
 
 from evaluate.evaluator.base import Evaluator
-from sat.evaluate.evaluator.survival_analysis import SurvivalAnalysisEvaluator
 
+from sat.evaluate.evaluator.survival_analysis import SurvivalAnalysisEvaluator
 
 SUPPORTED_EVALUATOR_TASKS = {
     "survival-analysis": {

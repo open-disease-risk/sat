@@ -3,16 +3,15 @@
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
-import torch
-import torch.nn as nn
-from typing import Dict, Optional, Tuple, List, Union, Any
-from collections import deque
 import math
-import copy
+from collections import deque
+from typing import Any, Dict, Optional, Tuple, Union
 
+import torch
 from transformers.utils import ModelOutput
 
 from sat.utils import logging
+
 from .base import Loss
 
 logger = logging.get_default_logger()

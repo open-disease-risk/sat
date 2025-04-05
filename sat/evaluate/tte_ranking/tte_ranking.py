@@ -4,9 +4,8 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 import datasets
-import torch
-
 import evaluate
+import torch
 
 from sat.utils import logging
 

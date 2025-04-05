@@ -1,16 +1,15 @@
 """Benchmark tests for comparing original and vectorized ranking loss implementations"""
 
-import torch
-import time
+import argparse
 import logging
-import pandas as pd
-import matplotlib.pyplot as plt
-from torch import nn
-import numpy as np
 import os
 import tempfile
-import argparse
-from tqdm import tqdm
+import time
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import torch
 
 # Configure minimal logging to avoid debug messages during benchmarks
 logging.basicConfig(level=logging.WARNING)
@@ -30,9 +29,9 @@ def get_best_device():
         return torch.device("cpu")
 
 
-from sat.models.heads.output import SAOutput
-from sat.loss.ranking.sample import SampleRankingLoss
 from sat.loss.ranking.multievent import MultiEventRankingLoss
+from sat.loss.ranking.sample import SampleRankingLoss
+from sat.models.heads.output import SAOutput
 
 
 def create_synthetic_survival_data(
