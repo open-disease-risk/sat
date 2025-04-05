@@ -12,7 +12,6 @@ import pandas as pd
 from logdecorator import log_on_end, log_on_error, log_on_start
 from omegaconf import DictConfig
 
-from sat.finetune import _finetune
 from sat.prepare_data import _prepare_data
 from sat.train_labeltransform import _train_labeltransform
 from sat.train_tokenizer import _train_tokenizer
@@ -29,8 +28,22 @@ def _pipeline(cfg: DictConfig) -> pd.DataFrame:
     _train_labeltransform(cfg)
     logger.info("Train tokenizer")
     _train_tokenizer(cfg)
-    logger.info("Run fine-tuning")
-    val_metrics, test_metrics = _finetune(cfg)
+
+    if cfg.pipeline_use_cv:
+        logger.info("Run CV experiment")
+        from sat.cv import _cv
+
+        val_metrics, test_metrics = _cv(cfg)
+    elif cfg.pipeline_use_ci:
+        logger.info("Run CI experiment")
+        from sat.ci import _ci
+
+        val_metrics, test_metrics = _ci(cfg)
+    else:
+        logger.info("Run finetuning experiment")
+        from sat.finetune import _finetune
+
+        val_metrics, test_metrics = _finetune(cfg)
 
     logger.debug("Serialize random number seed used for pipeline")
     with Path(f"{cfg.trainer.training_arguments.output_dir}/pipeline-seed.json").open(
