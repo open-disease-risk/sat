@@ -25,7 +25,7 @@ hydra:
     storage: sqlite:///${modelhub}/${dataset}/${modelname}/studies.db
     study_name: ${dataset}_${modelname}
 optuna:
-  metric: [test_ipcw_avg, test_brier_avg]
+  metric: [ipcw.mean, brier.mean]
   metric_direction: [maximize, minimize]
   pruner:
     _target_: optuna.pruners.MedianPruner
