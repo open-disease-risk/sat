@@ -25,11 +25,11 @@ hydra:
     storage: sqlite:///${modelhub}/${dataset}/${modelname}/studies.db
     study_name: ${dataset}_${modelname}
 optuna:
-  metric: [test_ipcw_avg, test_brier_avg]
+  metric: [ipcw.mean, brier.mean]
   metric_direction: [maximize, minimize]
   pruner:
     _target_: optuna.pruners.MedianPruner
     interval_steps: 5
     n_startup_trials: 5
-    n_warmup_steps: 20
+    n_warmup_steps: 40
   study_overwrite: true

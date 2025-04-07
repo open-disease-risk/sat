@@ -4,7 +4,3 @@ task: kfold_cv
 defaults:
   - _self_
   - defaults
-
-multiple_replications: true
-cv_kfold: 5
-cv_kfold_reuse: true

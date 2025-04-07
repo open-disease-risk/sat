@@ -42,6 +42,7 @@ seaborn = "^0.13.2"
 hydra-optuna-sweeper = { git = "https://github.com/dahlem/hydra", subdirectory = "plugins/hydra_optuna_sweeper" }
 plotly = "^6.0.1"
 ipython = "^9.0.2"
+glom = "^24.11.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "8.3.5"

@@ -1,6 +1,6 @@
 # @package _global_
 dataset: metabric_numeric
-modelname: survival
+modelname: survival-moco
 
 defaults:
   - metabric_numeric/defaults

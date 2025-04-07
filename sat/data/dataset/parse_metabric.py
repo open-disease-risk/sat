@@ -220,13 +220,13 @@ class metabric:
                         index=X_test_kf.index,
                     )
 
-                    outDir = Path(f"{self.processed_dir}/{self.name}_{i}")
+                    outDir = Path(f"{self.processed_dir}/{self.name}")
                     outDir.mkdir(parents=True, exist_ok=True)
                     data_kf = pd.concat(
                         [train_data_kf, test_data_kf, test_data]
                     ).reset_index(level=0)
                     data_kf.to_csv(
-                        Path(f"{outDir}/{self.name}_{i}.csv"),
+                        Path(f"{outDir}/{i}_{self.name}.csv"),
                         index=False,
                     )
 

@@ -57,9 +57,9 @@ def _cv(cfg: DictConfig) -> None:
     ipcw = statistics.OnlineStats()
 
     for i in range(cfg.cv.kfold):
-        cfg.dataset = dataset + "_" + str(i)
+        cfg.fold = str(i) + "_"
         logger.info("Run training pipeline")
-        metrics, _ = _pipeline(cfg)
+        metrics, test_metrics = _pipeline(cfg)
 
         brier.push(metrics["test_brier_avg"])
         ipcw.push(metrics["test_ipcw_avg"])
@@ -104,6 +104,8 @@ def _cv(cfg: DictConfig) -> None:
             json.dump(prefixed_metrics, fp, indent=4)
 
         logger.info(f"Saved detailed CV metrics to {outDir}/cv_detailed_metrics.json")
+
+    return cv_results, test_metrics
 
 
 @log_on_start(DEBUG, "Start the cv pipeline...", logger=logger)

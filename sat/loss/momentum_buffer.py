@@ -164,9 +164,10 @@ class MomentumBuffer:
 
         if rel_change > variance_threshold:
             # Significant increase in variance - need larger buffer
-            logger.info(
-                f"Detected loss instability (variance +{rel_change:.1%}), increasing buffer size"
-            )
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(
+                    f"Detected loss instability (variance +{rel_change:.1%}), increasing buffer size"
+                )
 
             old_size = self.current_buffer_size
             # Increase buffer by 50% up to max size
@@ -187,9 +188,10 @@ class MomentumBuffer:
                     )
                 )
 
-                logger.info(
-                    f"Increased buffer size due to instability: {old_size} → {new_size}"
-                )
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(
+                        f"Increased buffer size due to instability: {old_size} → {new_size}"
+                    )
 
         elif len(self.loss_variance_history) >= 5 and rel_change < -variance_threshold:
             # Significant decrease in variance - could reduce buffer to save memory
@@ -218,9 +220,10 @@ class MomentumBuffer:
                     )
                 )
 
-                logger.info(
-                    f"Decreased buffer size due to stability: {old_size} → {new_size}"
-                )
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(
+                        f"Decreased buffer size due to stability: {old_size} → {new_size}"
+                    )
 
     def update_buffer_size(self, iteration: int):
         """
@@ -257,10 +260,11 @@ class MomentumBuffer:
                 int(self.initial_size * (self.growth_factor**self.current_step)),
             )
 
-        logger.info(
-            f"Increasing buffer size: {old_size} → {self.current_buffer_size} "
-            f"(step {self.current_step}/{self.growth_steps})"
-        )
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                f"Increasing buffer size: {old_size} → {self.current_buffer_size} "
+                f"(step {self.current_step}/{self.growth_steps})"
+            )
 
         # Update queue maxlen - need to recreate queues with new size
         self._resize_queues(self.current_buffer_size)
@@ -512,11 +516,12 @@ class MomentumBuffer:
         max_reasonable_size = min(num_samples // 2, 4096)
         recommended_buffer = min(recommended_buffer, max_reasonable_size)
 
-        logger.info(
-            f"Estimated optimal buffer size: {recommended_buffer} "
-            f"(events_per_batch={events_per_batch:.1f}, "
-            f"target={min_events_per_batch})"
-        )
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                f"Estimated optimal buffer size: {recommended_buffer} "
+                f"(events_per_batch={events_per_batch:.1f}, "
+                f"target={min_events_per_batch})"
+            )
 
         return recommended_buffer
 
