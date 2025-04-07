@@ -33,7 +33,7 @@ pipeline_use_ci: false
 
 # CV config
 multiple_replications: true
-cv_kfold: 5
+cv_kfold: 3
 cv_kfold_reuse: true
 
 # CI config
