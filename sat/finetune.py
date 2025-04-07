@@ -238,61 +238,6 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
         "callbacks": callbacks,
     }
 
-    # Check if we're running as part of an Optuna trial
-    is_optuna_trial = "optuna_trial" in cfg or "optuna_trial_number" in cfg
-
-    # If we have an Optuna trial, add a pruning callback
-    if is_optuna_trial and hasattr(cfg, "optuna"):
-        try:
-            import optuna
-            from hydra.utils import instantiate
-            from optuna.integration import PyTorchLightningPruningCallback
-
-            logger.info("Optuna trial detected - adding pruning callback")
-
-            # Use the metric from the optuna configuration
-            monitor = cfg.optuna.metric
-
-            # Get trial from config
-            trial = cfg.optuna_trial if hasattr(cfg, "optuna_trial") else None
-
-            # Get pruner from config if available
-            pruner = None
-            if hasattr(cfg.optuna, "pruner"):
-                try:
-                    logger.info(f"Instantiating pruner from config")
-                    pruner = instantiate(cfg.optuna.pruner)
-                    logger.info(f"Using pruner: {type(pruner).__name__}")
-                except Exception as e:
-                    logger.warning(
-                        f"Could not instantiate pruner: {e}, using default MedianPruner"
-                    )
-
-            # If we have a trial object but no pruner was configured, apply the pruner
-            if trial is not None and pruner is not None:
-                # Apply pruner to the trial's study if possible
-                try:
-                    if hasattr(trial, "study") and trial.study is not None:
-                        logger.info(f"Setting pruner {type(pruner).__name__} on study")
-                        trial.study.pruner = pruner
-                except Exception as e:
-                    logger.warning(f"Could not set pruner on study: {e}")
-
-            # Create a pruning callback
-            # For Transformers Trainer, we use TorchPruningCallback
-            from optuna.integration import TorchPruningCallback
-
-            # Create a pruning callback
-            pruning_callback = TorchPruningCallback(trial=trial, monitor=monitor)
-
-            # Add to existing callbacks
-            callbacks.append(pruning_callback)
-            logger.info(f"Added Optuna pruning callback monitoring '{monitor}'")
-        except ImportError:
-            logger.warning("Optuna pruning callback not available - skipping")
-        except Exception as e:
-            logger.warning(f"Could not add pruning callback: {e}")
-
     # Create trainer
     if cfg.get(cfg.trainer.custom, False):
         trainer = satrain.SATTrainer(**trainer_kwargs)
