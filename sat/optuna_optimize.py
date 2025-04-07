@@ -8,6 +8,7 @@ from logging import DEBUG, ERROR
 from pathlib import Path
 
 import hydra
+from glom import glom
 from logdecorator import log_on_end, log_on_error, log_on_start
 from omegaconf import DictConfig, OmegaConf
 
@@ -132,11 +133,9 @@ def objective(cfg: DictConfig) -> float or tuple:
         missing_metrics = []
 
         for idx, metric_name in enumerate(metric_names):
-            # Check if metric exists in validation or test metrics
-            if metric_name in val_metrics:
-                metric_values.append(val_metrics.get(metric_name))
-            elif metric_name in test_metrics:
-                metric_values.append(test_metrics.get(metric_name))
+            # Check if metric exists in validation
+            if glom(val_metrics, metric_name, default=None) is not None:
+                metric_values.append(glom(val_metrics, metric_name))
             else:
                 missing_metrics.append(metric_name)
                 # Add a bad value based on direction
@@ -148,7 +147,7 @@ def objective(cfg: DictConfig) -> float or tuple:
         if missing_metrics:
             logger.error(
                 f"Trial #{trial_number}: Metrics {missing_metrics} not found in results. Available metrics: "
-                f"val={list(val_metrics.keys())}, test={list(test_metrics.keys())}"
+                f"val={list(val_metrics.keys())}"
             )
 
         # Log the results with trial number
