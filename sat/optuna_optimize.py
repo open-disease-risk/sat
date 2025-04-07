@@ -226,6 +226,7 @@ def optimize(cfg: DictConfig) -> None:
 
     logger.debug("Ensure that we do not use CIs -- too costly")
     cfg.pipeline_use_ci = False
+    cfg.optuna_trial = True
 
     # Check for Optuna sweep parameters
     logger.info("Checking for Optuna sweep parameters in the config:")
