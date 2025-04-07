@@ -75,6 +75,8 @@ def _ci(cfg: DictConfig) -> None:
 
         logger.info(f"Saved detailed CI metrics to {outDir}/ci_detailed_metrics.json")
 
+    return ci_results, test_metrics
+
 
 @log_on_start(DEBUG, "Start the ci pipeline...", logger=logger)
 @log_on_error(
