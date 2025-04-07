@@ -41,11 +41,15 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
         torch.autograd.set_detect_anomaly(cfg.detect_anomalies)
 
     logger.debug(f"Loading tokenizer from {cfg.tokenizers.tokenizer_dir}")
-    tokenizer = PreTrainedTokenizerFast(
-        pad_token=cfg.tokenizers.pad_token,
-        mask_token=cfg.tokenizers.mask_token,
-        tokenizer_file=str(Path(f"{cfg.tokenizers.tokenizer_dir}/tokenizer.json")),
-    )
+    try:
+        tokenizer = PreTrainedTokenizerFast(
+            pad_token=cfg.tokenizers.pad_token,
+            mask_token=cfg.tokenizers.mask_token,
+            tokenizer_file=str(Path(f"{cfg.tokenizers.tokenizer_dir}/tokenizer.json")),
+        )
+    except Exception:
+        logger.error(f"Cannot load tokenizer from {cfg.tokenizers.tokenizer_dir}")
+        exit(-1)
 
     logger.debug(f"Loaded tokenizer: {tokenizer} with length {len(tokenizer)}")
     if cfg.token_emb == TokenEmbedding.BERT.value:
