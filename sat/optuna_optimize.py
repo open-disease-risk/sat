@@ -4,6 +4,8 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 import os
+import sys
+
 from logging import DEBUG, ERROR
 from pathlib import Path
 
@@ -32,8 +34,6 @@ def objective(cfg: DictConfig) -> float or tuple:
     trial_number = None
 
     # Log all override parameters from Optuna
-    import sys
-
     logger.info("Command line arguments:")
     logger.info(f"  {' '.join(sys.argv)}")
 
@@ -226,7 +226,6 @@ def optimize(cfg: DictConfig) -> None:
 
     logger.debug("Ensure that we do not use CIs -- too costly")
     cfg.pipeline_use_ci = False
-    cfg.optuna_trial = True
 
     # Check for Optuna sweep parameters
     logger.info("Checking for Optuna sweep parameters in the config:")
@@ -266,12 +265,6 @@ def optimize(cfg: DictConfig) -> None:
         logger.info(f"Found trial information: {trial_info}")
     else:
         logger.info("No trial information found in configuration")
-
-    # Check for any command line arguments that might be Optuna params
-    import sys
-
-    logger.info("Command line arguments:")
-    logger.info(f"  {' '.join(sys.argv)}")
 
     return objective(cfg)
 
