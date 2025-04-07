@@ -31,5 +31,5 @@ optuna:
     _target_: optuna.pruners.MedianPruner
     interval_steps: 5
     n_startup_trials: 5
-    n_warmup_steps: 20
+    n_warmup_steps: 40
   study_overwrite: true
