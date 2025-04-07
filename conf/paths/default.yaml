@@ -7,7 +7,7 @@ do_data_transform: true
 do_tokenize: true
 do_pretrain: false
 do_finetune: true
-
+fold: ""
 
 # environment variables available when running a job in Azure
 run_id: ${oc.env:AZUREML_RUN_ID, ""}

@@ -57,7 +57,7 @@ def _cv(cfg: DictConfig) -> None:
     ipcw = statistics.OnlineStats()
 
     for i in range(cfg.cv.kfold):
-        cfg.dataset = dataset + "_" + str(i)
+        cfg.fold = str(i) + "_"
         logger.info("Run training pipeline")
         metrics, test_metrics = _pipeline(cfg)
 
