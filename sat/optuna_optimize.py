@@ -68,8 +68,8 @@ def objective(cfg: DictConfig) -> float or tuple:
 
         logger.info(f"Generated new trial number: {trial_number}")
 
-    dataset = cfg.dataset
-    cfg.dataset = dataset + "_trial_" + str(trial_number)
+    modelname = cfg.modelname
+    cfg.modelname = modelname + "_trial_" + str(trial_number)
 
     # Set up output directory for this trial
     trial_dir = Path(cfg.trainer.training_arguments.output_dir)
@@ -224,6 +224,9 @@ def optimize(cfg: DictConfig) -> None:
     logger.info("Full configuration received by optimize function:")
     logger.info(OmegaConf.to_yaml(cfg))
 
+    logger.debug("Ensure that we do not use CIs -- too costly")
+    cfg.pipeline_use_ci = False
+
     # Check for Optuna sweep parameters
     logger.info("Checking for Optuna sweep parameters in the config:")
 
@@ -235,15 +238,6 @@ def optimize(cfg: DictConfig) -> None:
         if "params" in cfg.hydra.sweeper:
             logger.info("Found Hydra sweeper params:")
             logger.info(OmegaConf.to_yaml(cfg.hydra.sweeper.params))
-
-    # # Look for common parameter values directly in root
-    # logger.info("Checking for common parameters in config root:")
-    # for param_name in ["learning_rate", "weight_decay", "num_layers", "hidden_size",
-    #                    "intermediate_size", "num_heads", "batch_size", "activation"]:
-    #     if hasattr(cfg, param_name):
-    #         logger.info(f"Found {param_name} = {getattr(cfg, param_name)}")
-    #     else:
-    #         logger.info(f"Parameter {param_name} not found")
 
     # Look for trial information in configuration
     trial_info = {}
