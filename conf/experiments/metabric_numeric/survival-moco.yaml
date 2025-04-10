@@ -12,15 +12,15 @@ defaults:
   - override /tasks/losses: moco_nllpch
   - override /trainer: metabric/default
 
-# Parameters tuned using /sweep/metabric_numeric/survival.yaml
-learning_rate: 0.000025270622035982622
+# Parameters tuned using /sweep/survival.yaml
+learning_rate: 0.004769204087503632
 token_emb: 2
 sentence_emb: 1
-transformer_hidden_size: 8
+transformer_hidden_size: 16
 transformer_intermediate_size: 64
-transformer_num_attention_heads: 2
+transformer_num_attention_heads: 4
 transformer_num_hidden_layers: 2
-weight_decay: 0.002797581479379407
+weight_decay: 0.0011441150387752684
 survival_intermediate_size: 24
 
 survival_batch_norm: false
