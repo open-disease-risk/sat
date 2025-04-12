@@ -243,7 +243,7 @@ def analyze_covariate_distributions(
 
                     # Update results with adjusted p-values
                     for (key, result_dict), adj_p in zip(
-                        list(results_dict.items()), adjusted_p
+                        list(results_dict.items()), adjusted_p, strict=False
                     ):
                         results_dict[key]["adjusted_p"] = adj_p
                         results_dict[key]["significant_adjusted"] = adj_p < 0.05
@@ -408,7 +408,7 @@ def analyze_feature_importance(
 
                     # Calculate mutual information
                     mi = mutual_info_regression(X_valid, y_valid)
-                    mi_dict = {col: mi_val for col, mi_val in zip(numeric_cols, mi)}
+                    mi_dict = {col: mi_val for col, mi_val in zip(numeric_cols, mi, strict=False)}
 
                     # Sort by importance
                     sorted_mi = sorted(
@@ -432,7 +432,7 @@ def analyze_feature_importance(
                     # Plot mutual information
                     if output_dir:
                         plt.figure(figsize=(12, 8))
-                        feat_names, mi_values = zip(*sorted_mi)
+                        feat_names, mi_values = zip(*sorted_mi, strict=False)
                         sns.barplot(x=list(mi_values), y=list(feat_names))
                         plt.title(
                             "Feature Importance: Mutual Information with Survival Time"
@@ -527,7 +527,7 @@ def analyze_feature_importance(
         # Plot categorical importance
         if output_dir and categorical_importance:
             plt.figure(figsize=(12, 8))
-            feat_names, imp_values = zip(*sorted_cat_imp)
+            feat_names, imp_values = zip(*sorted_cat_imp, strict=False)
             sns.barplot(x=list(imp_values), y=list(feat_names))
             plt.title(
                 "Categorical Feature Importance: -log10(p-value) from Log-rank Tests"
@@ -574,7 +574,7 @@ def analyze_feature_importance(
     # Plot combined importance
     if output_dir and combined_importance:
         plt.figure(figsize=(12, 8))
-        feat_names, imp_values = zip(*sorted_combined)
+        feat_names, imp_values = zip(*sorted_combined, strict=False)
         sns.barplot(x=list(imp_values), y=list(feat_names))
         plt.title("Combined Feature Importance for Survival")
         plt.xlabel("Importance Score")

@@ -4,7 +4,6 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 import json
-
 from logging import DEBUG, ERROR
 from pathlib import Path
 

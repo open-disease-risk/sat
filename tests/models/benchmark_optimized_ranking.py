@@ -1151,7 +1151,7 @@ def main():
             print("MPS requested but not available. Falling back to CPU.")
             args.device = "cpu"
 
-    print(f"Starting benchmark with the following configuration:")
+    print("Starting benchmark with the following configuration:")
     print(f"  - Batch sizes: {args.batch_sizes}")
     print(f"  - Event counts: {args.event_counts}")
     print(f"  - Trials per config: {args.num_trials}")

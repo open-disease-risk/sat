@@ -65,7 +65,7 @@ def load_model(resolved_archive_file, model):
         if new_key:
             old_keys.append(key)
             new_keys.append(new_key)
-    for old_key, new_key in zip(old_keys, new_keys):
+    for old_key, new_key in zip(old_keys, new_keys, strict=False):
         state_dict[new_key] = state_dict.pop(old_key)
 
     # copy state_dict so _load_from_state_dict can modify it

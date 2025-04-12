@@ -7,10 +7,7 @@ import pandas as pd
 import torch
 import torch.nn.functional as F
 
-from sat.distributions import (
-    LogNormalMixtureDistribution,
-    WeibullMixtureDistribution,
-)
+from sat.distributions import LogNormalMixtureDistribution, WeibullMixtureDistribution
 from sat.models.heads import SAOutput
 from sat.utils import logging
 

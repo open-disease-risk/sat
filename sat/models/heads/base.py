@@ -11,7 +11,6 @@ import torch
 from torch import nn
 from transformers import PretrainedConfig
 from transformers.modeling_utils import PreTrainedModel
-from transformers.models.bert.configuration_bert import BertConfig
 
 from sat.utils import logging
 

@@ -19,14 +19,14 @@ from transformers import PreTrainedTokenizerFast, Trainer, TrainingArguments
 from transformers.integrations import TensorBoardCallback
 
 from sat.callbacks import LossWeightLoggerCallback
-from sat.data import collator, load
+from sat.data import load
 from sat.models import heads
 from sat.models.heads.embeddings import TokenEmbedding
 from sat.models.utils import get_device
 from sat.transformers import trainer as satrain
 from sat.transformers.feature_extractor import SAFeatureExtractor
 from sat.utils import config, logging, rand, tokenizing
-from sat.utils.output import log_metrics, write_output
+from sat.utils.output import write_output
 
 logger = logging.get_default_logger()
 
@@ -283,7 +283,7 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
         json.dump({"seed": cfg.seed}, f, ensure_ascii=False, indent=4)
 
     # Save metrics to JSON files
-    if cfg.run_id != "" and not "multiple_replications" in cfg:
+    if cfg.run_id != "" and "multiple_replications" not in cfg:
         val_metrics = {
             k.replace("test_", "validation_"): v
             for k, v in valid_output.metrics.items()

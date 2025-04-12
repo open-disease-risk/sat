@@ -163,7 +163,7 @@ def extract_dataset_components(cfg: DictConfig) -> Tuple:
             )
 
             if duration_cols and event_cols:
-                for dur_col, evt_col in zip(duration_cols, event_cols):
+                for dur_col, evt_col in zip(duration_cols, event_cols, strict=False):
                     evt_idx = re.match(event_pattern, evt_col).group(1)
                     dur_array = get_numpy_array(df[dur_col])
                     evt_array = get_numpy_array(df[evt_col])
@@ -334,7 +334,7 @@ def analyze_distribution(
     event_durations = []
     event_indicators = []
 
-    for i, (durs, evts) in enumerate(zip(durations, events)):
+    for i, (durs, evts) in enumerate(zip(durations, events, strict=False)):
         # Keep only events that occurred
         mask = evts == 1
         event_durations.append(durs[mask])
@@ -411,7 +411,7 @@ def analyze_censoring(
     results = {}
 
     # Analyze censoring pattern for each event type
-    for i, (durs, evts, evt_type) in enumerate(zip(durations, events, event_types)):
+    for i, (durs, evts, evt_type) in enumerate(zip(durations, events, event_types, strict=False)):
         logger.info(f"Analyzing censoring for {evt_type}")
         event_output_dir = os.path.join(cens_output_dir, evt_type)
 
@@ -492,7 +492,7 @@ def analyze_covariates_effects(
     results["distributions"] = distribution_results
 
     # Analyze effects for each event type
-    for i, (durs, evts, evt_type) in enumerate(zip(durations, events, event_types)):
+    for i, (durs, evts, evt_type) in enumerate(zip(durations, events, event_types, strict=False)):
         logger.info(f"Analyzing covariate effects for {evt_type}")
         event_output_dir = os.path.join(cov_output_dir, evt_type)
 

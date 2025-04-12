@@ -9,7 +9,6 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 import warnings
-from dataclasses import dataclass
 from typing import Optional, Tuple, Union
 
 import einops
@@ -266,7 +265,7 @@ class NumericGPT2Model(hf_gpt2.GPT2PreTrainedModel):
             () if output_attentions and self.config.add_cross_attention else None
         )
         all_hidden_states = () if output_hidden_states else None
-        for i, (block, layer_past) in enumerate(zip(self.h, past_key_values)):
+        for i, (block, layer_past) in enumerate(zip(self.h, past_key_values, strict=False)):
             # Model parallel
             if self.model_parallel:
                 torch.cuda.set_device(hidden_states.device)

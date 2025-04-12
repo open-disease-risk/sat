@@ -12,9 +12,7 @@ import torch
 # Configure minimal logging to avoid debug messages during benchmarks
 logging.basicConfig(level=logging.WARNING)
 
-import os
 
-import matplotlib.pyplot as plt
 
 from sat.loss.ranking.sample import SampleRankingLoss
 from sat.loss.survival.deephit import DeepHitLikelihoodLoss

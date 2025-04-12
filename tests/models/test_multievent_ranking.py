@@ -460,7 +460,7 @@ def test_ranking_loss_gradient():
         sample_loss_val.backward()
         sample_grad = hazard.grad.clone()
 
-        print(f"\nGradient test:")
+        print("\nGradient test:")
         print(f"MultiEventRankingLoss gradient norm: {torch.norm(multi_grad)}")
         print(f"SampleRankingLoss gradient norm: {torch.norm(sample_grad)}")
 

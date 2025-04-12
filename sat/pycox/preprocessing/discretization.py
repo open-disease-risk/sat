@@ -161,7 +161,7 @@ def duration_idx_map(duration):
     duration = np.unique(duration)
     duration = np.sort(duration)
     idx = np.arange(duration.shape[0])
-    return {d: i for i, d in zip(idx, duration)}
+    return {d: i for i, d in zip(idx, duration, strict=False)}
 
 
 class Duration2Idx(_OnlyTransform):

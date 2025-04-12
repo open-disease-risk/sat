@@ -5,7 +5,6 @@ __status__ = "Development"
 
 import os
 import sys
-
 from logging import DEBUG, ERROR
 from pathlib import Path
 
@@ -152,12 +151,12 @@ def objective(cfg: DictConfig) -> float or tuple:
 
         # Log the results with trial number
         metrics_str = ", ".join(
-            [f"{name}={value}" for name, value in zip(metric_names, metric_values)]
+            [f"{name}={value}" for name, value in zip(metric_names, metric_values, strict=False)]
         )
         logger.info(f"Trial #{trial_number} completed with {metrics_str}")
 
         # Log all metrics for clarity
-        metrics_dict = dict(zip(metric_names, metric_values))
+        metrics_dict = dict(zip(metric_names, metric_values, strict=False))
         logger.info(f"Trial #{trial_number} metrics: {metrics_dict}")
 
         # Store trial information for monitoring

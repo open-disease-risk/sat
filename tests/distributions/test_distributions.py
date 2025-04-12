@@ -13,7 +13,6 @@ from sat.distributions import (
 )
 from sat.distributions.utils import (
     create_conditional_dsm_distribution,
-    create_distribution,
     create_dsm_distribution,
 )
 

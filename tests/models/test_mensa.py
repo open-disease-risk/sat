@@ -11,7 +11,6 @@ from sat.loss.survival.mensa import MENSALoss
 from sat.models.heads.mensa import MENSAConfig, MENSATaskHead
 from sat.models.heads.output import SAOutput
 from sat.models.parameter_nets import MENSAParameterNet
-from sat.transformers.trainer import SATTrainer, TrainingArgumentsWithMPSSupport
 
 
 # Create temporary files needed for tests

@@ -14,7 +14,6 @@ from sat.models.parameter_nets import (
     ParamCauseSpecificNet,
     ParamCauseSpecificNetCompRisk,
 )
-from sat.transformers.trainer import SATTrainer, TrainingArgumentsWithMPSSupport
 
 
 # Create temporary files needed for tests

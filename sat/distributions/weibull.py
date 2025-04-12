@@ -185,7 +185,7 @@ class WeibullDistribution(SurvivalDistribution):
         if torch.isnan(survival).any():
             survival = torch.nan_to_num(survival, nan=1.0)
             if debug_nans:
-                print(f"*** DEBUG-SURVIVAL-FIXED: Replaced remaining NaNs with 1.0 ***")
+                print("*** DEBUG-SURVIVAL-FIXED: Replaced remaining NaNs with 1.0 ***")
 
         return survival
 
@@ -205,7 +205,7 @@ class WeibullDistribution(SurvivalDistribution):
         # Check input tensor for NaN before any operations
         if debug_nans and torch.isnan(time).any():
             print(
-                f"\n*** DEBUG-LOG-SURV-START-NAN: Input time tensor has NaN values ***"
+                "\n*** DEBUG-LOG-SURV-START-NAN: Input time tensor has NaN values ***"
             )
             print(f"  time shape: {time.shape}")
             print(f"  time NaNs: {torch.isnan(time).sum().item()}")
@@ -238,7 +238,7 @@ class WeibullDistribution(SurvivalDistribution):
         ratio_clamped = torch.clamp(ratio, min=self.eps, max=1e6)
 
         if debug_nans and torch.isnan(ratio_clamped).any():
-            print(f"*** DEBUG-LOG-SURV-NAN: NaN after ratio clamping ***")
+            print("*** DEBUG-LOG-SURV-NAN: NaN after ratio clamping ***")
             print(f"  ratio_clamped NaNs: {torch.isnan(ratio_clamped).sum().item()}")
 
         # Log domain calculation with strict bounds
@@ -310,7 +310,7 @@ class WeibullDistribution(SurvivalDistribution):
 
         # Check input tensor for NaN before any operations
         if debug_nans and torch.isnan(time).any():
-            print(f"\n*** DEBUG-HAZARD-START-NAN: Input time tensor has NaN values ***")
+            print("\n*** DEBUG-HAZARD-START-NAN: Input time tensor has NaN values ***")
             print(f"  time shape: {time.shape}")
             print(f"  time NaNs: {torch.isnan(time).sum().item()}")
             if torch.any(~torch.isnan(time)):
@@ -318,13 +318,13 @@ class WeibullDistribution(SurvivalDistribution):
                     f"  time range: [{time[~torch.isnan(time)].min().item()}, {time[~torch.isnan(time)].max().item()}]"
                 )
             else:
-                print(f"  time range: all NaN")
+                print("  time range: all NaN")
 
         # Ensure time is positive with strict bounds
         time_safe = torch.clamp(time, min=self.eps, max=1e8)
 
         if debug_nans and torch.isnan(time_safe).any():
-            print(f"*** DEBUG-HAZARD-NAN: NaN after time clamping ***")
+            print("*** DEBUG-HAZARD-NAN: NaN after time clamping ***")
             print(f"  time_safe NaNs: {torch.isnan(time_safe).sum().item()}")
 
         # Handle broadcasting with NaN checks
@@ -347,7 +347,7 @@ class WeibullDistribution(SurvivalDistribution):
         ratio = time_safe / scale_safe
 
         if debug_nans and torch.isnan(ratio).any():
-            print(f"\n*** DEBUG-HAZARD-NAN: NaN in ratio = time/scale ***")
+            print("\n*** DEBUG-HAZARD-NAN: NaN in ratio = time/scale ***")
             print(f"  ratio NaNs: {torch.isnan(ratio).sum().item()}")
             print(f"  scale_safe zeros: {(scale_safe == 0).sum().item()}")
 
@@ -450,7 +450,7 @@ class WeibullDistribution(SurvivalDistribution):
 
         # Check input tensor for NaN before any operations
         if debug_nans and torch.isnan(time).any():
-            print(f"\n*** DEBUG-LOGLIK-START-NAN: Input time tensor has NaN values ***")
+            print("\n*** DEBUG-LOGLIK-START-NAN: Input time tensor has NaN values ***")
             print(f"  time shape: {time.shape}")
             print(f"  time NaNs: {torch.isnan(time).sum().item()}")
             if torch.any(~torch.isnan(time)):
@@ -458,7 +458,7 @@ class WeibullDistribution(SurvivalDistribution):
                     f"  time range: [{time[~torch.isnan(time)].min().item()}, {time[~torch.isnan(time)].max().item()}]"
                 )
             else:
-                print(f"  time range: all NaN")
+                print("  time range: all NaN")
             print(
                 f"  shape range: [{self.shape.min().item()}, {self.shape.max().item()}]"
             )
@@ -469,7 +469,7 @@ class WeibullDistribution(SurvivalDistribution):
         # Debug parameter information
         if debug_nans:
             print(
-                f"\n*** DEBUG-LOGLIK-PARAMS: Parameter information for log_likelihood ***"
+                "\n*** DEBUG-LOGLIK-PARAMS: Parameter information for log_likelihood ***"
             )
             print(f"  time shape: {time.shape}")
             print(f"  shape parameter shape: {self.shape.shape}")
@@ -482,7 +482,7 @@ class WeibullDistribution(SurvivalDistribution):
         if torch.isnan(time_safe).any():
             time_safe = torch.nan_to_num(time_safe, nan=1.0)
             if debug_nans:
-                print(f"*** DEBUG-LOGLIK-NAN: Fixed NaNs in time by setting to 1.0 ***")
+                print("*** DEBUG-LOGLIK-NAN: Fixed NaNs in time by setting to 1.0 ***")
 
         # Reshape time for survival/hazard functions
         time_reshaped = time_safe.unsqueeze(-1)  # [batch_size, 1]
@@ -542,7 +542,7 @@ class WeibullDistribution(SurvivalDistribution):
         # Final check for any remaining NaNs - this shouldn't happen with all the safeguards
         if torch.isnan(log_likelihood).any():
             print(
-                f"*** CRITICAL ERROR: NaNs still present in final log_likelihood despite all safeguards ***"
+                "*** CRITICAL ERROR: NaNs still present in final log_likelihood despite all safeguards ***"
             )
             print(f"  Number of NaNs: {torch.isnan(log_likelihood).sum().item()}")
             # Replace with a moderate negative value as last resort
@@ -550,7 +550,7 @@ class WeibullDistribution(SurvivalDistribution):
 
         # For debugging only
         if debug_nans:
-            print(f"\n*** DEBUG-LOGLIK-FINAL: Final log-likelihood range ***")
+            print("\n*** DEBUG-LOGLIK-FINAL: Final log-likelihood range ***")
             print(f"  log_likelihood min: {log_likelihood.min().item()}")
             print(f"  log_likelihood max: {log_likelihood.max().item()}")
             print(f"  log_likelihood mean: {log_likelihood.mean().item()}")
@@ -713,7 +713,7 @@ class WeibullMixtureDistribution(MixtureDistribution):
 
         if debug_nans:
             print(
-                f"\n*** DEBUG-GET-COMPONENTS: Creating mixture component distributions ***"
+                "\n*** DEBUG-GET-COMPONENTS: Creating mixture component distributions ***"
             )
             print(
                 f"  shape tensor: {self.shape.shape}, scale tensor: {self.scale.shape}"
@@ -788,7 +788,7 @@ class WeibullMixtureDistribution(MixtureDistribution):
         debug_nans = False
 
         if debug_nans:
-            print(f"\n*** DEBUG-GET-WEIGHTS: Computing mixture weights from logits ***")
+            print("\n*** DEBUG-GET-WEIGHTS: Computing mixture weights from logits ***")
             print(f"  logits shape: {logits.shape}")
             if torch.isnan(logits).any():
                 print(f"  logits NaNs: {torch.isnan(logits).sum().item()}")
@@ -805,7 +805,7 @@ class WeibullMixtureDistribution(MixtureDistribution):
         # Replace NaNs in logits with a neutral value (0) before softmax
         if torch.isnan(logits).any():
             if debug_nans:
-                print(f"  Replacing NaNs in logits with 0.0 before softmax")
+                print("  Replacing NaNs in logits with 0.0 before softmax")
             logits_safe = torch.nan_to_num(logits, nan=0.0)
         else:
             logits_safe = logits
@@ -814,7 +814,7 @@ class WeibullMixtureDistribution(MixtureDistribution):
         weights = F.softmax(logits_safe, dim=1)
 
         if debug_nans and torch.isnan(weights).any():
-            print(f"\n*** DEBUG-GET-WEIGHTS-NAN: NaN in weights after softmax ***")
+            print("\n*** DEBUG-GET-WEIGHTS-NAN: NaN in weights after softmax ***")
             print(f"  weights NaNs: {torch.isnan(weights).sum().item()}")
             print(
                 f"  Any -inf in logits_safe: {(logits_safe == float('-inf')).sum().item()}"
@@ -827,14 +827,14 @@ class WeibullMixtureDistribution(MixtureDistribution):
         weights = torch.clamp(weights, min=self.eps)
 
         if debug_nans and torch.isnan(weights).any():
-            print(f"*** DEBUG-GET-WEIGHTS-NAN: NaN after weights clamping ***")
+            print("*** DEBUG-GET-WEIGHTS-NAN: NaN after weights clamping ***")
             print(f"  weights NaNs: {torch.isnan(weights).sum().item()}")
 
         # Normalize weights to sum to 1 for numerical stability
         weight_sums = weights.sum(dim=1, keepdim=True)
 
         if debug_nans and torch.isnan(weight_sums).any():
-            print(f"\n*** DEBUG-GET-WEIGHTS-NAN: NaN in weight_sums ***")
+            print("\n*** DEBUG-GET-WEIGHTS-NAN: NaN in weight_sums ***")
             print(f"  weight_sums NaNs: {torch.isnan(weight_sums).sum().item()}")
 
         # Check if any row sums to 0, which would cause division by zero
@@ -849,14 +849,14 @@ class WeibullMixtureDistribution(MixtureDistribution):
         weights = weights / weight_sums
 
         if debug_nans and torch.isnan(weights).any():
-            print(f"\n*** DEBUG-GET-WEIGHTS-NAN: NaN in final normalized weights ***")
+            print("\n*** DEBUG-GET-WEIGHTS-NAN: NaN in final normalized weights ***")
             print(f"  weights NaNs: {torch.isnan(weights).sum().item()}")
             print(f"  weight_sums zeros: {(weight_sums == 0).sum().item()}")
 
         # Final safety check: replace any remaining NaNs with equal weights
         if torch.isnan(weights).any():
             if debug_nans:
-                print(f"  Replacing remaining NaNs with equal weights")
+                print("  Replacing remaining NaNs with equal weights")
             # Get number of mixtures
             num_mixtures = weights.shape[1]
             # Create mask for rows with NaNs
@@ -1001,7 +1001,7 @@ class WeibullMixtureDistribution(MixtureDistribution):
 
         if debug_nans:
             print(
-                f"\n*** DEBUG-MIX-LOGLIK-START: Starting mixture log likelihood computation ***"
+                "\n*** DEBUG-MIX-LOGLIK-START: Starting mixture log likelihood computation ***"
             )
             print(f"  time shape: {time.shape}")
             if torch.isnan(time).any():
@@ -1014,14 +1014,14 @@ class WeibullMixtureDistribution(MixtureDistribution):
         time_safe = torch.clamp(time, min=self.eps, max=1e10)
 
         if debug_nans and torch.isnan(time_safe).any():
-            print(f"*** DEBUG-MIX-LOGLIK-NAN: NaN after time clamping ***")
+            print("*** DEBUG-MIX-LOGLIK-NAN: NaN after time clamping ***")
             print(f"  time_safe NaNs: {torch.isnan(time_safe).sum().item()}")
 
         # Initialize log weights with careful clamping
         weights_safe = torch.clamp(self.weights, min=self.eps, max=1.0 - self.eps)
 
         if debug_nans and torch.isnan(weights_safe).any():
-            print(f"\n*** DEBUG-MIX-LOGLIK-NAN: NaN in weights_safe ***")
+            print("\n*** DEBUG-MIX-LOGLIK-NAN: NaN in weights_safe ***")
             print(f"  weights_safe NaNs: {torch.isnan(weights_safe).sum().item()}")
             print(
                 f"  original weights NaNs: {torch.isnan(self.weights).sum().item() if self.weights is not None else 'None'}"
@@ -1030,13 +1030,13 @@ class WeibullMixtureDistribution(MixtureDistribution):
         weights_sum = weights_safe.sum(dim=1, keepdim=True)
 
         if debug_nans and torch.isnan(weights_sum).any():
-            print(f"*** DEBUG-MIX-LOGLIK-NAN: NaN in weights_sum ***")
+            print("*** DEBUG-MIX-LOGLIK-NAN: NaN in weights_sum ***")
             print(f"  weights_sum NaNs: {torch.isnan(weights_sum).sum().item()}")
 
         weights_normalized = weights_safe / weights_sum
 
         if debug_nans and torch.isnan(weights_normalized).any():
-            print(f"*** DEBUG-MIX-LOGLIK-NAN: NaN in weights_normalized ***")
+            print("*** DEBUG-MIX-LOGLIK-NAN: NaN in weights_normalized ***")
             print(
                 f"  weights_normalized NaNs: {torch.isnan(weights_normalized).sum().item()}"
             )
@@ -1045,7 +1045,7 @@ class WeibullMixtureDistribution(MixtureDistribution):
         log_weights = torch.log(weights_normalized)
 
         if debug_nans and torch.isnan(log_weights).any():
-            print(f"*** DEBUG-MIX-LOGLIK-NAN: NaN in log_weights ***")
+            print("*** DEBUG-MIX-LOGLIK-NAN: NaN in log_weights ***")
             print(f"  log_weights NaNs: {torch.isnan(log_weights).sum().item()}")
             print(
                 f"  weights_normalized zeros: {(weights_normalized == 0).sum().item()}"
@@ -1084,7 +1084,7 @@ class WeibullMixtureDistribution(MixtureDistribution):
         )  # [batch_size, num_mixtures]
 
         if debug_nans and torch.isnan(stacked_lls).any():
-            print(f"\n*** DEBUG-MIX-LOGLIK-NAN: NaN in stacked_lls ***")
+            print("\n*** DEBUG-MIX-LOGLIK-NAN: NaN in stacked_lls ***")
             print(f"  stacked_lls NaNs: {torch.isnan(stacked_lls).sum().item()}")
             print(f"  stacked_lls shape: {stacked_lls.shape}")
 
@@ -1093,7 +1093,7 @@ class WeibullMixtureDistribution(MixtureDistribution):
 
         if debug_nans and torch.isnan(combined_values).any():
             print(
-                f"\n*** DEBUG-MIX-LOGLIK-NAN: NaN in combined_values = log_weights + stacked_lls ***"
+                "\n*** DEBUG-MIX-LOGLIK-NAN: NaN in combined_values = log_weights + stacked_lls ***"
             )
             print(
                 f"  combined_values NaNs: {torch.isnan(combined_values).sum().item()}"
@@ -1108,7 +1108,7 @@ class WeibullMixtureDistribution(MixtureDistribution):
 
         if debug_nans and torch.isnan(combined_values_safe).any():
             print(
-                f"*** DEBUG-MIX-LOGLIK-NAN: NaN after combined_values_safe where replacement ***"
+                "*** DEBUG-MIX-LOGLIK-NAN: NaN after combined_values_safe where replacement ***"
             )
             print(
                 f"  combined_values_safe NaNs: {torch.isnan(combined_values_safe).sum().item()}"
@@ -1118,7 +1118,7 @@ class WeibullMixtureDistribution(MixtureDistribution):
         max_values, _ = torch.max(combined_values_safe, dim=1, keepdim=True)
 
         if debug_nans and torch.isnan(max_values).any():
-            print(f"\n*** DEBUG-MIX-LOGLIK-NAN: NaN in max_values ***")
+            print("\n*** DEBUG-MIX-LOGLIK-NAN: NaN in max_values ***")
             print(f"  max_values NaNs: {torch.isnan(max_values).sum().item()}")
             print(
                 f"  Are all rows NaN in combined_values_safe: {torch.isnan(combined_values_safe).all(dim=1).sum().item()}"
@@ -1129,7 +1129,7 @@ class WeibullMixtureDistribution(MixtureDistribution):
 
         if debug_nans and torch.isnan(exp_values).any():
             print(
-                f"\n*** DEBUG-MIX-LOGLIK-NAN: NaN in exp_values = exp(combined_values_safe - max_values) ***"
+                "\n*** DEBUG-MIX-LOGLIK-NAN: NaN in exp_values = exp(combined_values_safe - max_values) ***"
             )
             print(f"  exp_values NaNs: {torch.isnan(exp_values).sum().item()}")
             print(
@@ -1144,7 +1144,7 @@ class WeibullMixtureDistribution(MixtureDistribution):
 
         if debug_nans and torch.isnan(sum_exp).any():
             print(
-                f"\n*** DEBUG-MIX-LOGLIK-NAN: NaN in sum_exp = sum(exp_values, dim=1) ***"
+                "\n*** DEBUG-MIX-LOGLIK-NAN: NaN in sum_exp = sum(exp_values, dim=1) ***"
             )
             print(f"  sum_exp NaNs: {torch.isnan(sum_exp).sum().item()}")
             print(f"  sum_exp zeros: {(sum_exp == 0).sum().item()}")
@@ -1154,7 +1154,7 @@ class WeibullMixtureDistribution(MixtureDistribution):
 
         if debug_nans and torch.isnan(log_likelihood).any():
             print(
-                f"\n*** DEBUG-MIX-LOGLIK-NAN: NaN in log_likelihood = max_values + log(sum_exp) ***"
+                "\n*** DEBUG-MIX-LOGLIK-NAN: NaN in log_likelihood = max_values + log(sum_exp) ***"
             )
             print(f"  log_likelihood NaNs: {torch.isnan(log_likelihood).sum().item()}")
             print(f"  sum_exp zeros: {(sum_exp == 0).sum().item()}")
@@ -1165,7 +1165,7 @@ class WeibullMixtureDistribution(MixtureDistribution):
         )
 
         if debug_nans:
-            print(f"\n*** DEBUG-MIX-LOGLIK-FINAL: Final mixture log likelihood ***")
+            print("\n*** DEBUG-MIX-LOGLIK-FINAL: Final mixture log likelihood ***")
             print(f"  log_likelihood min: {log_likelihood.min().item()}")
             print(f"  log_likelihood max: {log_likelihood.max().item()}")
             print(f"  log_likelihood mean: {log_likelihood.mean().item()}")

@@ -254,7 +254,7 @@ class SurvivalAnalysisEvaluator(Evaluator):
     ) -> Dict[str, Any]:
         # First check if we have valid input to do bootstrapping
         if "predictions" not in metric_inputs or "references" not in metric_inputs:
-            logger.warning(f"Missing required keys in metric_inputs for bootstrapping")
+            logger.warning("Missing required keys in metric_inputs for bootstrapping")
             # Return default confidence intervals
             return self._create_default_confidence_intervals(metric_keys)
 
@@ -268,7 +268,7 @@ class SurvivalAnalysisEvaluator(Evaluator):
             or not hasattr(references, "shape")
             or references.size == 0
         ):
-            logger.warning(f"Empty arrays or invalid shapes in data for bootstrapping")
+            logger.warning("Empty arrays or invalid shapes in data for bootstrapping")
             # Return default confidence intervals
             return self._create_default_confidence_intervals(metric_keys)
 

@@ -12,8 +12,6 @@ from sat.distributions.utils import (
     apply_informative_prior,
     create_clinically_informed_distribution,
     create_conditional_dsm_distribution,
-    create_distribution,
-    create_dsm_distribution,
 )
 from sat.distributions.weibull import WeibullDistribution, WeibullMixtureDistribution
 

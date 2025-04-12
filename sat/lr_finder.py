@@ -12,7 +12,7 @@ import hydra
 import torch
 from datasets import load_from_disk
 from logdecorator import log_on_end, log_on_error, log_on_start
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig
 from tokenizers.processors import TemplateProcessing
 from transformers import PreTrainedTokenizerFast, Trainer, TrainingArguments
 

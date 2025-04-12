@@ -144,7 +144,7 @@ def safe_integrated_brier_score(survival_train, survival_test, estimate, times):
         return 0.0
 
 
-_CITATION = """
+_CITATION = r"""
 @article{https://doi.org/10.1002/(SICI)1097-0258(19990915/30)18:17/18<2529::AID-SIM274>3.0.CO;2-5,
 author = {Graf, Erika and Schmoor, Claudia and Sauerbrei, Willi and Schumacher, Martin},
 title = {Assessment and comparison of prognostic classification schemes for survival data},

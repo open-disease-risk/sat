@@ -51,7 +51,7 @@ def apply_lifelines_patch():
                         continue
 
                     # Add trapezoid function as trapz
-                    setattr(module, "trapz", trapezoid)
+                    module.trapz = trapezoid
 
                     # If the module imports trapz directly
                     module_code = inspect.getsource(module)
@@ -62,7 +62,7 @@ def apply_lifelines_patch():
 
             # Specifically patch scipy.integrate
             if not hasattr(integrate, "trapz"):
-                setattr(integrate, "trapz", trapezoid)
+                integrate.trapz = trapezoid
                 print("Patched scipy.integrate.trapz")
 
             print("Lifelines patch applied successfully")

@@ -7,10 +7,7 @@ import hydra
 import torch
 import torch.nn.functional as F
 
-from sat.distributions import (
-    LogNormalMixtureDistribution,
-    WeibullMixtureDistribution,
-)
+from sat.distributions import LogNormalMixtureDistribution, WeibullMixtureDistribution
 from sat.models.parameter_nets import (
     ParamCauseSpecificNet,
     ParamCauseSpecificNetCompRisk,
@@ -297,7 +294,7 @@ class DSMTaskHead(SurvivalTask):
             if duration_cuts.min() <= 0:
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug(
-                        f"Found non-positive values in duration cuts, adding epsilon"
+                        "Found non-positive values in duration cuts, adding epsilon"
                     )
                 duration_cuts = torch.clamp(duration_cuts, min=eps)
 
