@@ -42,32 +42,93 @@ The synthetic MEDS generator creates multiple Parquet files:
 - And others like `diagnoses`, `medications`, etc.
 - `synthetic_meds_metadata.json`: Information about the dataset tables
 
-## Using FEMR for MEDS Data
+## Medical Labelers for MEDS Data
 
-SAT uses the FEMR package to process MEDS data through label definitions:
+SAT provides specialized labelers for medical data in the MEDS format. These labelers include built-in parallel processing capabilities for efficiently handling large datasets by processing patients in parallel batches.
+
+### Built-in Labelers
+
+The following labelers are available:
+
+1. **MortalityLabeler**: Identifies mortality events and creates time-to-event labels
+2. **CompetingRiskLabeler**: Handles multiple competing events (like death and hospitalization)
+3. **CustomEventLabeler**: Configurable labeler for custom event definitions
+4. **RiskFactorLabeler**: Identifies risk factors from medical codes
+
+Each labeler inherits from the `MedicalLabeler` base class, which provides parallel processing support.
+
+### Parallel Processing Modes
+
+All labelers support three processing modes:
+
+1. **Serial**: Process patients one by one (for small datasets or debugging)
+2. **Multiprocessing**: Process patients in parallel using Python's multiprocessing (default)
+3. **Ray**: Distributed processing across multiple machines (if Ray is installed)
+
+### Configuration
+
+Instead of using label definitions, you can now use custom labelers in your configuration:
 
 ```yaml
-label_definitions:
-  - name: mortality
-    positive_class: true
-    table_name: mortality
-    time_field: days
-  - name: hospitalization
-    positive_class: true
-    table_name: hospitalizations
-    time_field: days
+_target_: sat.data.dataset.parse_meds.meds
+source: ${data_source}
+processed_dir: ${modelhub}
+train_ratio: 0.7
+validation_ratio: 0.15
+test_ratio: 0.15
+n_bins: 20
+encode: ordinal
+strategy: quantile
+name: ${dataset}
+kfold: ${cv.kfold}
+time_field: days
+# Scaling options for numerical features
+scale_numerics: true
+scale_method: "standard"  # or "min_max"
+min_scale_numerics: 1.0  # Used with min_max scaling
+
+# Custom labelers for medical events
+labelers:
+  # Mortality labeler to identify death events
+  - type: mortality
+    name: death_labeler
+    max_followup_days: 1095  # 3 years follow-up
+    death_codes: ["MEDS_DEATH"]
+    
+  # Competing risks labeler for multiple events
+  - type: competing_risk
+    name: competing_risks_labeler
+    max_followup_days: 1095
+    event_codes:
+      death: ["MEDS_DEATH"]
+      hospitalization: ["ENC_INPATIENT"]
+      
+  # Custom event labeler for complex event definitions
+  - type: custom_event
+    name: diabetes_complications
+    max_followup_days: 1095
+    event_definition:
+      and:
+        - codes: ["ICD10:E11"]  # Type 2 diabetes
+        - or:
+            - codes: ["ICD10:I50"]  # Heart failure
+            - codes: ["ICD10:N18"]  # Kidney disease
+            
+  # Risk factor labeler to identify conditions
+  - type: risk_factor
+    name: risk_factor_labeler
+    custom_codes:  # Optional additional codes
+      icd10:
+        hypertension: ["I15.9"]
+      rxnorm:
+        diabetes: ["A10BK"]
 ```
 
-This approach leverages FEMR's labeling system to:
-1. Extract events from the MEDS data
-2. Transform them into standardized survival format
-3. Support competing risks with multiple event types
-
-Each label definition specifies:
-- `name`: An identifier for the event type
-- `positive_class`: Whether this is a positive event (true) or censoring (false)
-- `table_name`: The table in the MEDS dataset containing this event
-- `time_field`: The field containing time-to-event values
+This approach leverages SAT's labeling system to:
+1. Extract events from the MEDS data using strongly typed schemas
+2. Process data efficiently with parallel processing
+3. Support flexible, custom event definitions
+4. Process very large datasets that don't fit in memory
 
 ## Configuration
 
@@ -157,13 +218,89 @@ Options:
 - `--seed`: Random seed for reproducibility
 - `--output`: Output path for the data
 
+## Efficient Processing of Large Datasets
+
+Our framework now includes specialized support for processing very large MEDS datasets that may not fit in memory:
+
+```python
+from sat.data.dataset.medical_labelers import MortalityLabeler, ProcessingMode
+
+# Initialize a labeler
+mortality_labeler = MortalityLabeler(
+    name="mortality_labeler",
+    max_followup_days=1095
+)
+
+# Process a large dataset in chunks
+mortality_labeler.process_large_dataset(
+    events_path="/path/to/meds/data",  # Directory with parquet files
+    output_path="/path/to/output",     # Where to save results
+    mode=ProcessingMode.MULTIPROCESSING,
+    n_jobs=8,                          # Number of parallel workers
+    batch_size=1000,                   # Patients per batch
+    patient_chunk_size=10000,          # Patients loaded at once
+    show_progress=True
+)
+```
+
+This approach:
+1. Processes patients in chunks to limit memory usage
+2. Uses parallel processing within each chunk
+3. Saves intermediate results to disk
+4. Combines all results at the end
+
+For datasets that do fit in memory, you can use the parallel processing directly:
+
+```python
+import pandas as pd
+from sat.data.dataset.medical_labelers import CompetingRiskLabeler, ProcessingMode
+
+# Load events
+events_df = pd.read_parquet("/path/to/events.parquet")
+
+# Initialize a labeler
+competing_risk_labeler = CompetingRiskLabeler(
+    name="competing_risk_labeler",
+    event_codes={
+        "death": ["MEDS_DEATH"],
+        "hospitalization": ["ENC_INPATIENT"],
+    },
+    max_followup_days=1095
+)
+
+# Process in parallel
+results = competing_risk_labeler.parallel_label(
+    events=events_df,
+    mode=ProcessingMode.MULTIPROCESSING,
+    n_jobs=8,
+    batch_size=1000,
+    show_progress=True
+)
+```
+
 ## Troubleshooting
 
 Common issues and solutions:
 
 - **Missing tables**: Check your MEDS data structure to ensure required tables are present
 - **Time field not found**: Set the correct `time_field` in your configuration
-- **FEMR import errors**: The parser will automatically fall back to direct table processing
+- **Processing performance issues**: Try different processing modes and batch sizes
+- **Memory errors**: Use the `process_large_dataset` method with appropriate chunk sizes
+- **Polars import errors**: Install polars (`pip install polars`) for faster data processing
+- **Ray import errors**: Install ray (`pip install ray`) for distributed processing
+
+## Variable-Length Medical Histories
+
+The MEDS parser captures variable-length patient histories through these derived features:
+
+1. **History Length**: The number of medical events in a patient's history
+2. **Event Count**: Total number of events per patient 
+3. **Event Type Indicators**: Binary features showing which event types occurred (e.g., has_hospitalization, has_medication)
+4. **Event Sequence**: Encoded sequence of the first three events that occurred
+5. **Time Between Events**: Average time between consecutive events
+6. **Event Density**: Number of events per time unit (indicates how frequently events occurred)
+
+These features allow the model to incorporate information about the variable-length medical histories rather than just using the baseline patient characteristics. This better represents real-world healthcare data where patients have different numbers of medical events over varying time periods.
 
 ## Further Reading
 

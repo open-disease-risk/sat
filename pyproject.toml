@@ -110,8 +110,8 @@ ignore_errors = true
 [tool.ruff]
 line-length = 88
 target-version = "py311"
-select = ["E", "F", "B", "W", "I"]
-ignore = ["E203", "E501"]
+lint.select = ["E", "F", "B", "W", "I"]
+lint.ignore = ["E203", "E501"]
 
 [tool.poetry.scripts]
 optimize = "sat.optuna_optimize:optimize"
