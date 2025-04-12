@@ -19,21 +19,20 @@ min_scale_numerics: 1.0  # Used with min_max scaling
 labelers:
   # Mortality labeler to identify death events
   - type: mortality
-    name: death_labeler
+    name: death
     max_followup_days: 1095  # 3 years follow-up
-    # MEDS_DEATH_CODE is "SNOMED/419620001" from meds.schema
+    death_codes: ["SNOMED/419620001"]  # Using MEDS_DEATH_CODE from the schema
     enrollment_codes: ["ENROLLMENT"]
-
-  # Competing risks labeler for multiple events
-  - type: competing_risk
-    name: competing_risks_labeler
+  
+  # Hospitalization event labeler
+  - type: custom_event
+    name: hospitalization
     max_followup_days: 1095
-    event_codes:
-      # death: Using MEDS_DEATH_CODE ("SNOMED/419620001") from the schema
-      hospitalization: ["ENC_INPATIENT"]
+    event_definition:
+      codes: ["ENC_INPATIENT"]
     enrollment_codes: ["ENROLLMENT"]
 
-  # Custom event labeler for diabetes complications
+  # Diabetes complications event labeler
   - type: custom_event
     name: diabetes_complications
     max_followup_days: 1095
@@ -47,7 +46,7 @@ labelers:
 
   # Risk factor labeler to identify conditions
   - type: risk_factor
-    name: risk_factor_labeler
+    name: risk_factors
     custom_codes:
       icd10:
         hypertension: ["I15.9"]
@@ -55,14 +54,3 @@ labelers:
         heart_failure: ["I50"]
       rxnorm:
         diabetes: ["A10"]
-
-# Backwards compatibility for existing code
-label_definitions:
-  - name: mortality
-    positive_class: true
-    table_name: mortality
-    time_field: days
-  - name: hospitalization
-    positive_class: true
-    table_name: hospitalizations
-    time_field: days

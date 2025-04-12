@@ -83,8 +83,8 @@ class meds:
     encode: str  # Encoding method
     strategy: str  # Discretization strategy
     name: str  # Dataset name
-    label_definitions: List[Dict[str, Any]]  # FEMR label definitions
     time_field: str = "days"  # Field to use for time measurements
+    label_definitions: Optional[List[Dict[str, Any]]] = None  # FEMR label definitions (deprecated)
     event_fields: Optional[List[str]] = (
         None  # Optional list of specific events to include
     )
@@ -309,56 +309,61 @@ class meds:
         event_data = []
         event_types = []
 
-        # Process each event type using the label definitions
-        for label_def in self.label_definitions:
-            logger.debug(f"Processing label definition: {label_def}")
-            event_name = label_def.get("name", "unknown_event")
-            event_types.append(event_name)
+        # Check if we have any event specifications
+        if not self.label_definitions and not self.labelers:
+            logger.warning("Neither label_definitions nor labelers specified. Using default approach to find events.")
+        
+        # Process label definitions if provided (for backward compatibility)
+        if self.label_definitions:
+            for label_def in self.label_definitions:
+                logger.debug(f"Processing label definition: {label_def}")
+                event_name = label_def.get("name", "unknown_event")
+                event_types.append(event_name)
+    
+                # Get event table name from definition
+                table_name = label_def.get("table_name", event_name)
+                time_field = label_def.get("time_field", "days")
 
-            # Get event table name from definition
-            table_name = label_def.get("table_name", event_name)
-            time_field = label_def.get("time_field", "days")
+                # Try to get the corresponding event table
+                if hasattr(dataset, "tables") and table_name in dataset.tables:
+                    # Our custom MedsDataset structure
+                    logger.debug(f"Found table '{table_name}' in the dataset")
+                    event_table = dataset.tables[table_name]
 
-            # Try to get the corresponding event table
-            if hasattr(dataset, "tables") and table_name in dataset.tables:
-                # Our custom MedsDataset structure
-                logger.debug(f"Found table '{table_name}' in the dataset")
-                event_table = dataset.tables[table_name]
-
-                # Process the events
-                if not event_table.empty and "patient_id" in event_table.columns:
-                    logger.debug(
-                        f"Processing {len(event_table)} events from '{table_name}'"
-                    )
-
-                    # Extract time values and standardize columns
-                    df_event = event_table.copy()
-
-                    # Ensure we have the necessary time field
-                    if time_field in df_event.columns:
-                        # Add event type column if not present
-                        if "event_type" not in df_event.columns:
-                            df_event["event_type"] = event_name
-
-                        # Rename time field to standard name if needed
-                        if time_field != "time":
-                            df_event = df_event.rename(columns={time_field: "time"})
-
-                        # Add to collected events
-                        event_data.append(df_event)
-                        logger.info(
-                            f"Added {len(df_event)} events of type '{event_name}'"
+                    # Process the events
+                    if not event_table.empty and "patient_id" in event_table.columns:
+                        logger.debug(
+                            f"Processing {len(event_table)} events from '{table_name}'"
                         )
+
+                        # Extract time values and standardize columns
+                        df_event = event_table.copy()
+
+                        # Ensure we have the necessary time field
+                        if time_field in df_event.columns:
+                            # Add event type column if not present
+                            if "event_type" not in df_event.columns:
+                                df_event["event_type"] = event_name
+
+                            # Rename time field to standard name if needed
+                            if time_field != "time":
+                                df_event = df_event.rename(columns={time_field: "time"})
+
+                            # Add to collected events
+                            event_data.append(df_event)
+                            logger.info(
+                                f"Added {len(df_event)} events of type '{event_name}'"
+                            )
+                        else:
+                            logger.warning(
+                                f"Time field '{time_field}' not found in table '{table_name}'"
+                            )
                     else:
                         logger.warning(
-                            f"Time field '{time_field}' not found in table '{table_name}'"
+                            f"Table '{table_name}' has no patient_id column or is empty"
                         )
                 else:
-                    logger.warning(
-                        f"Table '{table_name}' has no patient_id column or is empty"
-                    )
-            else:
-                logger.warning(f"Event table '{table_name}' not found in dataset")
+                    logger.warning(f"Event table '{table_name}' not found in dataset")
 
                 # Try alternate approach for standard HuggingFace dataset
                 if (
@@ -392,10 +397,10 @@ class meds:
                 else:
                     logger.warning(f"No event source found for '{event_name}'")
 
-        # If no events were collected with label definitions, try direct approach
+        # If no events were collected (either no label definitions provided or none found), try direct approach
         if not event_data and hasattr(dataset, "tables"):
             logger.warning(
-                "No events found using label definitions. Trying direct approach."
+                "No events found using existing approaches. Trying direct table approach."
             )
 
             # Check for standard event tables by common names
@@ -437,9 +442,13 @@ class meds:
         # 2. Transform data to survival analysis format
         logger.debug("Transforming MEDS data to survival analysis format")
 
-        # If no events were found, raise an error
-        if not event_data:
-            raise ValueError("No events found using the provided label definitions")
+        # If no events were found and we don't have custom labelers, raise an error
+        if not event_data and not self.labelers:
+            # If label definitions were provided, mention them in the error
+            if self.label_definitions:
+                raise ValueError("No events found using the provided label definitions")
+            else:
+                raise ValueError("No events found in the dataset. Please specify labelers or label_definitions.")
 
         # Combine all event data
         df_events = pd.concat(event_data, axis=0)
@@ -597,13 +606,20 @@ class meds:
                 "No custom labelers specified, using default CompetingRiskLabeler"
             )
 
-            # Initialize with default event types based on label_definitions
-            event_codes = {}
-            for label_def in self.label_definitions:
-                event_name = label_def.get("name", "unknown_event")
-                event_codes[event_name] = [
-                    event_name.upper()
-                ]  # Default code is uppercase event name
+            # Create default event codes
+            event_codes = {
+                "death": [MEDS_DEATH_CODE],
+                "hospitalization": ["ENC_INPATIENT"]
+            }
+            
+            # Add additional codes from label_definitions if they exist (for backward compatibility)
+            if self.label_definitions:
+                for label_def in self.label_definitions:
+                    event_name = label_def.get("name", "unknown_event")
+                    if event_name not in event_codes:
+                        event_codes[event_name] = [
+                            event_name.upper()
+                        ]  # Default code is uppercase event name
 
             competing_risk_labeler = CompetingRiskLabeler(
                 name="default_competing_risk_labeler",
@@ -725,6 +741,10 @@ class meds:
 
         # Create the labelers
         labelers = self._create_custom_labelers(events_df)
+        
+        # Store labeler order for later use
+        labeler_names = [labeler.name for labeler in labelers]
+        logger.debug(f"Labelers will be processed in this order: {labeler_names}")
 
         # Initialize results dictionary
         results = {}
@@ -744,6 +764,9 @@ class meds:
             n_jobs = 1
             logger.debug(f"Using serial processing for {num_patients} patients")
 
+        # First phase: Process all labelers and collect raw results
+        raw_results = {}
+        
         # Apply each labeler to the events, using parallel processing
         for labeler in labelers:
             logger.debug(f"Applying labeler: {labeler.name} with {processing_mode.value} processing")
@@ -757,129 +780,197 @@ class meds:
                     batch_size=1000,
                     show_progress=True
                 )
-
-                # Handle specific labeler types differently
-                if isinstance(labeler, CompetingRiskLabeler):
-                    # CompetingRiskLabeler returns complete events/durations lists
-                    for patient_id, data in labeler_results.items():
-                        if patient_id not in results:
-                            results[patient_id] = {}
-
-                        # Store events and durations directly
-                        if "events" in data:
-                            results[patient_id]["events"] = data["events"]
-                        if "durations" in data:
-                            results[patient_id]["durations"] = data["durations"]
-                        if "event_types" in data:
-                            results[patient_id]["event_types"] = data["event_types"]
-
-                elif isinstance(labeler, RiskFactorLabeler):
-                    # RiskFactorLabeler returns risk factors for each patient
-                    for patient_id, data in labeler_results.items():
-                        if patient_id not in results:
-                            results[patient_id] = {}
-
-                        # Store risk factors
-                        if "risk_factors" in data:
-                            results[patient_id]["risk_factors"] = data["risk_factors"]
-
-                elif isinstance(labeler, (MortalityLabeler, CustomEventLabeler)):
-                    # These labelers return event/time pairs for specific events
-                    for patient_id, data in labeler_results.items():
-                        if patient_id not in results:
-                            results[patient_id] = {}
-
-                        # Add the event information
-                        event_status = data.get("event", 0)
-                        event_time = data.get("time", 0)
-
-                        # Check if we already have events/durations lists
-                        if "events" not in results[patient_id]:
-                            results[patient_id]["events"] = [event_status]
-                        else:
-                            results[patient_id]["events"].append(event_status)
-
-                        if "durations" not in results[patient_id]:
-                            results[patient_id]["durations"] = [event_time]
-                        else:
-                            results[patient_id]["durations"].append(event_time)
-
-                        # Add the event type name if not already present
-                        if "event_types" not in results[patient_id]:
-                            results[patient_id]["event_types"] = [labeler.name]
-                        else:
-                            results[patient_id]["event_types"].append(labeler.name)
-
+                
+                # Store all labeler results in the raw results dictionary
+                for patient_id, data in labeler_results.items():
+                    # Handle potential string IDs (convert to int if possible)
+                    try:
+                        if isinstance(patient_id, str) and patient_id.isdigit():
+                            patient_id = int(patient_id)
+                    except (ValueError, TypeError):
+                        # Keep as string if conversion fails
+                        pass
+                        
+                    if patient_id not in raw_results:
+                        raw_results[patient_id] = {}
+                    
+                    # Store all results for this labeler
+                    raw_results[patient_id][labeler.name] = data
+                
             except Exception as e:
-                logger.error(f"Error applying labeler {labeler.name}: {e}")
+                logger.error(f"Error applying labeler {labeler.name} with parallel processing: {e}")
                 logger.error(f"Falling back to serial processing for {labeler.name}")
 
                 # Fall back to the legacy method if parallel processing fails
                 try:
                     labeler_results = labeler.label(events_df)
-
-                    # Process results as before (same code as the parallel case)
-                    if isinstance(labeler, CompetingRiskLabeler):
-                        for patient_id, data in labeler_results.items():
-                            if patient_id not in results:
-                                results[patient_id] = {}
-
-                            if "events" in data:
-                                results[patient_id]["events"] = data["events"]
-                            if "durations" in data:
-                                results[patient_id]["durations"] = data["durations"]
-                            if "event_types" in data:
-                                results[patient_id]["event_types"] = data["event_types"]
-
-                    elif isinstance(labeler, RiskFactorLabeler):
-                        for patient_id, data in labeler_results.items():
-                            if patient_id not in results:
-                                results[patient_id] = {}
-
-                            if "risk_factors" in data:
-                                results[patient_id]["risk_factors"] = data["risk_factors"]
-
-                    elif isinstance(labeler, (MortalityLabeler, CustomEventLabeler)):
-                        for patient_id, data in labeler_results.items():
-                            if patient_id not in results:
-                                results[patient_id] = {}
-
-                            event_status = data.get("event", 0)
-                            event_time = data.get("time", 0)
-
-                            if "events" not in results[patient_id]:
-                                results[patient_id]["events"] = [event_status]
-                            else:
-                                results[patient_id]["events"].append(event_status)
-
-                            if "durations" not in results[patient_id]:
-                                results[patient_id]["durations"] = [event_time]
-                            else:
-                                results[patient_id]["durations"].append(event_time)
-
-                            if "event_types" not in results[patient_id]:
-                                results[patient_id]["event_types"] = [labeler.name]
-                            else:
-                                results[patient_id]["event_types"].append(labeler.name)
+                    
+                    # Store all labeler results in the raw results dictionary
+                    for patient_id, data in labeler_results.items():
+                        # Convert patient_id to int if it's a string (from older implementation)
+                        # We preserve the original string-based ID if it's not convertible to int
+                        try:
+                            if isinstance(patient_id, str) and patient_id.isdigit():
+                                patient_id = int(patient_id)
+                        except (ValueError, TypeError):
+                            # Keep as string if conversion fails
+                            pass
+                            
+                        if patient_id not in raw_results:
+                            raw_results[patient_id] = {}
+                        
+                        # Store all results for this labeler
+                        raw_results[patient_id][labeler.name] = data
+                        
                 except Exception as e2:
                     logger.error(f"Fatal error with labeler {labeler.name}: {e2}")
 
-        # Ensure all patients have event data
-        for patient_id in patient_histories:
+        # Second phase: Convert raw results to ordered events/durations lists
+        for patient_id in raw_results.keys():
+            # Initialize ordered lists
+            ordered_events = []
+            ordered_durations = []
+            ordered_event_types = []
+            
+            # Get max time for this patient (for censoring times)
+            if patient_id in patient_histories:
+                max_time = max([e["time"] for e in patient_histories[patient_id]], default=1095)
+            else:
+                max_time = 1095  # Default to 3 years if no history available
+            
+            # Process each labeler in the correct order
+            for labeler_idx, labeler in enumerate(labelers):
+                labeler_name = labeler.name
+                
+                # Check if we have results for this labeler and patient
+                if labeler_name in raw_results.get(patient_id, {}):
+                    patient_labeler_data = raw_results[patient_id][labeler_name]
+                    
+                    # Handle different labeler types
+                    if isinstance(labeler, CompetingRiskLabeler):
+                        # Competing Risk Labeler returns a list of events
+                        if "events" in patient_labeler_data and "durations" in patient_labeler_data:
+                            events_list = patient_labeler_data["events"]
+                            durations_list = patient_labeler_data["durations"]
+                            
+                            # Since all events from this labeler share the same prefix, we can add them all
+                            if "event_types" in patient_labeler_data:
+                                event_types = patient_labeler_data["event_types"]
+                                # Add one entry per event type
+                                for i, event_type in enumerate(event_types):
+                                    if i < len(events_list) and i < len(durations_list):
+                                        ordered_events.append(events_list[i])
+                                        ordered_durations.append(durations_list[i])
+                                        ordered_event_types.append(f"{labeler_name}_{event_type}")
+                            else:
+                                # No event types provided, use generic event names
+                                for i, (event, duration) in enumerate(zip(events_list, durations_list)):
+                                    ordered_events.append(event)
+                                    ordered_durations.append(duration)
+                                    ordered_event_types.append(f"{labeler_name}_event{i+1}")
+                        else:
+                            # Add a censored event if we don't have proper data
+                            ordered_events.append(0)  # Censored
+                            ordered_durations.append(float(max_time))
+                            ordered_event_types.append(labeler_name)
+                            
+                    elif isinstance(labeler, (MortalityLabeler, CustomEventLabeler)):
+                        # These labelers return a single event/time pair
+                        event_status = patient_labeler_data.get("event", 0)
+                        event_time = patient_labeler_data.get("time", max_time)
+                        
+                        ordered_events.append(event_status)
+                        ordered_durations.append(float(event_time))
+                        ordered_event_types.append(labeler_name)
+                        
+                    elif isinstance(labeler, RiskFactorLabeler):
+                        # Risk factors don't necessarily generate events
+                        if "risk_factors" in patient_labeler_data and len(patient_labeler_data["risk_factors"]) > 0:
+                            # If risk factors exist, add a censored event entry
+                            ordered_events.append(0)  # Censored
+                            ordered_durations.append(float(max_time))
+                            ordered_event_types.append(labeler_name)
+                            
+                            # Also store risk factors separately
+                            if patient_id not in results:
+                                results[patient_id] = {}
+                            results[patient_id]["risk_factors"] = patient_labeler_data["risk_factors"]
+                else:
+                    # No results for this labeler, add a censored event unless it's a risk factor labeler
+                    if not isinstance(labeler, RiskFactorLabeler):
+                        ordered_events.append(0)  # Censored
+                        ordered_durations.append(float(max_time))
+                        ordered_event_types.append(labeler_name)
+            
+            # If we don't have any labelers' events (rare case), provide a default
+            if len(ordered_events) == 0:
+                ordered_events = [0]  # Default to censored
+                ordered_durations = [float(max_time)]
+                ordered_event_types = ["default"]
+            
+            # Store the final ordered results for this patient
             if patient_id not in results:
                 results[patient_id] = {}
-
-            # If no events were found, provide defaults
-            if "events" not in results[patient_id]:
-                results[patient_id]["events"] = [0]  # Default to censored
-            if "durations" not in results[patient_id]:
-                # Get the maximum time from patient history
-                max_time = max(
-                    [e["time"] for e in patient_histories[patient_id]], default=1095
+                
+            results[patient_id]["events"] = ordered_events
+            results[patient_id]["durations"] = ordered_durations
+            results[patient_id]["event_types"] = ordered_event_types
+            
+            # Log some patients for debugging
+            # Use int() conversion to ensure we can use the modulo operator
+            # For string IDs that can't be converted to int, use a hash-based approach
+            try:
+                log_condition = int(patient_id) % 100 == 0
+            except (ValueError, TypeError):
+                # For non-integer IDs, use a hash-based approach to log some patients
+                log_condition = hash(str(patient_id)) % 100 == 0
+                
+            if log_condition:  # Only log some patients to avoid spam
+                logger.debug(
+                    f"Patient {patient_id} has {len(ordered_events)} events: "
+                    f"types={ordered_event_types}, "
+                    f"statuses={ordered_events}, "
+                    f"durations={ordered_durations}"
                 )
-                results[patient_id]["durations"] = [float(max_time)]
-            if "event_types" not in results[patient_id]:
-                results[patient_id]["event_types"] = ["default"]
+        
+        # Ensure all patients from the histories are included
+        for patient_id in patient_histories:
+            if patient_id not in results:
+                # Patient wasn't processed, give default values
+                max_time = max([e["time"] for e in patient_histories[patient_id]], default=1095)
+                
+                # Create default ordered lists based on labelers
+                ordered_events = []
+                ordered_durations = []
+                ordered_event_types = []
+                
+                for labeler in labelers:
+                    if not isinstance(labeler, RiskFactorLabeler):
+                        ordered_events.append(0)  # Censored
+                        ordered_durations.append(float(max_time))
+                        ordered_event_types.append(labeler.name)
+                
+                # Store with defaults
+                results[patient_id] = {
+                    "events": ordered_events if ordered_events else [0],
+                    "durations": ordered_durations if ordered_durations else [float(max_time)],
+                    "event_types": ordered_event_types if ordered_event_types else ["default"]
+                }
+                
+                # Log some patients for debugging
+                try:
+                    log_condition = int(patient_id) % 100 == 0
+                except (ValueError, TypeError):
+                    # For non-integer IDs, use a hash-based approach to log some patients
+                    log_condition = hash(str(patient_id)) % 100 == 0
+                    
+                if log_condition:
+                    logger.debug(
+                        f"Added default events for patient {patient_id}: "
+                        f"types={ordered_event_types}, "
+                        f"statuses={ordered_events}, "
+                        f"durations={ordered_durations}"
+                    )
 
         return results
 
@@ -1093,8 +1184,37 @@ class meds:
             and "labeled_durations" in df_combined.columns
         ):
             logger.debug("Using custom labeled events/durations")
+            
+            # Make sure all entries have lists for events and durations
+            # Some might be None or individual values
+            for idx in df_combined.index:
+                events = df_combined.at[idx, "labeled_events"]
+                durations = df_combined.at[idx, "labeled_durations"]
+                event_types = df_combined.at[idx, "event_types"] if "event_types" in df_combined.columns else None
+                
+                # Convert None or individual values to lists
+                if events is None or not isinstance(events, list):
+                    df_combined.at[idx, "labeled_events"] = [0]  # Default to censored
+                if durations is None or not isinstance(durations, list):
+                    df_combined.at[idx, "labeled_durations"] = [1095.0]  # Default duration
+                    
+                # Log some examples for debugging
+                if idx % 100 == 0:  # Only log every 100th row
+                    patient_id = df_combined.at[idx, "patient_id"] if "patient_id" in df_combined.columns else idx
+                    logger.debug(
+                        f"Patient {patient_id} labeled events: {df_combined.at[idx, 'labeled_events']}, "
+                        f"durations: {df_combined.at[idx, 'labeled_durations']}, "
+                        f"types: {event_types}"
+                    )
+            
+            # Now set the target values
             df_targets["events"] = df_combined["labeled_events"]
             df_targets["durations"] = df_combined["labeled_durations"]
+            
+            # Log the first few target rows
+            logger.debug(f"Target events/durations shape: {df_targets.shape}")
+            logger.debug(f"First 3 event lists: {df_targets['events'].head(3).tolist()}")
+            logger.debug(f"First 3 duration lists: {df_targets['durations'].head(3).tolist()}")
         else:
             # Process the targets for multi-event framework
             # df_combined has ['time', 'event'] columns
@@ -1249,14 +1369,48 @@ class meds:
         data = pd.concat([train_data, val_data, test_data]).reset_index(drop=True)
         data.to_json(Path(f"{outDir}/{self.name}.json"), orient="records", lines=True)
 
+        # Include event times in the output data
+        if "labeled_events" in df_combined.columns and "labeled_durations" in df_combined.columns:
+            # Add event times to the final dataset
+            train_data["event_times"] = X_train.index.map(lambda idx: df_combined.loc[idx, "labeled_durations"] if idx in df_combined.index else [])
+            val_data["event_times"] = X_val.index.map(lambda idx: df_combined.loc[idx, "labeled_durations"] if idx in df_combined.index else [])
+            test_data["event_times"] = X_test.index.map(lambda idx: df_combined.loc[idx, "labeled_durations"] if idx in df_combined.index else [])
+            
+            # Also add the event type names for easier interpretation
+            if "event_types" in df_combined.columns:
+                train_data["event_type_names"] = X_train.index.map(lambda idx: df_combined.loc[idx, "event_types"] if idx in df_combined.index else [])
+                val_data["event_type_names"] = X_val.index.map(lambda idx: df_combined.loc[idx, "event_types"] if idx in df_combined.index else [])
+                test_data["event_type_names"] = X_test.index.map(lambda idx: df_combined.loc[idx, "event_types"] if idx in df_combined.index else [])
+        
         # Save a metadata file with information about the events
+        # Include both original event types and labeler-generated event types
+        
+        # Get all unique event types from the labeled data
+        all_event_types = set()
+        if "event_types" in df_combined.columns:
+            # Extract all event types from the labeled data
+            for event_type_list in df_combined["event_types"].dropna():
+                if isinstance(event_type_list, list):
+                    all_event_types.update(event_type_list)
+        
+        # Create an updated event_type_map including all labeler events
+        updated_event_type_map = {}
+        for idx, event_type in enumerate(sorted(all_event_types)):
+            updated_event_type_map[event_type] = idx + 1
+        
+        # Use the original event_type_map as fallback if no labeler events are found
+        final_event_type_map = updated_event_type_map if updated_event_type_map else event_type_map
+        
         metadata_output = {
-            "event_types": event_type_map,
+            "event_types": final_event_type_map,
             "feature_count": len(feature_cols),
             "categorical_features": categorical_features,
             "numerical_features": numerical_features,
             "total_patients": len(df_combined["patient_id"].unique()),
             "total_events": total_events,
+            "labeler_events": list(all_event_types),  # Add explicit list of labeler event types
+            "includes_event_times": True,              # Flag that event times are included in output
+            "includes_risk_factor_timing": True        # Flag that risk factors include timing information
         }
 
         pd.DataFrame([metadata_output]).to_json(
