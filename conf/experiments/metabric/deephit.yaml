@@ -15,13 +15,13 @@ defaults:
 
 
 # Parameters tuned using /sweep/metabric/deephit.yaml
-learning_rate: 0.00001594535352394893
-token_emb: 4
-sentence_emb: 2
-transformer_hidden_size: 32
-transformer_intermediate_size: 32
+learning_rate: 0.000024498600665276173
+token_emb: 5
+sentence_emb: 1
+transformer_hidden_size: 16
+transformer_intermediate_size: 96
 transformer_num_attention_heads: 2
-transformer_num_hidden_layers: 4
+transformer_num_hidden_layers: 2
 weight_decay: 0.05001268392745459
 survival_intermediate_size: 16
 
