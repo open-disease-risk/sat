@@ -151,7 +151,10 @@ def objective(cfg: DictConfig) -> float or tuple:
 
         # Log the results with trial number
         metrics_str = ", ".join(
-            [f"{name}={value}" for name, value in zip(metric_names, metric_values, strict=False)]
+            [
+                f"{name}={value}"
+                for name, value in zip(metric_names, metric_values, strict=False)
+            ]
         )
         logger.info(f"Trial #{trial_number} completed with {metrics_str}")
 

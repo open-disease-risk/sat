@@ -13,7 +13,6 @@ import torch
 logging.basicConfig(level=logging.WARNING)
 
 
-
 from sat.loss.ranking.sample import SampleRankingLoss
 from sat.loss.survival.deephit import DeepHitLikelihoodLoss
 

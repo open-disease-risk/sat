@@ -411,7 +411,9 @@ def analyze_censoring(
     results = {}
 
     # Analyze censoring pattern for each event type
-    for i, (durs, evts, evt_type) in enumerate(zip(durations, events, event_types, strict=False)):
+    for i, (durs, evts, evt_type) in enumerate(
+        zip(durations, events, event_types, strict=False)
+    ):
         logger.info(f"Analyzing censoring for {evt_type}")
         event_output_dir = os.path.join(cens_output_dir, evt_type)
 
@@ -492,7 +494,9 @@ def analyze_covariates_effects(
     results["distributions"] = distribution_results
 
     # Analyze effects for each event type
-    for i, (durs, evts, evt_type) in enumerate(zip(durations, events, event_types, strict=False)):
+    for i, (durs, evts, evt_type) in enumerate(
+        zip(durations, events, event_types, strict=False)
+    ):
         logger.info(f"Analyzing covariate effects for {evt_type}")
         event_output_dir = os.path.join(cov_output_dir, evt_type)
 

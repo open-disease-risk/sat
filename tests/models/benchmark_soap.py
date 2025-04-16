@@ -664,7 +664,8 @@ def plot_benchmark_results(results, save_path=None):
             method_times = [results[f"{method}_total"][j] for j in indices]
             # Calculate speedups
             speedups = [
-                b / m if m > 0 else 0 for b, m in zip(baseline_times, method_times, strict=False)
+                b / m if m > 0 else 0
+                for b, m in zip(baseline_times, method_times, strict=False)
             ]
 
             ax2.plot(

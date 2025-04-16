@@ -281,7 +281,9 @@ def analyze_competing_risks(
         try:
             plt.figure(figsize=(10, 6))
 
-            for i, (dur, evt, label) in enumerate(zip(durations, events, labels, strict=False)):
+            for i, (dur, evt, label) in enumerate(
+                zip(durations, events, labels, strict=False)
+            ):
                 # Create Kaplan-Meier estimator and fit with event-specific data
                 kmf = KaplanMeierFitter()
                 kmf.fit(dur, evt, label=label)

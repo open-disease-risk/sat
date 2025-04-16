@@ -408,7 +408,10 @@ def analyze_feature_importance(
 
                     # Calculate mutual information
                     mi = mutual_info_regression(X_valid, y_valid)
-                    mi_dict = {col: mi_val for col, mi_val in zip(numeric_cols, mi, strict=False)}
+                    mi_dict = {
+                        col: mi_val
+                        for col, mi_val in zip(numeric_cols, mi, strict=False)
+                    }
 
                     # Sort by importance
                     sorted_mi = sorted(
