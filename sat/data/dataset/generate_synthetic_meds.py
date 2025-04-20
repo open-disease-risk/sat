@@ -773,7 +773,13 @@ def create_meds_tables(meds_events: List[Dict[str, Any]]) -> pd.DataFrame:
 def save_meds_to_parquet(
     df_meds: pd.DataFrame, output_path: str, metadata: Dict[str, Any] = None
 ) -> None:
-    """Save MEDS format data to a Parquet file following MEDS schema.
+    """Save MEDS format data to a Parquet file following the required format:
+    
+    {fold_}{dataset_name}/
+        data/
+            data.parquet (subject_id, time, code, numeric_value)
+        codes.parquet (code, description, parent_codes)
+        subjects_splits.parquet (subject_id, split)
 
     Args:
         df_meds: DataFrame with MEDS format data
@@ -782,27 +788,22 @@ def save_meds_to_parquet(
     """
     logger.info(f"Saving MEDS format data to {output_path}")
 
-    # Create output directory if it doesn't exist
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    # Get base directory and dataset name
+    dir_name = os.path.dirname(output_path)
+    base_name = os.path.basename(output_path).split(".")[0]
+    
+    # Create the dataset folder structure
+    dataset_folder = os.path.join(dir_name, base_name)
+    data_folder = os.path.join(dataset_folder, "data")
+    os.makedirs(data_folder, exist_ok=True)
+    
+    logger.info(f"Creating dataset directory structure at {dataset_folder}")
 
-    # Create PyArrow schema conforming to MEDS requirements
-    pa_schema = pa.schema(
-        [
-            ("subject_id", pa.int64()),
-            ("time", pa.timestamp("us")),  # microsecond precision
-            ("time_type", pa.string()),
-            ("code", pa.string()),
-            ("numeric_value", pa.float32()),
-            ("string_value", pa.string()),
-        ]
-    )
-
-    # Convert time column to proper timestamp format (static events have null timestamps)
+    # Create a copy of the data and prepare it for saving
     df_meds_copy = df_meds.copy()
-
-    # Handle data types for PyArrow schema
+    
+    # Handle data types and NULL values
     for subject_id in df_meds_copy["subject_id"].unique():
-        # For each patient, get their data in correct order
         patient_data = df_meds_copy[
             df_meds_copy["subject_id"] == subject_id
         ].sort_values("time")
@@ -812,98 +813,144 @@ def save_meds_to_parquet(
         patient_data.loc[patient_data["numeric_value"].isna(), "numeric_value"] = None
         patient_data.loc[patient_data["string_value"].isna(), "string_value"] = None
 
-    # Get the directory and base filename
-    dir_name = os.path.dirname(output_path)
-    base_name = os.path.basename(output_path).split(".")[0]
-
-    # Save data to a single parquet file (per MEDS schema)
-    parquet_path = os.path.join(dir_name, f"{base_name}.parquet")
-
-    # Use PyArrow to create table with correct schema
+    # 1. Save the main data.parquet file with required columns
+    data_df = df_meds_copy[["subject_id", "time", "code", "numeric_value"]].copy()
+    data_path = os.path.join(data_folder, "data.parquet")
+    
+    # Use PyArrow for proper timestamp handling
     try:
-        # Convert DataFrame to PyArrow Table with the schema
-        table = pa.Table.from_pandas(
-            df_meds_copy, schema=pa_schema, preserve_index=False
-        )
-
-        # Write table to Parquet file
-        pq.write_table(table, parquet_path, compression="snappy")
-        logger.info(f"Saved MEDS data to {parquet_path}")
+        # Create schema for the data file
+        data_schema = pa.schema([
+            ("subject_id", pa.int64()),
+            ("time", pa.timestamp("us")),  # microsecond precision
+            ("code", pa.string()),
+            ("numeric_value", pa.float32())
+        ])
+        
+        # Convert and save
+        data_table = pa.Table.from_pandas(data_df, schema=data_schema, preserve_index=False)
+        pq.write_table(data_table, data_path, compression="snappy")
+        logger.info(f"Saved data.parquet with {len(data_df)} records")
     except Exception as e:
-        logger.error(f"Error saving to Parquet: {e}")
-        # Fallback to pandas if PyArrow conversion fails
-        df_meds_copy.to_parquet(parquet_path, index=False)
-        logger.info(f"Saved MEDS data using pandas to {parquet_path}")
+        logger.error(f"Error saving data.parquet: {e}")
+        # Fallback to pandas
+        data_df.to_parquet(data_path, index=False)
+        logger.info(f"Saved data.parquet using pandas fallback with {len(data_df)} records")
 
-    # Save metadata (code descriptions, dataset info)
+    # 2. Create and save codes.parquet
+    codes_data = []
+    
+    # Add all codes from ICD, RxNorm, LOINC, and MEDS
+    
+    # Add ICD codes
+    for icd in ICD_CODES:
+        codes_data.append({
+            "code": icd["code"],
+            "description": icd["description"],
+            "parent_code": "ICD10"  # Use ICD10 as parent
+        })
+    
+    # Add medication codes
+    for med in MEDICATION_CODES:
+        codes_data.append({
+            "code": med["code"],
+            "description": med["description"],
+            "parent_code": "RxNorm"  # Use RxNorm as parent
+        })
+    
+    # Add lab codes
+    for lab in LAB_CODES:
+        codes_data.append({
+            "code": lab["code"],
+            "description": lab["description"],
+            "parent_code": "LOINC"  # Use LOINC as parent
+        })
+    
+    # Add special MEDS codes
+    meds_special_codes = [
+        {"code": "MEDS_BIRTH", "description": "Date of birth"},
+        {"code": "MEDS_DEATH", "description": "Date of death"},
+        {"code": "ENROLLMENT", "description": "Date of enrollment"},
+        {"code": "ENC_INPATIENT", "description": "Inpatient hospitalization encounter"},
+        {"code": "GENDER", "description": "Patient gender"},
+        {"code": "AGE", "description": "Patient age"}
+    ]
+    
+    for special_code in meds_special_codes:
+        codes_data.append({
+            "code": special_code["code"],
+            "description": special_code["description"],
+            "parent_code": "MEDS"  # Use MEDS as parent
+        })
+    
+    # Create and save codes dataframe
+    codes_df = pd.DataFrame(codes_data)
+    codes_path = os.path.join(dataset_folder, "codes.parquet")
+    
+    try:
+        codes_df.to_parquet(codes_path, index=False)
+        logger.info(f"Saved codes.parquet with {len(codes_df)} codes")
+    except Exception as e:
+        logger.error(f"Error saving codes.parquet: {e}")
+    
+    # 3. Create and save subjects_splits.parquet
+    # Generate 70/15/15 train/val/test split
+    subject_ids = df_meds_copy["subject_id"].unique()
+    np.random.shuffle(subject_ids)
+    
+    total = len(subject_ids)
+    train_size = int(0.7 * total)
+    val_size = int(0.15 * total)
+    
+    train_ids = subject_ids[:train_size]
+    val_ids = subject_ids[train_size:train_size+val_size]
+    test_ids = subject_ids[train_size+val_size:]
+    
+    splits_data = []
+    
+    # Add train subjects
+    for subject_id in train_ids:
+        splits_data.append({
+            "subject_id": subject_id,
+            "split": "train"
+        })
+    
+    # Add validation subjects
+    for subject_id in val_ids:
+        splits_data.append({
+            "subject_id": subject_id,
+            "split": "val"
+        })
+    
+    # Add test subjects
+    for subject_id in test_ids:
+        splits_data.append({
+            "subject_id": subject_id,
+            "split": "test"
+        })
+    
+    # Create and save splits dataframe
+    splits_df = pd.DataFrame(splits_data)
+    splits_path = os.path.join(dataset_folder, "subjects_splits.parquet")
+    
+    try:
+        splits_df.to_parquet(splits_path, index=False)
+        logger.info(f"Saved subjects_splits.parquet with {len(splits_df)} subjects")
+        logger.info(f"Split: {len(train_ids)} train, {len(val_ids)} val, {len(test_ids)} test")
+    except Exception as e:
+        logger.error(f"Error saving subjects_splits.parquet: {e}")
+    
+    # Save original metadata for reference
     if metadata:
-        metadata_path = os.path.join(dir_name, f"{base_name}_metadata.json")
+        metadata_path = os.path.join(dataset_folder, f"{base_name}_metadata.json")
         with open(metadata_path, "w") as f:
             json.dump(metadata, f, indent=2)
             logger.info(f"Saved metadata to {metadata_path}")
-
-    # Create code metadata file (required by MEDS)
-    code_metadata = {
-        "code_systems": {
-            "ICD10": "International Classification of Diseases, 10th Revision",
-            "RxNorm": "RxNorm Medication Codes",
-            "LOINC": "Logical Observation Identifiers Names and Codes",
-            "MEDS": "Medical Event Data Standard special codes",
-        },
-        "codes": {},
-    }
-
-    # Add ICD codes
-    for icd in ICD_CODES:
-        code_metadata["codes"][icd["code"]] = {
-            "description": icd["description"],
-            "system": "ICD10",
-        }
-
-    # Add medication codes
-    for med in MEDICATION_CODES:
-        code_metadata["codes"][med["code"]] = {
-            "description": med["description"],
-            "system": "RxNorm",
-        }
-
-    # Add lab codes
-    for lab in LAB_CODES:
-        code_metadata["codes"][lab["code"]] = {
-            "description": lab["description"],
-            "system": "LOINC",
-            "unit": lab["unit"],
-        }
-
-    # Add special MEDS codes
-    code_metadata["codes"]["MEDS_BIRTH"] = {
-        "description": "Date of birth",
-        "system": "MEDS",
-    }
-    code_metadata["codes"]["MEDS_DEATH"] = {
-        "description": "Date of death",
-        "system": "MEDS",
-    }
-    code_metadata["codes"]["ENROLLMENT"] = {
-        "description": "Date of enrollment",
-        "system": "MEDS",
-    }
-    code_metadata["codes"]["ENC_INPATIENT"] = {
-        "description": "Inpatient hospitalization encounter",
-        "system": "MEDS",
-    }
-
-    # Save code metadata
-    codes_path = os.path.join(dir_name, f"{base_name}_codes.json")
-    with open(codes_path, "w") as f:
-        json.dump(code_metadata, f, indent=2)
-        logger.info(f"Saved code metadata to {codes_path}")
-
-    # Instead of creating random train/val/test splits,
-    # we'll let the parsing script handle this based on configuration
-    logger.info("Skipping subject splits - will be created during parsing")
-
-    logger.info(f"MEDS data saved successfully to {dir_name}")
+    
+    logger.info(f"MEDS data saved successfully in the format: {dataset_folder}/")
+    logger.info(f"  - {data_path}")
+    logger.info(f"  - {codes_path}")
+    logger.info(f"  - {splits_path}")
 
 
 def generate_synthetic_meds(
