@@ -9,19 +9,32 @@ This module extends FEMR's labeling capabilities with specialized labelers for:
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
-
+import abc
 import logging
 from typing import Dict, List, Optional
 
 from femr.labelers import Labeler
 from meds import Patient
 
-from .schema import ExtendedLabel
+from .schema import ExtendedLabel, EventType
 
 logger = logging.getLogger(__name__)
 
+class CohortLabeler(Labeler, abc.ABC):
+    """FEMR-compatible labeler for cohort selection.
 
-class CompetingRiskLabeler(Labeler):
+    This labeler returns a single event indicator for the cohort.
+
+    Args:
+        name: Unique identifier for this labeler
+        event_type: Type of event this labeler is associated with
+    """
+    def __init__(self, name: str, event_type: EventType):
+        super().__init__()
+        self.name = name
+        self.event_type = event_type
+
+class CompetingRiskLabeler(CohortLabeler):
     """FEMR-compatible labeler supporting competing risks.
 
     This labeler supports multiple competing event types, each with its own
@@ -30,6 +43,7 @@ class CompetingRiskLabeler(Labeler):
 
     Args:
         name: Unique identifier for this labeler
+        event_type: Type of event this labeler is associated with
         event_codes: Dictionary mapping event types to lists of relevant codes
         time_field: Name of the time field to use (default: 'time')
     """
@@ -38,14 +52,14 @@ class CompetingRiskLabeler(Labeler):
         self,
         name: str,
         event_codes: Dict[str, List[str]],
+        event_type: EventType = EventType.OUTCOME,
         time_field: str = "time",
         max_time: float = 3650.0,
     ):
-        super().__init__()
+        super().__init__(name, event_type)
         self.event_codes = event_codes
         self.time_field = time_field
-        self.event_types = list(event_codes.keys())
-        self.name = name
+        self.event_categories = list(event_codes.keys())
         self.max_time = max_time
 
     def get_schema(self) -> Dict:
@@ -53,7 +67,7 @@ class CompetingRiskLabeler(Labeler):
         return {
             "events": {"type": "List[int]", "description": "Event indicators"},
             "durations": {"type": "List[float]", "description": "Times to event"},
-            "event_types": {"type": "List[str]", "description": "Event type names"},
+            "event_categories": {"type": "List[str]", "description": "Event category names"},
         }
 
     def label(self, patient: Patient) -> List[ExtendedLabel]:
@@ -72,20 +86,20 @@ class CompetingRiskLabeler(Labeler):
         # Process each competing risk type
         # Map event types to their earliest event (if any)
         event_occurrences = {}
-        for event_type, codes in self.event_codes.items():
+        for event_category, codes in self.event_codes.items():
             for event in patient["events"]:
                 if event["code"] in codes:
                     event_time = event[self.time_field]
-                    if event_type not in event_occurrences or event_time < event_occurrences[event_type][1]:
-                        event_occurrences[event_type] = (event, event_time)
+                    if event_category not in event_occurrences or event_time < event_occurrences[event_category][1]:
+                        event_occurrences[event_category] = (event, event_time)
 
         # Find the first event among all event types
-        first_event_type = None
+        first_event_category = None
         first_event_time = float("inf")
-        for etype, (event, event_time) in event_occurrences.items():
+        for event_category, (event, event_time) in event_occurrences.items():
             if event_time < first_event_time:
                 first_event_time = event_time
-                first_event_type = etype
+                first_event_category = event_category
 
         # Determine the maximum observed event time for the patient
         if patient["events"]:
@@ -99,14 +113,14 @@ class CompetingRiskLabeler(Labeler):
         # Use max_time as censoring time if no event observed
         effective_time = min(effective_time, self.max_time)
 
-        # Create labels for each event type
+        # Create labels for each event category
         results: List[ExtendedLabel] = []
-        for event_type in self.event_codes.keys():
+        for event_category in self.event_codes.keys():
             label: ExtendedLabel = {
-                "event_type": self.name + "_" + event_type,
+                "event_category": self.name + "_" + event_category,
                 "prediction_time": effective_time,
             }
-            if event_type == first_event_type:
+            if event_category == first_event_category:
                 # This is the observed event
                 label["competing_event"] = True
                 label["boolean_value"] = True
@@ -125,7 +139,7 @@ class CompetingRiskLabeler(Labeler):
         return results
 
 
-class SurvivalLabeler(Labeler):
+class SurvivalLabeler(CohortLabeler):
     """FEMR-compatible labeler for single-event survival analysis.
 
     This labeler identifies a single event type based on provided event codes.
@@ -133,6 +147,7 @@ class SurvivalLabeler(Labeler):
 
     Args:
         name: Unique identifier for this labeler
+        event_type: Type of event this labeler is associated with
         event_codes: List of codes that define the event of interest
         time_field: Name of the time field to use (default: 'time')
     """
@@ -141,13 +156,13 @@ class SurvivalLabeler(Labeler):
         self,
         name: str,
         event_codes: List[str],
+        event_type: EventType = EventType.OUTCOME,
         time_field: str = "time",
         max_time: float = 3650.0,
     ):
-        super().__init__()
+        super().__init__(name, event_type)
         self.event_codes = set(event_codes)
         self.time_field = time_field
-        self.name = name
         self.max_time = max_time
 
     def get_schema(self) -> Dict:
@@ -174,7 +189,7 @@ class SurvivalLabeler(Labeler):
             if event["code"] in self.event_codes:
                 event_time = event[self.time_field]
                 label: ExtendedLabel = {
-                    "event_type": self.name,
+                    "event_category": self.name,
                     "prediction_time": event_time,
                     "boolean_value": True,
                     "competing_event": False,
@@ -188,7 +203,7 @@ class SurvivalLabeler(Labeler):
             last_event_time = self.max_time
 
         label: ExtendedLabel = {
-            "event_type": self.name,
+            "event_category": self.name,
             "prediction_time": last_event_time,
             "boolean_value": False,
             "competing_event": False,
@@ -196,7 +211,7 @@ class SurvivalLabeler(Labeler):
         return [label]
 
 
-class CustomEventLabeler(Labeler):
+class CustomEventLabeler(CohortLabeler):
     """FEMR-compatible labeler for custom event detection with advanced filtering.
 
     This labeler identifies events based on complex criteria including code patterns,
@@ -204,6 +219,7 @@ class CustomEventLabeler(Labeler):
 
     Args:
         name: Unique identifier for this labeler
+        event_type: Type of event this labeler is associated with
         primary_codes: List of codes that define the primary event
         condition_codes: Optional list of codes that must also be present
         exclusion_codes: Optional list of codes that exclude a patient
@@ -217,6 +233,7 @@ class CustomEventLabeler(Labeler):
         self,
         name: str,
         primary_codes: List[str],
+        event_type: EventType = EventType.OUTCOME,
         condition_codes: Optional[List[str]] = None,
         exclusion_codes: Optional[List[str]] = None,
         time_window: Optional[float] = None,
@@ -224,7 +241,7 @@ class CustomEventLabeler(Labeler):
         time_field: str = "time",
         max_time: float = 3650.0,
     ):
-        super().__init__()
+        super().__init__(name, event_type)
         self.primary_codes = set(primary_codes)
         self.condition_codes = set(condition_codes or [])
         self.exclusion_codes = set(exclusion_codes or [])
@@ -232,7 +249,6 @@ class CustomEventLabeler(Labeler):
         self.sequence_required = sequence_required
         self.time_field = time_field
         self.max_time = max_time
-        self.name = name
 
     def get_schema(self) -> Dict:
         """Return the schema for this labeler."""
@@ -275,7 +291,7 @@ class CustomEventLabeler(Labeler):
                 f"Patient {patient}: Excluded due to exclusion codes"
             )
             label: ExtendedLabel = {
-                "event_type": self.name,
+                "event_category": self.name,
                 "prediction_time": last_event_time,
                 "boolean_value": False,
                 "competing_event": False,
@@ -291,7 +307,7 @@ class CustomEventLabeler(Labeler):
         if not primary_events:
             logger.debug(f"Patient {patient}: No primary events found")
             label: ExtendedLabel = {
-                "event_type": self.name,
+                "event_category": self.name,
                 "prediction_time": last_event_time,
                 "boolean_value": False,
                 "competing_event": False,
@@ -334,7 +350,7 @@ class CustomEventLabeler(Labeler):
                 f"Patient {patient}: Event at time {primary_time}, code {primary_code}"
             )
             label: ExtendedLabel = {
-                "event_type": self.name,
+                "event_category": self.name,
                 "prediction_time": primary_time,
                 "boolean_value": True,
                 "competing_event": False,
@@ -346,7 +362,7 @@ class CustomEventLabeler(Labeler):
             )
 
             label: ExtendedLabel = {
-                "event_type": self.name,
+                "event_category": self.name,
                 "prediction_time": last_event_time,
                 "boolean_value": False,
                 "competing_event": False,
