@@ -13,20 +13,10 @@ from sat.data.dataset.femr_extensions.labelers import (
     SurvivalLabeler,
     CustomEventLabeler,
 )
-from sat.data.dataset.femr_extensions.adapter import FEMRAdapter
-from sat.data.dataset.femr_extensions.registry import (
-    LabelerRegistry,
-    register_labeler,
-)
 
 __all__ = [
     # Labelers
     "CompetingRiskLabeler",
     "SurvivalLabeler",
     "CustomEventLabeler",
-    # Adapter
-    "FEMRAdapter",
-    # Registry
-    "LabelerRegistry",
-    "register_labeler",
 ]
