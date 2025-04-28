@@ -1,0 +1,35 @@
+# FEMR-based Omop configuration for synthetic_omop dataset
+_target_: sat.data.dataset.parse_omop.omop
+source: ${data_source}
+processed_dir: ${modelhub}
+name: ${dataset}
+time_field: "time"
+primary_key: "patient_id"
+# Scaling options for numerical features
+scale_numerics: true
+scale_method: "standard"  # or "min_max"
+min_scale_numerics: 1.0  # Used with min_max scaling
+
+# FEMR-compatible labelers
+labelers:
+  # Mortality labeler (single-event)
+  - _target_: sat.data.dataset.femr_extensions.labelers.SurvivalLabeler
+    name: mortality
+    event_codes: ["OMOP_DEATH"]
+    max_time: 3650.0
+  
+  # Competing risks labeler for diseases
+  - _target_: sat.data.dataset.femr_extensions.labelers.CompetingRiskLabeler
+    name: competing_risks
+    event_codes:
+      heart_disease: ["ICD10:I25.1", "ICD10:I25.10"]
+      diabetes: ["ICD10:E11", "ICD10:E11.9"] 
+      hypertension: ["ICD10:I10"]
+    max_time: 3650.0
+    
+  # Custom event labeler for complex criteria
+  - _target_: sat.data.dataset.femr_extensions.labelers.CustomEventLabeler
+    name: hospitalization
+    primary_codes: ["ENC_INPATIENT"]
+    condition_codes: ["ICD10:I25.1", "ICD10:E11"]  # Only count hospitalizations with these conditions
+    max_time: 3650.0

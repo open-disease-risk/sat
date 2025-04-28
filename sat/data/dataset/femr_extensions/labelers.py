@@ -16,9 +16,10 @@ from typing import Dict, List, Optional
 from femr.labelers import Labeler
 from meds import Patient
 
-from .schema import ExtendedLabel, EventType
+from .schema import ExtendedLabel, LabelType
 
 logger = logging.getLogger(__name__)
+
 
 class CohortLabeler(Labeler, abc.ABC):
     """FEMR-compatible labeler for cohort selection.
@@ -27,12 +28,14 @@ class CohortLabeler(Labeler, abc.ABC):
 
     Args:
         name: Unique identifier for this labeler
-        event_type: Type of event this labeler is associated with
+        label_type: Type of event this labeler is associated with
     """
-    def __init__(self, name: str, event_type: EventType):
+
+    def __init__(self, name: str, label_type: LabelType):
         super().__init__()
         self.name = name
-        self.event_type = event_type
+        self.label_type = label_type
+
 
 class CompetingRiskLabeler(CohortLabeler):
     """FEMR-compatible labeler supporting competing risks.
@@ -43,8 +46,8 @@ class CompetingRiskLabeler(CohortLabeler):
 
     Args:
         name: Unique identifier for this labeler
-        event_type: Type of event this labeler is associated with
         event_codes: Dictionary mapping event types to lists of relevant codes
+        label_type: Type of event this labeler is associated with
         time_field: Name of the time field to use (default: 'time')
     """
 
@@ -52,11 +55,11 @@ class CompetingRiskLabeler(CohortLabeler):
         self,
         name: str,
         event_codes: Dict[str, List[str]],
-        event_type: EventType = EventType.OUTCOME,
+        label_type: LabelType = LabelType.OUTCOME,
         time_field: str = "time",
         max_time: float = 3650.0,
     ):
-        super().__init__(name, event_type)
+        super().__init__(name, label_type)
         self.event_codes = event_codes
         self.time_field = time_field
         self.event_categories = list(event_codes.keys())
@@ -67,7 +70,10 @@ class CompetingRiskLabeler(CohortLabeler):
         return {
             "events": {"type": "List[int]", "description": "Event indicators"},
             "durations": {"type": "List[float]", "description": "Times to event"},
-            "event_categories": {"type": "List[str]", "description": "Event category names"},
+            "event_categories": {
+                "type": "List[str]",
+                "description": "Event category names",
+            },
         }
 
     def label(self, patient: Patient) -> List[ExtendedLabel]:
@@ -90,7 +96,10 @@ class CompetingRiskLabeler(CohortLabeler):
             for event in patient["events"]:
                 if event["code"] in codes:
                     event_time = event[self.time_field]
-                    if event_category not in event_occurrences or event_time < event_occurrences[event_category][1]:
+                    if (
+                        event_category not in event_occurrences
+                        or event_time < event_occurrences[event_category][1]
+                    ):
                         event_occurrences[event_category] = (event, event_time)
 
         # Find the first event among all event types
@@ -108,7 +117,9 @@ class CompetingRiskLabeler(CohortLabeler):
             last_event_time = self.max_time  # fallback if no events
 
         # Use last_event_time as censoring time if no event observed
-        effective_time = first_event_time if first_event_time != float("inf") else last_event_time
+        effective_time = (
+            first_event_time if first_event_time != float("inf") else last_event_time
+        )
 
         # Use max_time as censoring time if no event observed
         effective_time = min(effective_time, self.max_time)
@@ -118,6 +129,7 @@ class CompetingRiskLabeler(CohortLabeler):
         for event_category in self.event_codes.keys():
             label: ExtendedLabel = {
                 "event_category": self.name + "_" + event_category,
+                "label_type": self.label_type,
                 "prediction_time": effective_time,
             }
             if event_category == first_event_category:
@@ -131,9 +143,7 @@ class CompetingRiskLabeler(CohortLabeler):
             results.append(label)
 
         # Log the result for debugging
-        logger.debug(
-            f"Patient {patient}: labels={results}"
-        )
+        logger.debug(f"Patient {patient}: labels={results}")
 
         # Return the combined results
         return results
@@ -147,7 +157,7 @@ class SurvivalLabeler(CohortLabeler):
 
     Args:
         name: Unique identifier for this labeler
-        event_type: Type of event this labeler is associated with
+        label_type: Type of event this labeler is associated with
         event_codes: List of codes that define the event of interest
         time_field: Name of the time field to use (default: 'time')
     """
@@ -156,11 +166,11 @@ class SurvivalLabeler(CohortLabeler):
         self,
         name: str,
         event_codes: List[str],
-        event_type: EventType = EventType.OUTCOME,
+        label_type: LabelType = LabelType.OUTCOME,
         time_field: str = "time",
         max_time: float = 3650.0,
     ):
-        super().__init__(name, event_type)
+        super().__init__(name, label_type)
         self.event_codes = set(event_codes)
         self.time_field = time_field
         self.max_time = max_time
@@ -190,6 +200,7 @@ class SurvivalLabeler(CohortLabeler):
                 event_time = event[self.time_field]
                 label: ExtendedLabel = {
                     "event_category": self.name,
+                    "label_type": self.label_type,
                     "prediction_time": event_time,
                     "boolean_value": True,
                     "competing_event": False,
@@ -204,6 +215,7 @@ class SurvivalLabeler(CohortLabeler):
 
         label: ExtendedLabel = {
             "event_category": self.name,
+            "label_type": self.label_type,
             "prediction_time": last_event_time,
             "boolean_value": False,
             "competing_event": False,
@@ -219,7 +231,7 @@ class CustomEventLabeler(CohortLabeler):
 
     Args:
         name: Unique identifier for this labeler
-        event_type: Type of event this labeler is associated with
+        label_type: Type of event this labeler is associated with
         primary_codes: List of codes that define the primary event
         condition_codes: Optional list of codes that must also be present
         exclusion_codes: Optional list of codes that exclude a patient
@@ -233,7 +245,7 @@ class CustomEventLabeler(CohortLabeler):
         self,
         name: str,
         primary_codes: List[str],
-        event_type: EventType = EventType.OUTCOME,
+        label_type: LabelType = LabelType.OUTCOME,
         condition_codes: Optional[List[str]] = None,
         exclusion_codes: Optional[List[str]] = None,
         time_window: Optional[float] = None,
@@ -241,7 +253,7 @@ class CustomEventLabeler(CohortLabeler):
         time_field: str = "time",
         max_time: float = 3650.0,
     ):
-        super().__init__(name, event_type)
+        super().__init__(name, label_type)
         self.primary_codes = set(primary_codes)
         self.condition_codes = set(condition_codes or [])
         self.exclusion_codes = set(exclusion_codes or [])
@@ -287,11 +299,10 @@ class CustomEventLabeler(CohortLabeler):
 
         # If any exclusion code is present, patient is excluded
         if self.exclusion_codes and self.exclusion_codes.intersection(patient_codes):
-            logger.debug(
-                f"Patient {patient}: Excluded due to exclusion codes"
-            )
+            logger.debug(f"Patient {patient}: Excluded due to exclusion codes")
             label: ExtendedLabel = {
                 "event_category": self.name,
+                "label_type": self.label_type,
                 "prediction_time": last_event_time,
                 "boolean_value": False,
                 "competing_event": False,
@@ -308,6 +319,7 @@ class CustomEventLabeler(CohortLabeler):
             logger.debug(f"Patient {patient}: No primary events found")
             label: ExtendedLabel = {
                 "event_category": self.name,
+                "label_type": self.label_type,
                 "prediction_time": last_event_time,
                 "boolean_value": False,
                 "competing_event": False,
@@ -351,6 +363,7 @@ class CustomEventLabeler(CohortLabeler):
             )
             label: ExtendedLabel = {
                 "event_category": self.name,
+                "label_type": self.label_type,
                 "prediction_time": primary_time,
                 "boolean_value": True,
                 "competing_event": False,
@@ -363,6 +376,7 @@ class CustomEventLabeler(CohortLabeler):
 
             label: ExtendedLabel = {
                 "event_category": self.name,
+                "label_type": self.label_type,
                 "prediction_time": last_event_time,
                 "boolean_value": False,
                 "competing_event": False,

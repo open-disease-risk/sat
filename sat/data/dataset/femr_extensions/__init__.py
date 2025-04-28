@@ -10,8 +10,8 @@ __status__ = "Development"
 
 from sat.data.dataset.femr_extensions.labelers import (
     CompetingRiskLabeler,
-    SurvivalLabeler,
     CustomEventLabeler,
+    SurvivalLabeler,
 )
 
 __all__ = [

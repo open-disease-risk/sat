@@ -1,0 +1,27 @@
+# @package _global_
+
+data_source: ${base_dir}/data/synthetic_omop/data/*
+
+data:
+  preprocess_data: false
+  perform_split: true
+  split_col: split
+  id_col: index
+  durations_col: durations
+  events_col: events
+  modality_col: modality
+  numerics_col: numerics
+  num_events: 2  # Number of competing events
+  transformed_duration_cols:
+    - t
+    - f
+  splits:
+    - train
+    - valid
+    - test
+  load:
+    _target_: datasets.load_dataset
+    path: json
+    data_files:
+      - ${modelhub}/${dataset}/${fold}${dataset}.json
+    streaming: false
