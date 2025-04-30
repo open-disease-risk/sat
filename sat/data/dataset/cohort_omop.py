@@ -274,22 +274,55 @@ class CohortOMOP:
                     break
 
         # Remove excluded patients from the dataset
-        ds = ds.select(
-            [i for i in range(len(ds)) if i not in exclude_patient_indices]
-        )
+        keep_indices = [i for i in range(len(ds)) if i not in exclude_patient_indices]
+        ds, labels_dict, anchor_times = self._select_patients(ds, labels_dict, anchor_times, keep_indices)
+        return ds, labels_dict, anchor_times
+
+    def filter_patients_without_anchor(self, labels_dict: Dict[str, List[Any]], anchor_times: List[Any], ds: Dataset) -> Tuple[Dataset, Dict[str, List[Any]], List[Any]]:
+        """
+        Remove patients who do not have an anchor event (i.e., anchor label's boolean_value == False).
+        This reduces the dataset for all downstream tasks.
+        """
+        # Find anchor label columns
+        anchor_label_cols = [
+            col
+            for col, labels in labels_dict.items()
+            if labels
+            and isinstance(labels[0], list)
+            and labels[0]
+            and isinstance(labels[0][0], dict)
+            and labels[0][0].get("label_type", None) == LabelType.ANCHOR
+        ]
+        if not anchor_label_cols:
+            # No anchor labelers found; return as is
+            return ds, labels_dict, anchor_times
+        anchor_col = anchor_label_cols[0]
+        # Identify patients to keep (anchor label boolean_value == True)
+        keep_indices = [
+            i for i, anchor_labels in enumerate(labels_dict[anchor_col])
+            if any(label.get("boolean_value", False) for label in anchor_labels)
+        ]
+        ds, labels_dict, anchor_times = self._select_patients(ds, labels_dict, anchor_times, keep_indices)
+        self._record_metadata("Filtered patients without anchor event", ds)
+        return ds, labels_dict, anchor_times
+
+    def _select_patients(self, ds, labels_dict, anchor_times, keep_indices):
+        """
+        Utility to select/filter patients by indices across ds, labels_dict, and anchor_times.
+        """
+        ds = ds.select(keep_indices)
         labels_dict = {
-            col: [labels[i] for i in range(len(ds)) if i not in exclude_patient_indices]
+            col: [labels[i] for i in keep_indices]
             for col, labels in labels_dict.items()
         }
-        anchor_times = [
-            anchor_times[i] for i in range(len(ds)) if i not in exclude_patient_indices
-        ]
+        anchor_times = [anchor_times[i] for i in keep_indices]
         return ds, labels_dict, anchor_times
 
     def build_cohort(self) -> Dataset:
         ds = self.load_data()
         ds = self.group_events(ds)
         labels_dict, anchor_times = self.apply_labelers(ds)
+        ds, labels_dict, anchor_times = self.filter_patients_without_anchor(labels_dict, anchor_times, ds)
         ds, labels_dict, anchor_times = self.exclude_patients(labels_dict, anchor_times, ds)
         self.apply_competing_risk_censoring(labels_dict, anchor_times, ds)
         ds = self.truncate_events_at_competing(labels_dict, anchor_times, ds)
