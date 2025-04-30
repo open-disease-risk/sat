@@ -11,7 +11,24 @@ def make_patient(patient_id, events):
     return {"patient_id": patient_id, "events": events}
 
 
-# ---- Competing Risk (with CustomEventLabeler) Tests ----
+def test_anchor_event():
+    labeler = CustomEventLabeler("anchor", label_type=LabelType.ANCHOR, event_codes=["X"], max_time=10)
+    patient = make_patient("p0", [make_event("X", 5)])
+    labels = labeler.label(patient)
+    assert labels[0]["boolean_value"] is True
+    assert labels[0]["competing_event"] is False
+    assert labels[0]["prediction_time"] == 5
+
+
+def test_anchor_event_2():
+    labeler = CustomEventLabeler("anchor", label_type=LabelType.ANCHOR, event_codes=["X"], max_time=10)
+    patient = make_patient("p0", [make_event("A", 5)])
+    labels = labeler.label(patient)
+    assert labels[0]["boolean_value"] is False
+    assert labels[0]["competing_event"] is False
+    assert labels[0]["prediction_time"] == 5
+
+
 def test_competing_risk_no_events():
     labeler_a = CustomEventLabeler("A", event_codes=["X"], competing_event=True, max_time=10)
     labeler_b = CustomEventLabeler("B", event_codes=["Y"], competing_event=True, max_time=10)
