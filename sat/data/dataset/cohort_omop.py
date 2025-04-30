@@ -253,10 +253,44 @@ class CohortOMOP:
         self._record_metadata("Truncated events at competing risk", ds)
         return ds
 
+    def exclude_patients(
+        self, labels_dict: Dict[str, List[Any]], anchor_times: List[Any], ds: Dataset) -> Tuple[Dataset, Dict[str, List[Any]], List[Any]]:
+        # Identify exclusion labels and patients to exclude
+        exclusion_label_cols = [
+            col
+            for col, labels in labels_dict.items()
+            if labels
+            and isinstance(labels[0], list)
+            and labels[0]
+            and isinstance(labels[0][0], dict)
+            and labels[0][0].get("label_type", None) == LabelType.EXCLUSION
+        ]
+        exclude_patient_indices = set()
+        for i, _ in enumerate(ds):
+            for exclusion_col in exclusion_label_cols:
+                exclusion_labels = labels_dict[exclusion_col][i]
+                if any(label.get("boolean_value", False) for label in exclusion_labels):
+                    exclude_patient_indices.add(i)
+                    break
+
+        # Remove excluded patients from the dataset
+        ds = ds.select(
+            [i for i in range(len(ds)) if i not in exclude_patient_indices]
+        )
+        labels_dict = {
+            col: [labels[i] for i in range(len(ds)) if i not in exclude_patient_indices]
+            for col, labels in labels_dict.items()
+        }
+        anchor_times = [
+            anchor_times[i] for i in range(len(ds)) if i not in exclude_patient_indices
+        ]
+        return ds, labels_dict, anchor_times
+
     def build_cohort(self) -> Dataset:
         ds = self.load_data()
         ds = self.group_events(ds)
         labels_dict, anchor_times = self.apply_labelers(ds)
+        ds, labels_dict, anchor_times = self.exclude_patients(labels_dict, anchor_times, ds)
         self.apply_competing_risk_censoring(labels_dict, anchor_times, ds)
         ds = self.truncate_events_at_competing(labels_dict, anchor_times, ds)
         ds = self.apply_filters(ds)
