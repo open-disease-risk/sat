@@ -3,8 +3,7 @@ __status__ = "Development"
 
 import datetime
 import logging
-import pathlib
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 from datasets import Dataset
 
