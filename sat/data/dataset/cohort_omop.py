@@ -3,6 +3,7 @@ __status__ = "Development"
 
 import datetime
 import logging
+import pathlib
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from datasets import Dataset
@@ -20,20 +21,17 @@ class CohortOMOP:
         1. Load data
         2. Group events by patient (if needed)
         3. Apply labelers (index date, outcome, eligibility, etc.)
-        4. Apply cohort filters (inclusion/exclusion)
-        5. Apply featurizers (covariate construction)
-        6. Save metadata (provenance)
+        4. Save cohort dataset and metadata (provenance)
     """
 
     def __init__(
         self,
         source: str,
+        name: str = "cohort_omop",
+        cohort_dir: str = "",
         labelers: Optional[List[Any]] = None,
-        featurizers: Optional[List[Any]] = None,
-        filters: Optional[List[Callable[[Dataset], Dataset]]] = None,
         primary_key: str = "patient_id",
         time_field: str = "time",
-        metadata_path: Optional[str] = None,
         date_diff_unit: str = "days",  # Unit for date differences
     ):
         """
@@ -41,13 +39,12 @@ class CohortOMOP:
             date_diff_unit: str
                 Unit for time differences when subtracting datetimes (e.g., 'days', 'hours', 'minutes'). Default: 'days'.
         """
+        self.name = name
         self.source = source
+        self.cohort_dir = cohort_dir
         self.labelers = labelers or []
-        self.featurizers = featurizers or []
-        self.filters = filters or []
         self.primary_key = primary_key
         self.time_field = time_field
-        self.metadata_path = metadata_path or "cohort_metadata.json"
         self.metadata: List[Dict[str, Any]] = []
         self.date_diff_unit = date_diff_unit
 
@@ -318,7 +315,61 @@ class CohortOMOP:
         anchor_times = [anchor_times[i] for i in keep_indices]
         return ds, labels_dict, anchor_times
 
-    def build_cohort(self) -> Dataset:
+    def save_metadata(self, labels_dict, anchor_times):
+        """
+        Save cohort metadata (labels_dict, anchor_times, and provenance) to a JSON file in the output directory.
+        The output directory is derived from self.cohort_dir.
+        """
+        def make_serializable(obj):
+            # Recursively convert objects to serializable forms
+            if isinstance(obj, dict):
+                return {k: make_serializable(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [make_serializable(v) for v in obj]
+            elif hasattr(obj, 'isoformat'):
+                return obj.isoformat()
+            elif hasattr(obj, '__dict__'):
+                return make_serializable(vars(obj))
+            else:
+                try:
+                    json.dumps(obj)
+                    return obj
+                except Exception:
+                    return str(obj)
+        # Determine output directory
+        meta = {
+            "labels_dict": make_serializable(labels_dict),
+            "anchor_times": make_serializable(anchor_times),
+            "provenance": self.metadata,
+        }
+        meta_path = Path(self.cohort_dir) / "cohort_metadata.json"
+        meta_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(meta_path, "w") as f:
+            json.dump(meta, f, indent=2)
+
+    def save_cohort_dataset(self, ds):
+        """
+        Save the cohort dataset to the output directory. Supports HuggingFace Dataset and pandas DataFrame.
+        The output directory is derived from self.cohort_dir.
+        """
+        cohort_path_parquet = Path(self.cohort_dir) / "cohort.parquet"
+        cohort_path_csv = Path(self.cohort_dir) / "cohort.csv"
+        cohort_path_parquet.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            # HuggingFace Dataset
+            ds.to_parquet(cohort_path_parquet)
+        except Exception:
+            try:
+                # Try pandas DataFrame
+                df = ds.to_pandas() if hasattr(ds, "to_pandas") else ds
+                df.to_parquet(cohort_path_parquet)
+            except Exception:
+                try:
+                    df.to_csv(cohort_path_csv, index=False)
+                except Exception as e:
+                    logger.warning(f"Could not save cohort dataset: {e}")
+
+    def build_cohort(self):
         ds = self.load_data()
         ds = self.group_events(ds)
         labels_dict, anchor_times = self.apply_labelers(ds)
@@ -326,7 +377,5 @@ class CohortOMOP:
         ds, labels_dict, anchor_times = self.exclude_patients(labels_dict, anchor_times, ds)
         self.apply_competing_risk_censoring(labels_dict, anchor_times, ds)
         ds = self.truncate_events_at_competing(labels_dict, anchor_times, ds)
-        ds = self.apply_filters(ds)
-        ds = self.apply_featurizers(ds)
-        self.save_metadata()
-        return ds
+        self.save_metadata(labels_dict, anchor_times)
+        self.save_cohort_dataset(ds)
