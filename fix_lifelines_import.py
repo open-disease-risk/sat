@@ -10,7 +10,6 @@ import importlib
 import inspect
 import sys
 import warnings
-from pathlib import Path
 
 
 def apply_lifelines_patch():
@@ -20,8 +19,7 @@ def apply_lifelines_patch():
     try:
         # Try to import lifelines
         import lifelines
-        import scipy
-        from scipy import integrate
+        from scipy import integrate  # Need to check if trapz exists
 
         # Check if trapz is directly available in scipy.integrate
         if not hasattr(integrate, "trapz"):
@@ -33,7 +31,8 @@ def apply_lifelines_patch():
             from scipy import trapezoid
 
             # Monkey patch the trapz function in lifelines modules that use it
-            fitters_init_path = Path(inspect.getfile(lifelines.fitters))
+            # Get the path to lifelines fitters for reference (not used but kept for debugging)
+            # fitters_init_path = Path(inspect.getfile(lifelines.fitters))
 
             # List of lifelines modules that might use trapz
             modules_to_patch = [
@@ -68,7 +67,7 @@ def apply_lifelines_patch():
             print("Lifelines patch applied successfully")
             return True
     except ImportError as e:
-        warnings.warn(f"Could not patch lifelines: {e}")
+        warnings.warn(f"Could not patch lifelines: {e}", stacklevel=2)
         return False
 
 

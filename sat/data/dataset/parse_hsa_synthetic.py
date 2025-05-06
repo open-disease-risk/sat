@@ -141,7 +141,7 @@ class hsa:
         df_features.loc[:, "modality"] = ""
         df_features.loc[:, "modality"] = df_features.loc[:, "modality"].astype("object")
 
-        for index, row in df_features.iterrows():
+        for index, _ in df_features.iterrows():
             df_features.at[index, "modality"] = modality
 
         # 4. create train/val/test split

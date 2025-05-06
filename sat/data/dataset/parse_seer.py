@@ -151,26 +151,38 @@ class seer:
                 )
 
         logger.debug("Prepend feature name to categorical values")
-        for c in categorical_features:
-            logger.debug(f"Map feature {c}")
-            df_features.loc[:, c] = df_features[c].apply(lambda x: c + "_" + str(x))
+
+        # Create a function that takes both column name and value to avoid closure issues
+        def prefix_with_colname(colname, value):
+            return f"{colname}_{value}"
+
+        for col in categorical_features:
+            logger.debug(f"Map feature {col}")
+            # Using a partial function to avoid closure issues with loop variables
+            df_features.loc[:, col] = df_features[col].apply(
+                lambda x, col=col: prefix_with_colname(col, x)
+            )
 
         df_features.loc[:, "x"] = ""
         df_features.loc[:, "x"] = df_features["x"].astype("object")
 
-        for index, row in df_features.iterrows():
-            df_features.at[index, "x"] = " ".join(tokens(row, modality))
+        for index, _ in df_features.iterrows():
+            df_features.at[index, "x"] = " ".join(
+                tokens(df_features.iloc[index], modality)
+            )
 
         df_features.loc[:, "numerics"] = ""
         df_features.loc[:, "numerics"] = df_features["numerics"].astype("object")
 
-        for index, row in df_features.iterrows():
-            df_features.at[index, "numerics"] = numerics(row, modality)
+        for index, _ in df_features.iterrows():
+            df_features.at[index, "numerics"] = numerics(
+                df_features.iloc[index], modality
+            )
 
         df_features.loc[:, "modality"] = ""
         df_features.loc[:, "modality"] = df_features["modality"].astype("object")
 
-        for index, row in df_features.iterrows():
+        for index, _ in df_features.iterrows():
             df_features.at[index, "modality"] = modality
 
         # 4. create train/val/test split

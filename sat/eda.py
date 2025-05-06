@@ -377,7 +377,7 @@ def analyze_distribution(
 
     # Save DSM configuration if requested
     if create_config and dataset_name:
-        config = distribution_fitting.create_dsm_config(
+        _ = distribution_fitting.create_dsm_config(
             recommendations, dist_output_dir, dataset_name
         )
 
@@ -411,7 +411,7 @@ def analyze_censoring(
     results = {}
 
     # Analyze censoring pattern for each event type
-    for i, (durs, evts, evt_type) in enumerate(
+    for _, (durs, evts, evt_type) in enumerate(
         zip(durations, events, event_types, strict=False)
     ):
         logger.info(f"Analyzing censoring for {evt_type}")
@@ -494,7 +494,7 @@ def analyze_covariates_effects(
     results["distributions"] = distribution_results
 
     # Analyze effects for each event type
-    for i, (durs, evts, evt_type) in enumerate(
+    for _, (durs, evts, evt_type) in enumerate(
         zip(durations, events, event_types, strict=False)
     ):
         logger.info(f"Analyzing covariate effects for {evt_type}")

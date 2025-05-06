@@ -5,7 +5,7 @@ __status__ = "Development"
 
 import abc
 import json
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import torch
 from torch import nn
@@ -26,7 +26,7 @@ class BaseConfig(abc.ABC, PretrainedConfig):
         initializer_range: int = 0.02,
         initializer: str = "kaiming_uniform",
         num_events: int = 1,
-        loss: Dict[str, Any] = {},
+        loss: Optional[Dict[str, Any]] = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -37,7 +37,7 @@ class BaseConfig(abc.ABC, PretrainedConfig):
         self.initializer = initializer
         self.task_specific_params: Dict[str, Any] = {}
         self.num_events = num_events
-        self.loss = loss
+        self.loss = loss if loss is not None else {}
 
     # deal with nested dictionaries
     def to_json_string(self, use_diff=True):
@@ -81,20 +81,20 @@ class BaseTask(PreTrainedModel):
     def initialize_module(self, module):
         """Initialize a module and its direct parameters, but NOT its sub-modules"""
         # Initialize parameters directly owned by this module
-        for name, param in module.named_parameters(recurse=False):
-            if "weight" in name:
+        for param_name, _ in module.named_parameters(recurse=False):
+            if "weight" in param_name:
                 if isinstance(module, nn.Linear):
                     self._init_linear_weight(module)
                 elif isinstance(module, nn.LayerNorm):
                     self._init_layernorm_weight(module)
-            elif "bias" in name:
+            elif "bias" in param_name:
                 if isinstance(module, nn.Linear):
                     self._init_linear_bias(module)
                 elif isinstance(module, nn.LayerNorm):
                     self._init_layernorm_bias(module)
 
         # Recursively initialize child modules with the same task's initializer
-        for child_name, child_module in module.named_children():
+        for _, child_module in module.named_children():
             self.initialize_module(child_module)
 
     def _init_linear_weight(self, module):

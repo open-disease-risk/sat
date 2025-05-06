@@ -6,7 +6,7 @@ __status__ = "Development"
 import pickle
 from logging import DEBUG, ERROR
 from pathlib import Path
-from typing import List, Union
+from typing import List, Optional, Union
 
 import numpy as np
 from logdecorator import log_on_end, log_on_error, log_on_start
@@ -37,14 +37,18 @@ class SAFeatureExtractor(FeatureExtractionMixin):
         do_data_transform: bool = True,
         duration_col: str = "duration",
         event_col: str = "event",
-        transformed_duration_cols: List[str] = ["t", "e"],
+        transformed_duration_cols: Optional[List[str]] = None,
         **kwargs,
     ):
         self.label_transform_path = label_transform_path
         self.do_data_transform = do_data_transform
         self.duration_col = duration_col
         self.event_col = event_col
-        self.transformed_duration_cols = transformed_duration_cols
+        self.transformed_duration_cols = (
+            transformed_duration_cols
+            if transformed_duration_cols is not None
+            else ["t", "e"]
+        )
         self.labtrans = None
         self.is_data_transform_loaded = False
 

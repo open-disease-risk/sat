@@ -280,7 +280,8 @@ class MixtureDistribution(SurvivalDistribution):
         Returns:
             Log likelihood values [batch_size]
         """
-        batch_size = time.shape[0]
+        # Get batch size for potential debugging/logging if needed
+        # batch_size = time.shape[0]
 
         # Initialize log likelihood tensor
         log_weights = torch.log(

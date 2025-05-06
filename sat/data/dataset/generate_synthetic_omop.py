@@ -18,6 +18,8 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
 
 from .generate_patient_event_json import generate_patient_event_json
 
@@ -309,7 +311,6 @@ def generate_patient_data(num_patients: int) -> pd.DataFrame:
     # Generate base data for each patient
     patient_birth_dates = {}
     patient_enrollment_dates = {}
-    patient_death_dates = {}
     patient_derived_features = {}
 
     for patient_id in patient_ids:
@@ -401,11 +402,7 @@ def generate_patient_data(num_patients: int) -> pd.DataFrame:
     # Create DataFrame in OMOP format
     df_omop = pd.DataFrame(omop_data)
 
-    # Initialize basic patient demographic features
-    for patient_id in patient_ids:
-        # We'll randomly assign risk scores later based on demographics,
-        # but won't explicitly track risk factors
-        pass
+    # Risk scores will be assigned later based on demographics
 
     return (
         df_omop,
@@ -513,9 +510,7 @@ def generate_event_times(
         time = np.random.weibull(shape) / lambda_param
         return time
 
-    # Get competing and non-competing event types
-    competing_events = [et for et in EVENT_TYPES if et["competing"]]
-    non_competing_events = [et for et in EVENT_TYPES if not et["competing"]]
+    # Events are processed based on patient risk factors
 
     # Process each patient
     for patient_id, enrollment_date in patient_enrollment_dates.items():
@@ -541,11 +536,9 @@ def generate_event_times(
 
             # For this patient, other events can only occur before death
             patient_max_time = death_time_days
-            patient_end_reason = "death"
         else:
             # Patient survived the entire follow-up period
             patient_max_time = censoring_time
-            patient_end_reason = "censored"
 
         # Generate time-dependent measurements and events
 
@@ -563,7 +556,6 @@ def generate_event_times(
 
             # Generate length of stay (1-14 days)
             length_of_stay = np.random.randint(1, 15)
-            discharge_date = hosp_date + timedelta(days=length_of_stay)
 
             # Add hospitalization event
             omop_events.append(
@@ -582,10 +574,7 @@ def generate_event_times(
             max(1, diagnosis_risk / 20 * (patient_max_time / 365))
         )
 
-        # Randomly select diagnosis codes
-        all_codes = random.sample(
-            ICD_CODES, min(len(ICD_CODES), 5 + int(diagnosis_risk / 10))
-        )
+        # Sample diagnosis codes directly when needed
 
         for _ in range(num_diagnoses):
             # Generate diagnosis time
@@ -612,10 +601,7 @@ def generate_event_times(
             max(1, medication_risk / 15 * (patient_max_time / 365))
         )
 
-        # Randomly select medications
-        all_omop = random.sample(
-            OMOP_CODES, min(len(OMOP_CODES), 3 + int(medication_risk / 10))
-        )
+        # Sample medications directly when needed
 
         for _ in range(num_medications):
             # Generate medication time
@@ -640,8 +626,7 @@ def generate_event_times(
         lab_risk = patient_risk_scores[patient_id]["LAB_RESULT"]
         num_labs = np.random.poisson(max(2, lab_risk / 10 * (patient_max_time / 365)))
 
-        # Randomly select lab tests
-        all_labs = random.sample(LAB_CODES, min(len(LAB_CODES), 3 + int(lab_risk / 8)))
+        # Sample lab tests directly when needed
 
         for _ in range(num_labs):
             # Generate lab time

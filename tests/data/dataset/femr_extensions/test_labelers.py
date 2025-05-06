@@ -12,7 +12,9 @@ def make_patient(patient_id, events):
 
 
 def test_anchor_event():
-    labeler = CustomEventLabeler("anchor", label_type=LabelType.ANCHOR, event_codes=["X"], max_time=10)
+    labeler = CustomEventLabeler(
+        "anchor", label_type=LabelType.ANCHOR, event_codes=["X"], max_time=10
+    )
     patient = make_patient("p0", [make_event("X", 5)])
     labels = labeler.label(patient)
     assert labels[0]["boolean_value"] is True
@@ -21,7 +23,9 @@ def test_anchor_event():
 
 
 def test_anchor_event_2():
-    labeler = CustomEventLabeler("anchor", label_type=LabelType.ANCHOR, event_codes=["X"], max_time=10)
+    labeler = CustomEventLabeler(
+        "anchor", label_type=LabelType.ANCHOR, event_codes=["X"], max_time=10
+    )
     patient = make_patient("p0", [make_event("A", 5)])
     labels = labeler.label(patient)
     assert labels[0]["boolean_value"] is False
@@ -30,8 +34,12 @@ def test_anchor_event_2():
 
 
 def test_competing_risk_no_events():
-    labeler_a = CustomEventLabeler("A", event_codes=["X"], competing_event=True, max_time=10)
-    labeler_b = CustomEventLabeler("B", event_codes=["Y"], competing_event=True, max_time=10)
+    labeler_a = CustomEventLabeler(
+        "A", event_codes=["X"], competing_event=True, max_time=10
+    )
+    labeler_b = CustomEventLabeler(
+        "B", event_codes=["Y"], competing_event=True, max_time=10
+    )
     patient = make_patient("p0", [])
     a_label = labeler_a.label(patient)[0]
     b_label = labeler_b.label(patient)[0]
@@ -104,7 +112,9 @@ def test_survival_event_not_found():
 
 # ---- CustomEventLabeler Tests ----
 def test_custom_event_exclusion():
-    labeler = CustomEventLabeler("custom", label_type=LabelType.EXCLUSION, event_codes=["Y"])
+    labeler = CustomEventLabeler(
+        "custom", label_type=LabelType.EXCLUSION, event_codes=["Y"]
+    )
     patient = make_patient("p6", [make_event("X", 1), make_event("Y", 2)])
     labels = labeler.label(patient)
     assert labels[0]["boolean_value"] is True, labels[0]
@@ -147,8 +157,6 @@ def test_custom_event_time_window():
     assert labels[0]["boolean_value"] is False, labels[0]
     assert labels[0]["competing_event"] is False, labels[0]
     assert labels[0]["prediction_time"] == 5, labels[0]
-
-
 
 
 def test_custom_event_time_window_2():

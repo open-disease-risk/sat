@@ -129,10 +129,10 @@ def run_benchmark(loss_fn, predictions, references, num_iterations=5, name="Unkn
     return avg_forward, avg_backward
 
 
-def compare_ranking_losses(
-    batch_sizes=[16, 32, 64, 128, 256], num_events=2, iterations=3
-):
+def compare_ranking_losses(batch_sizes=None, num_events=2, iterations=3):
     """Compare different ranking loss implementations."""
+    if batch_sizes is None:
+        batch_sizes = [16, 32, 64, 128, 256]
     results = defaultdict(list)
 
     # Track metadata

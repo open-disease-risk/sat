@@ -383,7 +383,7 @@ class SOAPLoss(RankingLoss):
         # Extract anchor and comparison indices - keep as separate tensors for better vectorization
         anchor_indices = pairs[:, 0]
         compare_indices = pairs[:, 1]
-        num_pairs = anchor_indices.shape[0]
+        # num_pairs = anchor_indices.shape[0]  # Used for debugging/logging if needed
 
         # Get max duration for normalization (used later in adaptive margin)
         max_duration = self.duration_cuts[-1].to(device)

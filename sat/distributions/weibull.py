@@ -366,7 +366,7 @@ class WeibullDistribution(SurvivalDistribution):
         shape_scale_ratio = torch.clamp(shape_scale_ratio, min=0.0, max=1e4)
 
         # Check if we have any shapes below 1.0 which need special handling
-        any_shape_below_one = torch.any(shape_expanded < 1.0)
+        # any_shape_below_one = torch.any(shape_expanded < 1.0)  # Not used in current implementation
 
         # For debugging purposes
         if debug_nans:
@@ -1008,7 +1008,7 @@ class WeibullMixtureDistribution(MixtureDistribution):
                 print(f"  time NaNs: {torch.isnan(time).sum().item()}")
 
         distributions = self.get_component_distributions()
-        batch_size = time.shape[0]
+        # batch_size = time.shape[0]  # For potential debugging/logging
 
         # Ensure time is positive and within reasonable bounds
         time_safe = torch.clamp(time, min=self.eps, max=1e10)

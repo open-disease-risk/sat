@@ -129,9 +129,16 @@ class metabric:
             df_feat.columns = new_feature_columns
             df_targets.columns = new_target_columns
 
-            for c in df_feat.columns:
-                logger.debug(f"Map feature {c}")
-                df_feat[c] = df_feat[c].apply(lambda x: c + "_" + str(x))
+            # Create a function that takes both column name and value to avoid closure issues
+            def prefix_with_colname(colname, value):
+                return f"{colname}_{value}"
+
+            for col in df_feat.columns:
+                logger.debug(f"Map feature {col}")
+                # Using a partial function to avoid closure issues with loop variables
+                df_feat[col] = df_feat[col].apply(
+                    lambda x, col=col: prefix_with_colname(col, x)
+                )
 
             # 3. create a dummy dataset where the event is flipped to 2 randomly
             if self.flip_event:

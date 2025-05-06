@@ -78,9 +78,17 @@ class synthetic:
         logger.debug("Prepend column name to the features turning them into tokens")
         logger.debug(f"Feature types: {df_feat.dtypes}")
         main_feature_cols = df_feat.columns
-        for c in df_feat.columns:
-            logger.debug(f"Map feature {c}")
-            df_feat[c] = df_feat[c].apply(lambda x: c + "_" + str(x))
+
+        # Create a function that takes both column name and value to avoid closure issues
+        def prefix_with_colname(colname, value):
+            return f"{colname}_{value}"
+
+        for col in df_feat.columns:
+            logger.debug(f"Map feature {col}")
+            # Using a partial function to avoid closure issues with loop variables
+            df_feat[col] = df_feat[col].apply(
+                lambda x, col=col: prefix_with_colname(col, x)
+            )
 
         # 3. create train/val/test split
         logger.debug("Create train/val/test split")

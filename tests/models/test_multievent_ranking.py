@@ -109,7 +109,7 @@ def test_tensor_orientations():
 
     # Show tensor after MultiEventRankingLoss permutation (no permutation)
     multi_events = events.clone()
-    multi_durations = durations.clone()
+    # multi_durations = durations.clone()  # Unused variable
 
     print("\nMultiEventRankingLoss tensor orientation:")
     print(f"Events tensor: {multi_events}")
@@ -117,7 +117,7 @@ def test_tensor_orientations():
 
     # Show tensor after SampleRankingLoss permutation
     sample_events = events.permute(1, 0)
-    sample_durations = durations.permute(1, 0)
+    # sample_durations = durations.permute(1, 0)  # Unused variable
 
     print("\nSampleRankingLoss tensor orientation (after permute):")
     print(f"Events tensor: {sample_events}")
@@ -326,12 +326,14 @@ def test_hsa_synthetic_specific():
 
         # For MultiEventRankingLoss
         events_multi = multi_loss.events(targets)
-        n_multi = events_multi.shape[0]
-        e_multi = events_multi.shape[1]
+        # n_multi and e_multi are not used in this test
+        # n_multi = events_multi.shape[0]
+        # e_multi = events_multi.shape[1]
 
         # Show the event masks
         I_multi = events_multi.to(bool)
-        I_censored_multi = ~I_multi
+        # I_censored_multi is not used in this test
+        # I_censored_multi = ~I_multi
         print(
             f"\nShape of event indicator tensor (MultiEventRankingLoss): {I_multi.shape}"
         )
@@ -339,12 +341,14 @@ def test_hsa_synthetic_specific():
 
         # For SampleRankingLoss
         events_sample = sample_loss.events(targets).permute(1, 0)
-        n_sample = events_sample.shape[0]
-        e_sample = events_sample.shape[1]
+        # n_sample and e_sample are not used in this test
+        # n_sample = events_sample.shape[0]
+        # e_sample = events_sample.shape[1]
 
         # Show the event masks
         I_sample = events_sample.to(bool)
-        I_censored_sample = ~I_sample
+        # I_censored_sample is not used in this test
+        # I_censored_sample = ~I_sample
         print(
             f"\nShape of event indicator tensor (SampleRankingLoss): {I_sample.shape}"
         )

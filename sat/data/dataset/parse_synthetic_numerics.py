@@ -175,7 +175,7 @@ class synthetic:
         df_features["modality"] = ""
         df_features["modality"] = df_features["modality"].astype("object")
 
-        for index, row in df_features.iterrows():
+        for index, _ in df_features.iterrows():
             df_features.at[index, "modality"] = modality
 
         # 4. create train/val/test split

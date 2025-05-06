@@ -9,17 +9,16 @@ import numpy as np
 import pytest
 import torch
 
-# Configure minimal logging to avoid debug messages during benchmarks
-logging.basicConfig(level=logging.WARNING)
-
-
 from sat.loss.ranking.sample import SampleRankingLoss
 from sat.loss.survival.deephit import DeepHitLikelihoodLoss
-
-# ObservationEventRankingLoss and DeepHitRankingLoss have been removed
 from sat.models.heads.output import SAOutput
 from sat.models.heads.survival import SurvivalConfig, SurvivalTaskHead
 from sat.models.nets import CauseSpecificNet, CauseSpecificNetCompRisk
+
+# Configure minimal logging to avoid debug messages during benchmarks
+logging.basicConfig(level=logging.WARNING)
+
+# ObservationEventRankingLoss and DeepHitRankingLoss have been removed
 
 
 @pytest.fixture
@@ -285,7 +284,7 @@ def test_cause_specific_net_performance(survival_data):
     num_trials = 20
     start_time = time.time()
     for _ in range(num_trials):
-        output = net(sequence_output)
+        _ = net(sequence_output)  # Capture output but don't store it
     forward_time = (time.time() - start_time) / num_trials
 
     print(f"\nCauseSpecificNet forward time: {forward_time:.6f} seconds")
@@ -320,7 +319,7 @@ def test_cause_specific_comp_risk_net_performance(survival_data):
     num_trials = 20
     start_time = time.time()
     for _ in range(num_trials):
-        output = net(sequence_output)
+        _ = net(sequence_output)  # Capture output but don't store it
     forward_time = (time.time() - start_time) / num_trials
 
     print(f"\nCauseSpecificNetCompRisk forward time: {forward_time:.6f} seconds")

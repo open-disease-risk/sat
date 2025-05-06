@@ -245,7 +245,7 @@ class MENSALoss(Loss):
         events = self.events(references)  # [batch_size, num_events]
         durations = self.durations(references)  # [batch_size, num_events]
 
-        batch_size = events.shape[0]
+        # batch_size = events.shape[0]  # Used for debugging/logging if needed
         device = references.device
 
         # Create weights tensor if needed

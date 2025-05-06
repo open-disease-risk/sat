@@ -141,26 +141,38 @@ class metabric:
             cols_categorical = ["x4", "x5", "x6", "x7"]
 
             logger.debug("Prepend feature name to categorical values")
-            for c in cols_categorical:
-                logger.debug(f"Map feature {c}")
-                df_features[c] = df_features[c].apply(lambda x: c + "_" + str(x))
+
+            # Create a function that takes both column name and value to avoid closure issues
+            def prefix_with_colname(colname, value):
+                return f"{colname}_{value}"
+
+            for col in cols_categorical:
+                logger.debug(f"Map feature {col}")
+                # Using a partial function to avoid closure issues with loop variables
+                df_features[col] = df_features[col].apply(
+                    lambda x, col=col: prefix_with_colname(col, x)
+                )
 
             df_features["x"] = ""
             df_features["x"] = df_features["x"].astype("object")
 
-            for index, row in df_features.iterrows():
-                df_features.at[index, "x"] = " ".join(tokens(row, modality, 0))
+            for index, _ in df_features.iterrows():
+                df_features.at[index, "x"] = " ".join(
+                    tokens(df_features.iloc[index], modality, 0)
+                )
 
             df_features["numerics"] = ""
             df_features["numerics"] = df_features["numerics"].astype("object")
 
-            for index, row in df_features.iterrows():
-                df_features.at[index, "numerics"] = numerics(row, modality, 0)
+            for index, _ in df_features.iterrows():
+                df_features.at[index, "numerics"] = numerics(
+                    df_features.iloc[index], modality, 0
+                )
 
             df_features["modality"] = ""
             df_features["modality"] = df_features["modality"].astype("object")
 
-            for index, row in df_features.iterrows():
+            for index, _ in df_features.iterrows():
                 df_features.at[index, "modality"] = modality
 
             # 4. create train/val/test split

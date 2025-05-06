@@ -256,7 +256,8 @@ class RankNetLoss(RankingLoss):
         Returns:
             torch.Tensor: Interpolated survival values [batch_size]
         """
-        batch_size = survival_curves.shape[0]
+        # Get batch size for debugging/logging if needed
+        # batch_size = survival_curves.shape[0]
 
         # Create tensor version of duration cuts
         cuts = self.duration_cuts.to(device)

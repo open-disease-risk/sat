@@ -391,7 +391,7 @@ def apply_informative_prior(
             # For infectious disease, high initial risk followed by decreasing hazard
             # Shape < 1 indicates decreasing hazard
             shape_prior_mean = 0.8
-            shape_prior_std = 0.2
+            # shape_prior_std = 0.2  # Not used in this implementation
 
             if "shape" in params:
                 shape = params["shape"]

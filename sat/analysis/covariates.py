@@ -242,7 +242,7 @@ def analyze_covariate_distributions(
                     adjusted_p = multipletests(p_values, method="fdr_bh")[1]
 
                     # Update results with adjusted p-values
-                    for (key, result_dict), adj_p in zip(
+                    for (key, _), adj_p in zip(
                         list(results_dict.items()), adjusted_p, strict=False
                     ):
                         results_dict[key]["adjusted_p"] = adj_p

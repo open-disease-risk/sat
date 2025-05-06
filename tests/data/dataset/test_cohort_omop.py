@@ -252,15 +252,20 @@ def test_truncate_events_no_events_column():
     ds2 = cohort.truncate_events_at_competing(labels_dict, anchor_times=[0], ds=ds)
     assert "events" not in ds2.column_names
 
+
 def test_filter_patients_without_anchor_all_true():
     ds = make_dummy_dataset()
     # Both patients have anchor label True
-    anchor_labels = [ [ {"boolean_value": True, "label_type": LabelType.ANCHOR} ],
-                      [ {"boolean_value": True, "label_type": LabelType.ANCHOR} ] ]
-    dummy_labels_dict = {"anchor": anchor_labels, "other": [[1],[2]]}
+    anchor_labels = [
+        [{"boolean_value": True, "label_type": LabelType.ANCHOR}],
+        [{"boolean_value": True, "label_type": LabelType.ANCHOR}],
+    ]
+    dummy_labels_dict = {"anchor": anchor_labels, "other": [[1], [2]]}
     anchor_times = [0, 1]
     cohort = CohortOMOP(source=None, labelers=[])
-    ds2, labels_dict2, anchor_times2 = cohort.filter_patients_without_anchor(dummy_labels_dict, anchor_times, ds)
+    ds2, labels_dict2, anchor_times2 = cohort.filter_patients_without_anchor(
+        dummy_labels_dict, anchor_times, ds
+    )
     assert len(ds2) == 2
     assert labels_dict2["anchor"] == anchor_labels
     assert anchor_times2 == [0, 1]
@@ -269,12 +274,16 @@ def test_filter_patients_without_anchor_all_true():
 def test_filter_patients_without_anchor_some_false():
     ds = make_dummy_dataset()
     # First patient True, second False
-    anchor_labels = [ [ {"boolean_value": True, "label_type": LabelType.ANCHOR} ],
-                      [ {"boolean_value": False, "label_type": LabelType.ANCHOR} ] ]
-    dummy_labels_dict = {"anchor": anchor_labels, "other": [[1],[2]]}
+    anchor_labels = [
+        [{"boolean_value": True, "label_type": LabelType.ANCHOR}],
+        [{"boolean_value": False, "label_type": LabelType.ANCHOR}],
+    ]
+    dummy_labels_dict = {"anchor": anchor_labels, "other": [[1], [2]]}
     anchor_times = [0, 1]
     cohort = CohortOMOP(source=None, labelers=[])
-    ds2, labels_dict2, anchor_times2 = cohort.filter_patients_without_anchor(dummy_labels_dict, anchor_times, ds)
+    ds2, labels_dict2, anchor_times2 = cohort.filter_patients_without_anchor(
+        dummy_labels_dict, anchor_times, ds
+    )
     assert len(ds2) == 1
     assert labels_dict2["anchor"] == [anchor_labels[0]]
     assert labels_dict2["other"] == [[1]]
@@ -284,12 +293,16 @@ def test_filter_patients_without_anchor_some_false():
 def test_filter_patients_without_anchor_all_false():
     ds = make_dummy_dataset()
     # Both patients False
-    anchor_labels = [ [ {"boolean_value": False, "label_type": LabelType.ANCHOR} ],
-                      [ {"boolean_value": False, "label_type": LabelType.ANCHOR} ] ]
-    dummy_labels_dict = {"anchor": anchor_labels, "other": [[1],[2]]}
+    anchor_labels = [
+        [{"boolean_value": False, "label_type": LabelType.ANCHOR}],
+        [{"boolean_value": False, "label_type": LabelType.ANCHOR}],
+    ]
+    dummy_labels_dict = {"anchor": anchor_labels, "other": [[1], [2]]}
     anchor_times = [0, 1]
     cohort = CohortOMOP(source=None, labelers=[])
-    ds2, labels_dict2, anchor_times2 = cohort.filter_patients_without_anchor(dummy_labels_dict, anchor_times, ds)
+    ds2, labels_dict2, anchor_times2 = cohort.filter_patients_without_anchor(
+        dummy_labels_dict, anchor_times, ds
+    )
     assert len(ds2) == 0
     assert labels_dict2["anchor"] == []
     assert labels_dict2["other"] == []
@@ -299,10 +312,12 @@ def test_filter_patients_without_anchor_all_false():
 def test_filter_patients_without_anchor_no_anchor_labeler():
     ds = make_dummy_dataset()
     # No anchor labeler in labels_dict
-    dummy_labels_dict = {"other": [[1],[2]]}
+    dummy_labels_dict = {"other": [[1], [2]]}
     anchor_times = [0, 1]
     cohort = CohortOMOP(source=None, labelers=[])
-    ds2, labels_dict2, anchor_times2 = cohort.filter_patients_without_anchor(dummy_labels_dict, anchor_times, ds)
+    ds2, labels_dict2, anchor_times2 = cohort.filter_patients_without_anchor(
+        dummy_labels_dict, anchor_times, ds
+    )
     assert len(ds2) == 2
     assert labels_dict2 == dummy_labels_dict
     assert anchor_times2 == anchor_times

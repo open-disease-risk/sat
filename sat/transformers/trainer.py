@@ -8,8 +8,8 @@ from typing import Optional, Tuple
 import torch
 from accelerate import Accelerator
 from torch.optim import AdamW
-from torch.utils.data import DataLoader, Dataset
-from torch.utils.data.dataloader import DataLoader
+from torch.utils.data import Dataset
+from torch.utils.data.dataloader import DataLoader  # Import DataLoader once
 from transformers import Trainer, TrainingArguments
 from transformers.optimization import get_scheduler
 from transformers.trainer_pt_utils import get_parameter_names

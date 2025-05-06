@@ -11,6 +11,10 @@ import numpy as np
 import pandas as pd
 import torch
 
+from sat.loss.ranking.multievent import MultiEventRankingLoss
+from sat.loss.ranking.sample import SampleRankingLoss
+from sat.models.heads.output import SAOutput
+
 # Configure minimal logging to avoid debug messages during benchmarks
 logging.basicConfig(level=logging.WARNING)
 
@@ -27,11 +31,6 @@ def get_best_device():
         return torch.device("mps")
     else:
         return torch.device("cpu")
-
-
-from sat.loss.ranking.multievent import MultiEventRankingLoss
-from sat.loss.ranking.sample import SampleRankingLoss
-from sat.models.heads.output import SAOutput
 
 
 def create_synthetic_survival_data(
@@ -219,9 +218,10 @@ def compare_loss_implementations(
             e = events.shape[1]  # number of events
             device = events.device
 
-            # Create tensor for censored indicator (n x e)
-            I = events.to(bool)
-            I_censored = ~I
+            # Create tensor for events as boolean
+            # events_bool not actually used in this function
+            # events_bool = events.to(bool)
+            # I_censored = ~events_bool  # Also unused variable
 
             # Initialize tensor for durations cut points (n x e x tn)
             T = self.duration_cuts.to(device)
@@ -488,9 +488,13 @@ def compare_loss_implementations(
 
 
 def run_comprehensive_benchmark(
-    batch_sizes=[32, 128, 512], event_counts=[1, 2, 5], num_trials=5, device="cpu"
+    batch_sizes=None, event_counts=None, num_trials=5, device="cpu"
 ):
     """Run a comprehensive benchmark comparing original vs vectorized implementations across multiple configurations."""
+    if batch_sizes is None:
+        batch_sizes = [32, 128, 512]
+    if event_counts is None:
+        event_counts = [1, 2, 5]
     print(
         f"Running comprehensive benchmark on {device} with {num_trials} trials per configuration"
     )
@@ -558,10 +562,11 @@ def calculate_speedup(results):
     df = pd.DataFrame(results)
 
     # Separate original and vectorized results
-    original_sample = df[df["tag"] == "SampleRankingLoss (Original)"]
-    vectorized_sample = df[df["tag"] == "SampleRankingLoss (Vectorized)"]
-    original_multievent = df[df["tag"] == "MultiEventRankingLoss (Original)"]
-    vectorized_multievent = df[df["tag"] == "MultiEventRankingLoss (Vectorized)"]
+    # These variables are calculated but not used directly
+    # original_sample = df[df["tag"] == "SampleRankingLoss (Original)"]
+    # vectorized_sample = df[df["tag"] == "SampleRankingLoss (Vectorized)"]
+    # original_multievent = df[df["tag"] == "MultiEventRankingLoss (Original)"]
+    # vectorized_multievent = df[df["tag"] == "MultiEventRankingLoss (Vectorized)"]
 
     # Create DataFrames for speedup calculations
     sample_speedup = []

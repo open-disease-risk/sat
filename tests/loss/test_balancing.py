@@ -43,7 +43,9 @@ def test_scale_normalization_balancer():
     assert abs(total_loss1.item() - 11.0) < 1e-5
 
     # Second iteration - should use updated weights based on first iteration
-    total_loss2 = balancer(losses2, iteration=1)
+    _ = balancer(
+        losses2, iteration=1
+    )  # We don't use the return value, just checking the weights update
 
     # Get weights and check they're inversely proportional to loss magnitudes
     weights = balancer.get_weights()

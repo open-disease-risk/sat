@@ -54,6 +54,7 @@ class CustomEventLabeler(CohortLabeler):
 
     Note: Instantiate one labeler per event type (including competing events).
     """
+
     def __init__(
         self,
         name: str,
@@ -122,23 +123,30 @@ class CustomEventLabeler(CohortLabeler):
                     if self.sequence_required and cond_time < first_event_time:
                         continue
                     # Time window requirement
-                    if self.time_window is not None and abs(cond_time - first_event_time) > self.time_window:
+                    if (
+                        self.time_window is not None
+                        and abs(cond_time - first_event_time) > self.time_window
+                    ):
                         continue
                     condition_met = True
                     break
             if condition_met:
-                return [ExtendedLabel(
-                    event_category=self.name,
-                    label_type=self.label_type,
-                    prediction_time=effective_time,
-                    boolean_value=condition_met,
-                    competing_event=self.competing_event,
-                )]
+                return [
+                    ExtendedLabel(
+                        event_category=self.name,
+                        label_type=self.label_type,
+                        prediction_time=effective_time,
+                        boolean_value=condition_met,
+                        competing_event=self.competing_event,
+                    )
+                ]
 
-        return [ExtendedLabel(
-            event_category=self.name,
-            label_type=self.label_type,
-            prediction_time=last_event_time,
-            boolean_value=False,
-            competing_event=self.competing_event,
-        )]
+        return [
+            ExtendedLabel(
+                event_category=self.name,
+                label_type=self.label_type,
+                prediction_time=last_event_time,
+                boolean_value=False,
+                competing_event=self.competing_event,
+            )
+        ]

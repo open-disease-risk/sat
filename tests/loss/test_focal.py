@@ -81,7 +81,7 @@ def test_focal_loss_init():
     assert loss_fn.gamma.item() == 2.0
     assert loss_fn.num_events == 2
     assert loss_fn.reduction == "mean"
-    assert loss_fn.multi_focal == False
+    assert not loss_fn.multi_focal
     assert torch.allclose(loss_fn.weights, torch.ones(3))  # Default weights
 
 
@@ -91,28 +91,28 @@ def test_multi_focal_init():
     gamma_list = [1.0, 3.0]
     loss_fn = SurvivalFocalLoss(gamma=gamma_list, num_events=2)
 
-    assert loss_fn.multi_focal == True
+    assert loss_fn.multi_focal
     assert torch.allclose(loss_fn.gamma, torch.tensor([1.0, 3.0]))
 
     # Test with tensor of gamma values
     gamma_tensor = torch.tensor([2.0, 4.0])
     loss_fn = SurvivalFocalLoss(gamma=gamma_tensor, num_events=2)
 
-    assert loss_fn.multi_focal == True
+    assert loss_fn.multi_focal
     assert torch.allclose(loss_fn.gamma, gamma_tensor)
 
     # Test with mismatched number of events and gamma values (more gammas than events)
     gamma_list = [1.0, 3.0, 5.0]
     loss_fn = SurvivalFocalLoss(gamma=gamma_list, num_events=2)
 
-    assert loss_fn.multi_focal == True
+    assert loss_fn.multi_focal
     assert torch.allclose(loss_fn.gamma, torch.tensor([1.0, 3.0]))
 
     # Test with mismatched number of events and gamma values (fewer gammas than events)
     gamma_list = [1.0]
     loss_fn = SurvivalFocalLoss(gamma=gamma_list, num_events=2)
 
-    assert loss_fn.multi_focal == True
+    assert loss_fn.multi_focal
     assert torch.allclose(loss_fn.gamma, torch.tensor([1.0, 1.0]))
 
 
@@ -401,7 +401,7 @@ def test_multi_focal_with_importance_weights(
     )
 
     # Should have correct parameters
-    assert loss_fn.multi_focal == True
+    assert loss_fn.multi_focal
     assert torch.allclose(loss_fn.gamma, torch.tensor([1.0, 3.0]))
     assert torch.allclose(loss_fn.weights, torch.tensor([0.5, 0.75, 1.25]))
 

@@ -686,8 +686,9 @@ def main():
         for file_path in temp_files.values():
             try:
                 os.unlink(file_path)
-            except:
-                pass
+            except (FileNotFoundError, PermissionError) as e:
+                # Simply log the error for debugging purposes
+                print(f"Warning: Failed to delete temporary file {file_path}: {e}")
 
 
 if __name__ == "__main__":

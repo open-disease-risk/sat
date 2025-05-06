@@ -221,12 +221,14 @@ def test_functional_equivalence():
 
 
 def benchmark_performance(
-    batch_sizes: List[int] = [8, 16, 32, 64, 128, 256],
+    batch_sizes: List[int] = None,
     num_events: int = 2,
     num_cuts: int = 10,
     num_iterations: int = 10,
 ):
     """Benchmark performance of original vs optimized implementations."""
+    if batch_sizes is None:
+        batch_sizes = [8, 16, 32, 64, 128, 256]
     print("\nBenchmarking performance:")
 
     # Create files needed for loss initialization
@@ -470,11 +472,13 @@ def benchmark_performance(
 
 def benchmark_num_events(
     batch_size: int = 32,
-    num_events_list: List[int] = [1, 2, 4, 8, 16],
+    num_events_list: List[int] = None,
     num_cuts: int = 10,
     num_iterations: int = 10,
 ):
     """Benchmark performance scaling with number of events."""
+    if num_events_list is None:
+        num_events_list = [1, 2, 4, 8, 16]
     print("\nBenchmarking scaling with number of events:")
 
     # Dictionary to store results

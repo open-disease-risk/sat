@@ -44,11 +44,11 @@ def load_model(resolved_archive_file, model):
         state_dict = torch.load(resolved_archive_file, map_location=device)
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f"Loaded model weights to {device}")
-    except Exception:
+    except Exception as err:
         raise OSError(
             "Unable to load weights from pytorch checkpoint file. "
             "If you tried to load a PyTorch model from a TF 2.0 checkpoint, please set from_tf=True. "
-        )
+        ) from err
 
     missing_keys = []
     unexpected_keys = []

@@ -633,7 +633,7 @@ class LogNormalMixtureDistribution(MixtureDistribution):
             Mixture log likelihood [batch_size]
         """
         distributions = self.get_component_distributions()
-        batch_size = time.shape[0]
+        # batch_size = time.shape[0]  # For potential debugging/logging
 
         # Ensure time is positive and within reasonable bounds
         time_safe = torch.clamp(time, min=self.eps, max=1e10)

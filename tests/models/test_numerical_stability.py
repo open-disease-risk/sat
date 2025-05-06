@@ -50,7 +50,7 @@ def test_dsm_numerical_stability(temp_csv_files):
     # Create test inputs - normal, small, and extreme values
     batch_size = 8
     num_events = 2
-    num_mixtures = 4
+    # num_mixtures = 4  # Unused variable
 
     # Create input features
     features = torch.randn(batch_size, 32)
@@ -128,7 +128,7 @@ def test_mensa_numerical_stability(temp_csv_files):
     # Create test inputs - use less extreme values for this test
     batch_size = 8
     num_events = 2
-    num_mixtures = 4
+    # num_mixtures = 4  # Unused variable
 
     # Create input features
     features = torch.randn(batch_size, 32)

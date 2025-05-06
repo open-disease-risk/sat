@@ -16,6 +16,12 @@ from evaluate.evaluator.base import (
 from evaluate.evaluator.utils import DatasetColumn
 from evaluate.module import EvaluationModule
 from evaluate.utils.file_utils import add_end_docstrings, add_start_docstrings
+from transformers import (
+    FeatureExtractionMixin,
+    Pipeline,
+    PreTrainedModel,
+    PreTrainedTokenizer,
+)
 from transformers.utils.generic import ModelOutput
 from typing_extensions import Literal
 

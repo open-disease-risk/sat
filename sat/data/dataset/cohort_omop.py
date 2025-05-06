@@ -2,7 +2,9 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 import datetime
+import json
 import logging
+from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 from datasets import Dataset
@@ -90,14 +92,14 @@ class CohortOMOP:
         """
         # Partition labelers by LabelType
         anchor_labelers = [
-            l
-            for l in self.labelers
-            if getattr(l, "label_type", None) == LabelType.ANCHOR
+            labeler
+            for labeler in self.labelers
+            if getattr(labeler, "label_type", None) == LabelType.ANCHOR
         ]
         remaining_labelers = [
-            l
-            for l in self.labelers
-            if getattr(l, "label_type", None) != LabelType.ANCHOR
+            labeler
+            for labeler in self.labelers
+            if getattr(labeler, "label_type", None) != LabelType.ANCHOR
         ]
 
         if not anchor_labelers:
@@ -250,7 +252,8 @@ class CohortOMOP:
         return ds
 
     def exclude_patients(
-        self, labels_dict: Dict[str, List[Any]], anchor_times: List[Any], ds: Dataset) -> Tuple[Dataset, Dict[str, List[Any]], List[Any]]:
+        self, labels_dict: Dict[str, List[Any]], anchor_times: List[Any], ds: Dataset
+    ) -> Tuple[Dataset, Dict[str, List[Any]], List[Any]]:
         # Identify exclusion labels and patients to exclude
         exclusion_label_cols = [
             col
@@ -271,10 +274,14 @@ class CohortOMOP:
 
         # Remove excluded patients from the dataset
         keep_indices = [i for i in range(len(ds)) if i not in exclude_patient_indices]
-        ds, labels_dict, anchor_times = self._select_patients(ds, labels_dict, anchor_times, keep_indices)
+        ds, labels_dict, anchor_times = self._select_patients(
+            ds, labels_dict, anchor_times, keep_indices
+        )
         return ds, labels_dict, anchor_times
 
-    def filter_patients_without_anchor(self, labels_dict: Dict[str, List[Any]], anchor_times: List[Any], ds: Dataset) -> Tuple[Dataset, Dict[str, List[Any]], List[Any]]:
+    def filter_patients_without_anchor(
+        self, labels_dict: Dict[str, List[Any]], anchor_times: List[Any], ds: Dataset
+    ) -> Tuple[Dataset, Dict[str, List[Any]], List[Any]]:
         """
         Remove patients who do not have an anchor event (i.e., anchor label's boolean_value == False).
         This reduces the dataset for all downstream tasks.
@@ -295,10 +302,13 @@ class CohortOMOP:
         anchor_col = anchor_label_cols[0]
         # Identify patients to keep (anchor label boolean_value == True)
         keep_indices = [
-            i for i, anchor_labels in enumerate(labels_dict[anchor_col])
+            i
+            for i, anchor_labels in enumerate(labels_dict[anchor_col])
             if any(label.get("boolean_value", False) for label in anchor_labels)
         ]
-        ds, labels_dict, anchor_times = self._select_patients(ds, labels_dict, anchor_times, keep_indices)
+        ds, labels_dict, anchor_times = self._select_patients(
+            ds, labels_dict, anchor_times, keep_indices
+        )
         self._record_metadata("Filtered patients without anchor event", ds)
         return ds, labels_dict, anchor_times
 
@@ -319,15 +329,16 @@ class CohortOMOP:
         Save cohort metadata (labels_dict, anchor_times, and provenance) to a JSON file in the output directory.
         The output directory is derived from self.cohort_dir.
         """
+
         def make_serializable(obj):
             # Recursively convert objects to serializable forms
             if isinstance(obj, dict):
                 return {k: make_serializable(v) for k, v in obj.items()}
             elif isinstance(obj, list):
                 return [make_serializable(v) for v in obj]
-            elif hasattr(obj, 'isoformat'):
+            elif hasattr(obj, "isoformat"):
                 return obj.isoformat()
-            elif hasattr(obj, '__dict__'):
+            elif hasattr(obj, "__dict__"):
                 return make_serializable(vars(obj))
             else:
                 try:
@@ -335,6 +346,7 @@ class CohortOMOP:
                     return obj
                 except Exception:
                     return str(obj)
+
         # Determine output directory
         meta = {
             "labels_dict": make_serializable(labels_dict),
@@ -372,8 +384,12 @@ class CohortOMOP:
         ds = self.load_data()
         ds = self.group_events(ds)
         labels_dict, anchor_times = self.apply_labelers(ds)
-        ds, labels_dict, anchor_times = self.filter_patients_without_anchor(labels_dict, anchor_times, ds)
-        ds, labels_dict, anchor_times = self.exclude_patients(labels_dict, anchor_times, ds)
+        ds, labels_dict, anchor_times = self.filter_patients_without_anchor(
+            labels_dict, anchor_times, ds
+        )
+        ds, labels_dict, anchor_times = self.exclude_patients(
+            labels_dict, anchor_times, ds
+        )
         self.apply_competing_risk_censoring(labels_dict, anchor_times, ds)
         ds = self.truncate_events_at_competing(labels_dict, anchor_times, ds)
         self.save_metadata(labels_dict, anchor_times)

@@ -269,7 +269,7 @@ def analyze_competing_risks(
     results = {"num_events": num_events, "event_counts": {}, "event_rates": {}}
 
     # Compute event counts and rates
-    for i, (dur, evt, label) in enumerate(zip(durations, events, labels, strict=False)):
+    for _, (_, evt, label) in enumerate(zip(durations, events, labels, strict=False)):
         count = int(np.sum(evt))
         rate = count / len(evt) * 100
         results["event_counts"][label] = count
@@ -281,7 +281,7 @@ def analyze_competing_risks(
         try:
             plt.figure(figsize=(10, 6))
 
-            for i, (dur, evt, label) in enumerate(
+            for _, (dur, evt, label) in enumerate(
                 zip(durations, events, labels, strict=False)
             ):
                 # Create Kaplan-Meier estimator and fit with event-specific data
@@ -318,7 +318,7 @@ def analyze_competing_risks(
 
             # Plot stacked histogram
             plt.figure(figsize=(12, 6))
-            ax = sns.histplot(
+            _ = sns.histplot(
                 data=df[df["event"] == 1],  # Only include events
                 x="time",
                 hue="type",

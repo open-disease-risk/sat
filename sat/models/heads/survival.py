@@ -29,7 +29,7 @@ class SurvivalConfig(BaseConfig):
         hidden_dropout_prob: float = 0.05,
         bias: bool = True,
         max_time=400,
-        duration_cuts=[],
+        duration_cuts=None,
         **kwargs,
     ):
         super().__init__(**kwargs)
