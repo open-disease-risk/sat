@@ -45,7 +45,7 @@ class synthetic:
         reraise=True,
     )
     @log_on_end(DEBUG, "done!")
-    def prepare(self) -> None:
+    def __call__(self) -> None:
         # 1. read original data
         logger.debug("Read original synthetic data")
         df = pd.read_csv(self.source)

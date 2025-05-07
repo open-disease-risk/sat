@@ -62,7 +62,7 @@ class seer:
         reraise=True,
     )
     @log_on_end(DEBUG, "done!")
-    def prepare(self) -> None:
+    def __call__(self) -> None:
         # 1. combine the test and training sets from H5 sources
         logger.debug("Combine train/test sets from H5 source")
 

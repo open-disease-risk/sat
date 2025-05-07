@@ -380,7 +380,7 @@ class CohortOMOP:
                 except Exception as e:
                     logger.warning(f"Could not save cohort dataset: {e}")
 
-    def build_cohort(self):
+    def __call__(self):
         ds = self.load_data()
         ds = self.group_events(ds)
         labels_dict, anchor_times = self.apply_labelers(ds)
