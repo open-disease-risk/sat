@@ -1,0 +1,26 @@
+# Configuration for generating synthetic OMOP data
+_target_: sat.data.dataset.generate_synthetic_omop.SyntheticOmopGenerator
+num_patients: 10000
+processed_dir: ${base_dir}/data/
+name: synthetic_omop
+seed: 42
+censoring_time: 1095  # Default 3 years (max follow-up in days)
+
+# Data definitions (optional - defaults defined in class)
+# categorical_covariates:
+#   - code: "OMOP_RACE"
+#     values: ["White", "Black", "Asian", "Other"]
+#     probabilities: [0.7, 0.15, 0.1, 0.05]
+#   - code: "OMOP_SEX"
+#     values: ["Male", "Female"]
+#     probabilities: [0.5, 0.5]
+
+# numerical_covariates:
+#   - code: "OMOP_AGE"
+#     name: "age"
+#     distribution: "normal"
+#     mean: 60
+#     std: 10
+#     min: 18  # Minimum allowed age
+#     max: 90  # Maximum allowed age
+#     time_dependent: false
