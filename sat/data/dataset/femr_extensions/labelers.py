@@ -10,6 +10,7 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 import abc
+import datetime
 import logging
 from typing import Dict, List, Optional
 
@@ -51,8 +52,11 @@ class CustomEventLabeler(CohortLabeler):
         condition_codes: Optional list of codes that must also be present
         time_window: Optional float specifying the time window for condition codes
         sequence_required: Whether condition must follow primary event
+        time_unit: Unit for time differences ('days', 'hours', 'minutes', 'seconds', default: 'days')
 
     Note: Instantiate one labeler per event type (including competing events).
+    When using time_window with datetime data, the time_unit determines how the
+    window is interpreted (e.g., time_window=7 with time_unit='days' means 7 days).
     """
 
     def __init__(
@@ -66,6 +70,7 @@ class CustomEventLabeler(CohortLabeler):
         condition_codes: Optional[List[str]] = None,
         time_window: Optional[float] = None,
         sequence_required: bool = False,
+        time_unit: str = "days",  # Unit for time differences: 'days', 'hours', 'minutes', 'seconds'
     ):
         super().__init__(name, label_type)
         self.event_codes = set(event_codes)
@@ -75,6 +80,7 @@ class CustomEventLabeler(CohortLabeler):
         self.condition_codes = set(condition_codes or [])
         self.time_window = time_window
         self.sequence_required = sequence_required
+        self.time_unit = time_unit
 
     def get_schema(self) -> Dict:
         """Return the schema for this labeler."""
@@ -101,7 +107,7 @@ class CustomEventLabeler(CohortLabeler):
         else:
             last_event_time = self.max_time
 
-        first_event_time = float("inf")
+        first_event_time = datetime.datetime(9999, 12, 31)
         for event in patient["events"]:
             if event["code"] in self.event_codes:
                 event_time = event[self.time_field]
@@ -109,7 +115,7 @@ class CustomEventLabeler(CohortLabeler):
                     first_event_time = event_time
 
         # Determine effective time and condition
-        if first_event_time != float("inf"):
+        if first_event_time != datetime.datetime(9999, 12, 31):
             effective_time = first_event_time
             # Check condition codes if provided
             condition_met = True
@@ -123,11 +129,24 @@ class CustomEventLabeler(CohortLabeler):
                     if self.sequence_required and cond_time < first_event_time:
                         continue
                     # Time window requirement
-                    if (
-                        self.time_window is not None
-                        and abs(cond_time - first_event_time) > self.time_window
-                    ):
-                        continue
+                    if self.time_window is not None:
+                        # Calculate time difference based on data type
+                        if isinstance(cond_time, (datetime.datetime, datetime.date)):
+                            delta = cond_time - first_event_time
+                            # Convert to the appropriate unit
+                            if self.time_unit == "days":
+                                time_diff = abs(delta.days)
+                            elif self.time_unit == "hours":
+                                time_diff = abs(delta.total_seconds() / 3600)
+                            elif self.time_unit == "minutes":
+                                time_diff = abs(delta.total_seconds() / 60)
+                            else:  # seconds
+                                time_diff = abs(delta.total_seconds())
+                        else:
+                            time_diff = abs(cond_time - first_event_time)
+
+                        if time_diff > self.time_window:
+                            continue
                     condition_met = True
                     break
             if condition_met:

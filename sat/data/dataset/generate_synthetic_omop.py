@@ -825,7 +825,7 @@ class SyntheticOmopGenerator:
         # Save original metadata for reference
         if metadata is None:
             metadata = {
-                "dataset_name": base_name,
+                "dataset_name": self.name,
                 "description": "Synthetic OMOP-format dataset for survival analysis",
                 "num_patients": self.num_patients,
                 "num_events": len(self._omop_events) if self._omop_events else 0,

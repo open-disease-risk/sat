@@ -29,7 +29,7 @@ class CohortOMOP:
         self,
         source: str,
         name: str = "cohort_omop",
-        cohort_dir: str = "",
+        processed_dir: str = "",
         labelers: Optional[List[Any]] = None,
         primary_key: str = "patient_id",
         time_field: str = "time",
@@ -42,7 +42,7 @@ class CohortOMOP:
         """
         self.name = name
         self.source = source
-        self.cohort_dir = cohort_dir
+        self.processed_dir = processed_dir
         self.labelers = labelers or []
         self.primary_key = primary_key
         self.time_field = time_field
@@ -114,9 +114,12 @@ class CohortOMOP:
             logger.info(f"Applying labeler: {labeler}")
             anchor_label_output = labeler.apply(ds)
             # Each element in anchor_label_output is a list of labels for that patient
-            anchor_time_flat = [
-                labels[0]["prediction_time"] for labels in anchor_label_output
-            ]
+            anchor_time_flat = []
+            for labels in anchor_label_output:
+                if labels and isinstance(labels, list) and len(labels) > 0:
+                    anchor_time_flat.append(labels[0]["prediction_time"])
+                else:
+                    anchor_time_flat.append(None)
             anchor_times.extend(anchor_time_flat)
             labels_dict[labeler.name] = anchor_label_output
             self._record_metadata(f"Applied labeler: {labeler}", ds)
@@ -327,7 +330,7 @@ class CohortOMOP:
     def save_metadata(self, labels_dict, anchor_times):
         """
         Save cohort metadata (labels_dict, anchor_times, and provenance) to a JSON file in the output directory.
-        The output directory is derived from self.cohort_dir.
+        The output directory is derived from self.processed_dir.
         """
 
         def make_serializable(obj):
@@ -353,7 +356,7 @@ class CohortOMOP:
             "anchor_times": make_serializable(anchor_times),
             "provenance": self.metadata,
         }
-        meta_path = Path(self.cohort_dir) / "cohort_metadata.json"
+        meta_path = Path(self.processed_dir) / self.name / "cohort_metadata.json"
         meta_path.parent.mkdir(parents=True, exist_ok=True)
         with open(meta_path, "w") as f:
             json.dump(meta, f, indent=2)
@@ -361,11 +364,12 @@ class CohortOMOP:
     def save_cohort_dataset(self, ds):
         """
         Save the cohort dataset to the output directory. Supports HuggingFace Dataset and pandas DataFrame.
-        The output directory is derived from self.cohort_dir.
+        The output directory is derived from self.processed_dir.
         """
-        cohort_path_parquet = Path(self.cohort_dir) / "cohort.parquet"
-        cohort_path_csv = Path(self.cohort_dir) / "cohort.csv"
+        cohort_path_parquet = Path(self.processed_dir) / self.name / "cohort.parquet"
+        cohort_path_csv = Path(self.processed_dir) / self.name / "cohort.csv"
         cohort_path_parquet.parent.mkdir(parents=True, exist_ok=True)
+
         try:
             # HuggingFace Dataset
             ds.to_parquet(cohort_path_parquet)
