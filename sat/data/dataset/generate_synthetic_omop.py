@@ -241,12 +241,12 @@ class SyntheticOmopGenerator:
                 }
             )
 
-            # Add enrollment event
+            # Add enrollment event with proper OMOP code
             omop_data.append(
                 {
                     "patient_id": patient_id,
                     "time": enrollment_date,
-                    "code": "ENROLLMENT",
+                    "code": "OMOP_ENROLLMENT",
                     "numeric_value": None,
                     "string_value": None,
                 }
@@ -654,7 +654,15 @@ class SyntheticOmopGenerator:
             DataFrame with events in OMOP format
         """
         # Convert list of event dictionaries to DataFrame
-        self._df_omop = pd.DataFrame(self._omop_events)
+        df_events = pd.DataFrame(self._omop_events)
+
+        # Combine patient data (static data including enrollment) with event data
+        if self._df_patient_data is not None:
+            self._df_omop = pd.concat(
+                [self._df_patient_data, df_events], ignore_index=True
+            )
+        else:
+            self._df_omop = df_events
 
         # Sort events by patient_id and time
         self._df_omop = self._df_omop.sort_values(by=["patient_id", "time"])
@@ -782,7 +790,7 @@ class SyntheticOmopGenerator:
         omop_special_codes = [
             {"code": "OMOP_BIRTH", "description": "Date of birth"},
             {"code": "OMOP_DEATH", "description": "Date of death"},
-            {"code": "ENROLLMENT", "description": "Date of enrollment"},
+            {"code": "OMOP_ENROLLMENT", "description": "Date of enrollment"},
             {
                 "code": "ENC_INPATIENT",
                 "description": "Inpatient hospitalization encounter",
@@ -847,25 +855,20 @@ class SyntheticOmopGenerator:
 
     def log_statistics(self):
         """Print summary statistics for the generated data."""
-        if not self._omop_events:
-            logger.warning("No events to analyze. Generate data first.")
+        if self._df_omop is None:
+            logger.warning("No OMOP data to analyze. Generate data first.")
             return
 
-        # Count events by type
-        event_types = {}
-        for event in self._omop_events:
-            code = event["code"]
-            if code not in event_types:
-                event_types[code] = 0
-            event_types[code] += 1
+        # Count events by type from the combined dataframe
+        event_types = self._df_omop["code"].value_counts().to_dict()
 
         logger.info("Event type statistics:")
         for code, count in sorted(
             event_types.items(), key=lambda x: x[1], reverse=True
         ):
-            n_patients = len(
-                set(e["patient_id"] for e in self._omop_events if e["code"] == code)
-            )
+            n_patients = self._df_omop[self._df_omop["code"] == code][
+                "patient_id"
+            ].nunique()
             if n_patients > 0:
                 avg_per_patient = count / n_patients
                 logger.info(
@@ -873,22 +876,20 @@ class SyntheticOmopGenerator:
                 )
 
         # Count patients with death events
-        death_patients = set(
-            e["patient_id"] for e in self._omop_events if e["code"] == "OMOP_DEATH"
-        )
+        death_patients = self._df_omop[self._df_omop["code"] == "OMOP_DEATH"][
+            "patient_id"
+        ].unique()
         logger.info(
             f"Patients with death events: {len(death_patients)} ({len(death_patients)/self.num_patients:.1%} of total)"
         )
 
         # Count variable length features by patient
-        patient_event_counts = {}
-        for event in self._omop_events:
-            # Check if event has a time field that is not None (these are time-dependent events)
-            if event.get("time") is not None:
-                patient_id = event["patient_id"]
-                if patient_id not in patient_event_counts:
-                    patient_event_counts[patient_id] = 0
-                patient_event_counts[patient_id] += 1
+        patient_event_counts = (
+            self._df_omop[self._df_omop["time"].notna()]
+            .groupby("patient_id")
+            .size()
+            .to_dict()
+        )
 
         # Calculate statistics on variable-length histories
         if patient_event_counts:
