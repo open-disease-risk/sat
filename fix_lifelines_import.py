@@ -6,7 +6,6 @@ This script monkey-patches the lifelines package to use scipy's trapezoid functi
 which has been moved in newer scipy versions.
 """
 
-import importlib
 import inspect
 import sys
 import warnings
@@ -17,8 +16,13 @@ def apply_lifelines_patch():
     Apply a monkey patch to lifelines to fix the scipy.integrate.trapz import error.
     """
     try:
-        # Try to import lifelines
-        import lifelines
+        # Try to import lifelines using find_spec
+        import importlib.util
+
+        lifelines_spec = importlib.util.find_spec("lifelines")
+        if lifelines_spec is None:
+            raise ImportError("lifelines package not found")
+
         from scipy import integrate  # Need to check if trapz exists
 
         # Check if trapz is directly available in scipy.integrate

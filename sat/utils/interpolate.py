@@ -37,8 +37,6 @@ class Interpolator(nn.Module):
             device=device,
         )
 
-        T = self.cut_points.expand(n, -1)
-
         mask = self.cut_points.unsqueeze(0) <= ts.unsqueeze(1)
         t0Index = torch.sum(mask, dim=1) - 1  # left boundary of time intervals (ts)
         t1Index = torch.sum(mask, dim=1)  # right boundary of time intervals (ts)

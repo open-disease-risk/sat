@@ -363,7 +363,7 @@ def test_with_uncertainty_balancing(mock_predictions, mock_references):
         )
 
     # Import our LossWeightLoggerCallback to test it directly
-    from sat.transformers.callbacks import LossWeightLoggerCallback
+    from sat.callbacks import LossWeightLoggerCallback
 
     # Create a simple callback and test it with our mock model
     callback = LossWeightLoggerCallback()

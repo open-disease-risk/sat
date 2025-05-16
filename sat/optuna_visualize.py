@@ -703,9 +703,7 @@ def main():
         # For IPython display, import only if needed
         try:
             # Create Pareto front visualization
-            pareto_plot = create_pareto_front_plot(
-                study, args.output_dir, args.interactive
-            )
+            create_pareto_front_plot(study, args.output_dir, args.interactive)
 
             # Generate table of Pareto-optimal solutions
             pareto_df = generate_pareto_solutions_table(study, args.output_dir)
@@ -720,14 +718,10 @@ def main():
         logger.info("Detected single-objective study")
 
     # Create optimization history plot
-    history_plot = create_optimization_history_plot(
-        study, args.output_dir, args.interactive
-    )
+    create_optimization_history_plot(study, args.output_dir, args.interactive)
 
     # Create parameter importance plot
-    importance_plot = create_parameter_importance_plot(
-        study, args.output_dir, args.interactive
-    )
+    create_parameter_importance_plot(study, args.output_dir, args.interactive)
 
     logger.info(f"All visualizations saved to {args.output_dir}")
 

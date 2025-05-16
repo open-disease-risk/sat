@@ -137,7 +137,7 @@ class CauseSpecificNet(nn.Module):
 
         # Create the event-specific networks
         self.event_nets = nn.ModuleList()
-        for event_idx in range(num_events):
+        for _ in range(num_events):
             net = tt.practical.MLPVanilla(
                 in_features=in_features,
                 num_nodes=[intermediate_size] * num_hidden_layers,
