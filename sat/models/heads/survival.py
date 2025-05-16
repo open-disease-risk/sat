@@ -92,10 +92,13 @@ class SurvivalTaskHead(SurvivalTask):
                     "SurvivalTaskHead created as part of MTL - will be initialized by MTL"
                 )
 
-        loss = config.loss["survival"]
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(f"Instantiate the loss {loss}")
-        self.loss = hydra.utils.instantiate(loss)
+        if config.loss and "survival" in config.loss:
+            loss = config.loss["survival"]
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"Instantiate the loss {loss}")
+            self.loss = hydra.utils.instantiate(loss)
+        else:
+            self.loss = None
 
     def forward(self, sequence_output, labels=None, **kwargs):
         # Compute network output

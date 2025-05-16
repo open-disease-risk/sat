@@ -105,7 +105,6 @@ class DSMLoss(Loss):
             torch.Tensor: Negative log-likelihood [batch_size]
         """
         _, num_mixtures = shape.shape
-        device = time.device
 
         # Create the appropriate mixture distribution based on distribution type
         if self.distribution.lower() == "weibull":

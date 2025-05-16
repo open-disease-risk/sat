@@ -65,6 +65,9 @@ class WeibullDistribution(SurvivalDistribution):
             event_type: Optional event type for applying specific priors
             use_expert_priors: Whether to use expert knowledge for parameter initialization
         """
+        # Set eps first since it's needed in constraint methods
+        self.eps = eps
+
         # Apply expert knowledge if requested
         if use_expert_priors and event_type is not None:
             shape, scale = self._apply_expert_priors(shape, scale, event_type)
@@ -79,7 +82,6 @@ class WeibullDistribution(SurvivalDistribution):
 
         # Scale parameter constraints (scale > 0 always)
         self.scale = torch.clamp(scale, min=eps, max=1000.0)
-        self.eps = eps
 
     def _apply_expert_priors(
         self, shape: torch.Tensor, scale: torch.Tensor, event_type: str
@@ -678,6 +680,9 @@ class WeibullMixtureDistribution(MixtureDistribution):
                 elif event_type == "infection":
                     # First component: high initial risk that decreases
                     first_shape = torch.clamp(first_shape, min=0.5, max=0.9)
+                elif event_type == "treatment_complications":
+                    # First component: high initial complications risk that decreases
+                    first_shape = torch.clamp(first_shape, min=0.4, max=0.8)
                 shape[:, 0:1] = first_shape
 
             # For second component - representing later risk
@@ -689,6 +694,9 @@ class WeibullMixtureDistribution(MixtureDistribution):
                 elif event_type == "infection":
                     # Second component: complications phase (more constant hazard)
                     second_shape = torch.clamp(second_shape, min=0.9, max=1.3)
+                elif event_type == "treatment_complications":
+                    # Second component: later complications (slightly decreasing)
+                    second_shape = torch.clamp(second_shape, min=0.6, max=1.0)
                 shape[:, 1:2] = second_shape
 
         # Store parameters with appropriate constraints

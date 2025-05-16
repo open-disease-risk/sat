@@ -365,7 +365,6 @@ class SATTrainer(Trainer):
         """
         # For multi-event models, ensure we capture all needed outputs
         if self.is_multi_event:
-            has_labels = all(inputs.get(k) is not None for k in self.label_names)
             inputs = self._prepare_inputs(inputs)
 
             if prediction_loss_only:
@@ -423,7 +422,6 @@ class SATTrainer(Trainer):
             return (outputs.loss, logits, labels)
 
         # For non-multi-event survival models, we still need to handle SAOutput specially
-        has_labels = all(inputs.get(k) is not None for k in self.label_names)
         inputs = self._prepare_inputs(inputs)
 
         if prediction_loss_only:

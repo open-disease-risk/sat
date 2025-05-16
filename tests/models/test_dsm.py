@@ -144,10 +144,10 @@ def test_dsm_task_head_single_event():
     assert (
         output.survival.shape[1] == 1
     ), f"Event dimension mismatch: {output.survival.shape}"
-    # Verify hazard and survival shapes match
+    # Verify hazard has one more column than survival due to padding
     assert (
-        output.hazard.shape[2] == output.survival.shape[2]
-    ), f"Hazard and survival time dimensions don't match: {output.hazard.shape} vs {output.survival.shape}"
+        output.hazard.shape[2] == output.survival.shape[2] + 1
+    ), f"Hazard should have one more dimension than survival due to padding: {output.hazard.shape} vs {output.survival.shape}"
     assert output.shape.shape == (
         batch_size,
         1,
@@ -208,10 +208,10 @@ def test_dsm_task_head_multi_event():
     assert (
         output.survival.shape[1] == 2
     ), f"Event dimension mismatch: {output.survival.shape}"
-    # Verify hazard and survival shapes match
+    # Verify hazard has one more column than survival due to padding
     assert (
-        output.hazard.shape[2] == output.survival.shape[2]
-    ), f"Hazard and survival time dimensions don't match: {output.hazard.shape} vs {output.survival.shape}"
+        output.hazard.shape[2] == output.survival.shape[2] + 1
+    ), f"Hazard should have one more dimension than survival due to padding: {output.hazard.shape} vs {output.survival.shape}"
     assert output.shape.shape == (
         batch_size,
         2,
@@ -447,9 +447,9 @@ def test_dsm_with_sat_output():
         output.hazard.shape[1] == config.num_events
     ), f"Event dimension mismatch: {output.hazard.shape[1]}"
 
-    # The hazard tensor should be properly padded to match the survival tensor's time dimension
-    assert output.hazard.shape[2] == output.survival.shape[2], (
-        f"Hazard and survival time dimensions should match after padding: "
+    # The hazard tensor should have one more column than survival due to start padding
+    assert output.hazard.shape[2] == output.survival.shape[2] + 1, (
+        f"Hazard should have one more dimension than survival due to padding: "
         f"{output.hazard.shape[2]} vs {output.survival.shape[2]}"
     )
 
