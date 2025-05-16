@@ -113,13 +113,9 @@ class CohortOMOP:
         for labeler in anchor_labelers:
             logger.info(f"Applying labeler: {labeler}")
             anchor_label_output = labeler.apply(ds)
-            # Each element in anchor_label_output is a list of labels for that patient
             anchor_time_flat = []
             for labels in anchor_label_output:
-                if labels and isinstance(labels, list) and len(labels) > 0:
-                    anchor_time_flat.append(labels[0]["prediction_time"])
-                else:
-                    anchor_time_flat.append(None)
+                anchor_time_flat.append(labels["prediction_time"] if labels else None)
             anchor_times.extend(anchor_time_flat)
             labels_dict[labeler.name] = anchor_label_output
             self._record_metadata(f"Applied labeler: {labeler}", ds)

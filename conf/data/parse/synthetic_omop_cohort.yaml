@@ -1,0 +1,50 @@
+# FEMR-based Omop configuration for synthetic_omop dataset
+_target_: sat.data.dataset.cohort_omop.CohortOMOP
+source: ${base_dir}/data/synthetic_omop/data/data.parquet
+processed_dir: ${modelhub}/cohort
+name: ${dataset}
+time_field: "time"
+primary_key: "patient_id"
+date_diff_unit: "days"
+
+# FEMR-compatible labelers
+labelers:
+  # enrollment (single-event)
+  - _target_: sat.data.dataset.femr_extensions.labelers.CustomEventLabeler
+    name: enrollment
+    event_codes: ["OMOP_ENROLLMENT"]
+    competing_event: false
+    label_type: anchor
+    max_time: 3650.0
+  
+  # mortality (single-event)
+  - _target_: sat.data.dataset.femr_extensions.labelers.CustomEventLabeler
+    name: mortality
+    event_codes: ["OMOP_DEATH"]
+    competing_event: true
+    label_type: outcome
+    max_time: 3650.0
+  
+  # stroke (single-event)
+  - _target_: sat.data.dataset.femr_extensions.labelers.CustomEventLabeler
+    name: stroke
+    event_codes: ["OMOP_STROKE", "ICD10:I63"]
+    competing_event: false
+    label_type: outcome
+    max_time: 3650.0
+  
+  # kidney failure (single-event)
+  - _target_: sat.data.dataset.femr_extensions.labelers.CustomEventLabeler
+    name: kidney_failure
+    event_codes: ["ICD10:N18"]
+    competing_event: false
+    label_type: outcome
+    max_time: 3650.0
+
+  # myocardial infarction (single-event)
+  - _target_: sat.data.dataset.femr_extensions.labelers.CustomEventLabeler
+    name: myocardial_infarction
+    event_codes: ["OMOP_MI", "ICD10:I21"]
+    competing_event: false
+    label_type: outcome
+    max_time: 3650.0
