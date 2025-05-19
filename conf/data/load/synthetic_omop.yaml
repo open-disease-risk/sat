@@ -23,5 +23,5 @@ data:
     _target_: datasets.load_dataset
     path: json
     data_files:
-      - ${modelhub}/${dataset}/${fold}${dataset}.json
+      - ${modelhub}/${dataset}/${dataset}.json
     streaming: false
