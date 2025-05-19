@@ -23,10 +23,7 @@ from pathlib import Path
 
 import pandas as pd
 from logdecorator import log_on_end, log_on_error, log_on_start
-from sklearn.preprocessing import (
-    MinMaxScaler,
-    StandardScaler,
-)
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 from sat.utils import logging
 
