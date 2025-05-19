@@ -1,4 +1,8 @@
-"""Process the synthetic dataset."""
+"""Process the synthetic dataset.
+
+1. Read the synthetic dataset
+2. Process and save the data in the required format
+"""
 
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
@@ -7,46 +11,25 @@ from dataclasses import dataclass
 from logging import DEBUG, ERROR
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 from logdecorator import log_on_end, log_on_error, log_on_start
-from sklearn.model_selection import KFold
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 
 from sat.utils import logging
-from sat.utils.data import train_val_test
+
+from . import utils
 
 logger = logging.get_default_logger()
-
-
-def tokens(row, modalities, offset):
-    (idx,) = np.where(np.array(modalities) == 0)
-    toks = list(row.index[:-1])
-    for i in idx:
-        toks[i] = row.iloc[i + offset]
-    return list(toks)
-
-
-def numerics(row, modalities, offset):
-    (idx,) = np.where(np.array(modalities) == 1)
-    numerics = [1.0] * len(modalities)
-    for i in idx:
-        numerics[i] = row.iloc[i + offset]
-    return numerics
 
 
 @dataclass
 class synthetic:
     source: str
     processed_dir: str
-    train_ratio: float
-    validation_ratio: float
-    test_ratio: float
     name: str
     scale_method: str
     scale_numerics: bool = True
     min_scale_numerics: float = 1.0
-    kfold: int = 0
 
     @log_on_start(DEBUG, "Create metabric data representation...")
     @log_on_error(
@@ -163,123 +146,38 @@ class synthetic:
         df_features["x"] = ""
         df_features["x"] = df_features["x"].astype("object")
 
-        for index, row in df_features.iterrows():
-            df_features.at[index, "x"] = " ".join(tokens(row, modality, 0))
+        for index, _ in df_features.iterrows():
+            df_features.at[index, "x"] = " ".join(
+                utils.tokens(df_features.iloc[index], modality)
+            )
 
         df_features["numerics"] = ""
         df_features["numerics"] = df_features["numerics"].astype("object")
 
-        for index, row in df_features.iterrows():
-            df_features.at[index, "numerics"] = numerics(row, modality, 0)
+        for index, _ in df_features.iterrows():
+            df_features.at[index, "numerics"] = utils.numerics(
+                df_features.iloc[index], modality
+            )
 
-        df_features["modality"] = ""
         df_features["modality"] = df_features["modality"].astype("object")
 
         for index, _ in df_features.iterrows():
             df_features.at[index, "modality"] = modality
 
-        # 4. create train/val/test split
-        logger.debug("Create train/val/test split")
-        X_train, X_val, X_test, y_train, y_val, y_test = train_val_test(
-            X=df_features,
-            y=df_targets,
-            train_ratio=self.train_ratio,
-            test_ratio=self.test_ratio,
-            validation_ratio=self.validation_ratio,
-        )
-
-        # 5. save data frames
-        logger.debug("Save the dataframes")
-
-        logger.debug("Combine features and targets and save into CSV files")
-        train_data = pd.DataFrame(
+        # 4. Create final dataframe with all data
+        logger.debug("Create final dataframe")
+        data = pd.DataFrame(
             data={
-                "x": X_train["x"],
-                "modality": X_train["modality"],
-                "numerics": X_train["numerics"],
-                "event": y_train["label"],
-                "duration": y_train["time"],
-                "split": "train",
+                "x": df_features["x"],
+                "modality": df_features["modality"],
+                "numerics": df_features["numerics"],
+                "event": df_targets["e"],
+                "duration": df_targets["t"],
             },
-            index=X_train.index,
-        )
+            index=df_features.index,
+        ).reset_index(level=0)
 
-        val_data = pd.DataFrame(
-            data={
-                "x": X_val["x"],
-                "modality": X_val["modality"],
-                "numerics": X_val["numerics"],
-                "event": y_val["label"],
-                "duration": y_val["time"],
-                "split": "valid",
-            },
-            index=X_val.index,
-        )
-
-        test_data = pd.DataFrame(
-            data={
-                "x": X_test["x"],
-                "modality": X_test["modality"],
-                "numerics": X_test["numerics"],
-                "event": y_test["label"],
-                "duration": y_test["time"],
-                "split": "test",
-            },
-            index=X_test.index,
-        )
-
-        if self.kfold > 0:
-            logger.debug("Create kfold splits")
-            df_train_data = pd.concat([X_train, X_val])
-            df_y_train_data = pd.concat([y_train, y_val])
-
-            kf = KFold(n_splits=self.kfold, shuffle=True)
-            for i, (train_index, test_index) in enumerate(kf.split(df_train_data)):
-                X_train_kf, X_test_kf = (
-                    df_train_data.iloc[train_index],
-                    df_train_data.iloc[test_index],
-                )
-                y_train_kf, y_test_kf = (
-                    df_y_train_data.iloc[train_index],
-                    df_y_train_data.iloc[test_index],
-                )
-
-                train_data_kf = pd.DataFrame(
-                    data={
-                        "x": X_train_kf["x"],
-                        "modality": X_train_kf["modality"],
-                        "numerics": X_train_kf["numerics"],
-                        "event": y_train_kf["label"],
-                        "duration": y_train_kf["time"],
-                        "split": "train",
-                    },
-                    index=X_train_kf.index,
-                )
-
-                test_data_kf = pd.DataFrame(
-                    data={
-                        "x": X_test_kf["x"],
-                        "modality": X_test_kf["modality"],
-                        "numerics": X_test_kf["numerics"],
-                        "event": y_test_kf["label"],
-                        "duration": y_test_kf["time"],
-                        "split": "valid",
-                    },
-                    index=X_test_kf.index,
-                )
-
-                outDir = Path(f"{self.processed_dir}/{self.name}")
-                outDir.mkdir(parents=True, exist_ok=True)
-                data_kf = pd.concat(
-                    [train_data_kf, test_data_kf, test_data]
-                ).reset_index(level=0)
-                data_kf.to_json(
-                    Path(f"{outDir}/{i}_{self.name}.json"),
-                    orient="records",
-                    lines=True,
-                )
-
-        outDir = Path(f"{self.processed_dir}/{self.name}")
-        outDir.mkdir(parents=True, exist_ok=True)
-        data = pd.concat([train_data, val_data, test_data]).reset_index(level=0)
-        data.to_json(Path(f"{outDir}/{self.name}.json"), orient="records", lines=True)
+        # 5. Save to file
+        out_dir = Path(f"{self.processed_dir}/{self.name}")
+        out_dir.mkdir(parents=True, exist_ok=True)
+        data.to_json(Path(f"{out_dir}/{self.name}.json"), orient="records", lines=True)
