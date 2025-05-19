@@ -18,8 +18,6 @@ class StreamingKFoldSplitter:
 
     Parameters:
     -----------
-    dataset_name : str
-        The Hugging Face dataset identifier (e.g., "ag_news", "glue", or a local path).
     id_field : str
         The name of the field to use as a stable, unique identifier for hashing (e.g., "id", "text").
     k : int or None, default=None
@@ -59,7 +57,6 @@ class StreamingKFoldSplitter:
 
     def __init__(
         self,
-        dataset_name: str,
         id_field: str = "id",
         k: int = None,
         val_ratio: float = 0.2,
@@ -67,7 +64,6 @@ class StreamingKFoldSplitter:
         test_split_strategy: str = "hash",
         split_names: Tuple[str] = ("train", "val", "test"),
     ):
-        self.dataset_name = dataset_name
         self.id_field = id_field
         self.k = k
         self.val_ratio = val_ratio

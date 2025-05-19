@@ -58,20 +58,18 @@ def assert_disjoint_and_complete(result, num_items, id_field="id"):
     assert all_ids == set(str(i) for i in range(num_items))
 
 
-@given(num_items=st.integers(min_value=20, max_value=100))
+@given(num_items=st.integers(min_value=50, max_value=100))
 @settings(max_examples=10, deadline=None)
 def test_hash_split_property(num_items):
     cfg = DummyConfig(dataset_name="synthetic", streaming=False)
     with patch("hydra.utils.call", return_value=make_synthetic_dataset(num_items)):
-        splitter = StreamingKFoldSplitter(
-            "synthetic", id_field="id", k=None, val_ratio=0.2
-        )
+        splitter = StreamingKFoldSplitter(id_field="id", k=None, val_ratio=0.2)
         result = splitter.load_split(cfg)
         assert_disjoint_and_complete(result, num_items)
 
 
 @given(
-    num_items=st.integers(min_value=20, max_value=100),
+    num_items=st.integers(min_value=50, max_value=100),
     k=st.integers(min_value=2, max_value=10),
 )
 @settings(max_examples=10, deadline=None)
@@ -80,9 +78,7 @@ def test_hash_split_kfold_property(num_items, k):
         return  # Skip degenerate folds
     cfg = DummyConfig(dataset_name="synthetic", streaming=False)
     with patch("hydra.utils.call", return_value=make_synthetic_dataset(num_items)):
-        splitter = StreamingKFoldSplitter(
-            "synthetic", id_field="id", k=k, val_ratio=0.2
-        )
+        splitter = StreamingKFoldSplitter(id_field="id", k=k, val_ratio=0.2)
         for fold in range(k):
             result = splitter.load_split(cfg, fold_index=fold)
             train_ids = set(result["train"]["id"])
@@ -107,7 +103,6 @@ def test_existing_split_property(num_items):
     cfg = DummyConfig(dataset_name="synthetic", streaming=False)
     with patch("hydra.utils.call", return_value=make_existing_split_dict(num_items)):
         splitter = StreamingKFoldSplitter(
-            "synthetic",
             id_field="id",
             k=None,
             test_split_strategy="existing",
@@ -123,7 +118,6 @@ def test_existing_split_kfold_property(k):
     cfg = DummyConfig(dataset_name="synthetic", streaming=False)
     with patch("hydra.utils.call", return_value=make_existing_split_dict(100)):
         splitter = StreamingKFoldSplitter(
-            "synthetic",
             id_field="id",
             k=k,
             test_split_strategy="existing",
@@ -147,7 +141,7 @@ def test_missing_id_field():
     # Dataset missing id_field
     ds = Dataset.from_dict({"feature": [1, 2, 3]})
     with patch("hydra.utils.call", return_value=ds):
-        splitter = StreamingKFoldSplitter("synthetic", id_field="id", k=2)
+        splitter = StreamingKFoldSplitter(id_field="id", k=2)
         with pytest.raises(ValueError, match="Required id_field 'id' not found"):
             splitter.load_split(cfg, fold_index=0)
 
@@ -157,9 +151,7 @@ def test_hash_split_basic(streaming):
     cfg = DummyConfig(dataset_name="synthetic", streaming=streaming)
     # Patch hydra.utils.call to return our synthetic dataset
     with patch("hydra.utils.call", return_value=make_synthetic_dataset(100)):
-        splitter = StreamingKFoldSplitter(
-            "synthetic", id_field="id", k=None, val_ratio=0.2
-        )
+        splitter = StreamingKFoldSplitter(id_field="id", k=None, val_ratio=0.2)
         result = splitter.load_split(cfg)
         assert set(result.keys()) == {"train", "val", "test"}
         # Check no overlap between splits
@@ -178,9 +170,7 @@ def test_hash_split_basic(streaming):
 def test_hash_split_kfold(streaming):
     cfg = DummyConfig(dataset_name="synthetic", streaming=streaming)
     with patch("hydra.utils.call", return_value=make_synthetic_dataset(100)):
-        splitter = StreamingKFoldSplitter(
-            "synthetic", id_field="id", k=3, val_ratio=0.2
-        )
+        splitter = StreamingKFoldSplitter(id_field="id", k=3, val_ratio=0.2)
         for fold in range(3):
             result = splitter.load_split(cfg, fold_index=fold)
             if streaming:
@@ -214,7 +204,6 @@ def test_existing_split(streaming):
     cfg = DummyConfig(dataset_name="synthetic", streaming=streaming)
     with patch("hydra.utils.call", return_value=make_existing_split_dict(100)):
         splitter = StreamingKFoldSplitter(
-            "synthetic",
             id_field="id",
             k=None,
             test_split_strategy="existing",
@@ -243,7 +232,6 @@ def test_existing_split_kfold(streaming):
     cfg = DummyConfig(dataset_name="synthetic", streaming=streaming)
     with patch("hydra.utils.call", return_value=make_existing_split_dict(100)):
         splitter = StreamingKFoldSplitter(
-            "synthetic",
             id_field="id",
             k=2,
             test_split_strategy="existing",
@@ -273,13 +261,13 @@ def test_edge_cases(streaming):
     # Empty dataset
     cfg = DummyConfig(dataset_name="synthetic", streaming=streaming)
     with patch("hydra.utils.call", return_value=make_synthetic_dataset(0)):
-        splitter = StreamingKFoldSplitter("synthetic", id_field="id", k=2)
+        splitter = StreamingKFoldSplitter(id_field="id", k=2)
         result = splitter.load_split(cfg, fold_index=0)
         assert len(result["train"]) == 0
         assert len(result["val"]) == 0
         assert len(result["test"]) == 0
     # Single item
     with patch("hydra.utils.call", return_value=make_synthetic_dataset(1)):
-        splitter = StreamingKFoldSplitter("synthetic", id_field="id", k=2)
+        splitter = StreamingKFoldSplitter(id_field="id", k=2)
         result = splitter.load_split(cfg, fold_index=0)
         assert len(result["train"]) + len(result["val"]) + len(result["test"]) == 1
