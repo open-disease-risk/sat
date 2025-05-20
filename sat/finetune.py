@@ -19,7 +19,7 @@ from transformers import PreTrainedTokenizerFast, Trainer, TrainingArguments
 from transformers.integrations import TensorBoardCallback
 
 from sat.callbacks import LossWeightLoggerCallback
-from sat.data import load
+from sat.data import splitter
 from sat.models import heads
 from sat.models.heads.embeddings import TokenEmbedding
 from sat.models.utils import get_device
@@ -70,8 +70,18 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
     if cfg.data.preprocess_data:
         mapped_labels_dataset = load_from_disk(cfg.data.preprocess_outdir)
     else:
-        dataset = hydra.utils.call(cfg.data.load)
-        dataset = load.split_dataset(cfg.data, dataset)
+        logger.info(
+            f"Splitting dataset with k-fold configuration: k={cfg.cv.k}; fold={cfg.cv.fold}"
+        )
+        ds_splitter = splitter.StreamingKFoldSplitter(
+            id_field=cfg.data.id_col,
+            k=cfg.cv.k,
+            val_ratio=cfg.data.validation_ratio,
+            test_ratio=cfg.data.test_ratio,
+            test_split_strategy="hash",
+            split_names=cfg.data.splits,
+        )
+        dataset = ds_splitter.load_split(cfg=cfg.data.load, fold_index=cfg.cv.fold)
 
         def tokenize_function(
             examples,
@@ -219,14 +229,15 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
         logger.debug("Use MPS in training argumments")
         args.use_mps_device = True
 
+    fold_part = "_" + str(cfg.cv.fold) if cfg.cv.fold else ""
     if cfg.do_sweep:
-        args.output_dir = args.output_dir + "/" + cfg.model_dir
+        args.output_dir = args.output_dir + fold_part + "/" + cfg.model_dir
         logger.debug(f"Redirect the sweep output: {args.output_dir}")
     else:
         logger.debug(
             f"Append run ID {cfg.run_id} to output of training arguments {args.output_dir}"
         )
-        args.output_dir = args.output_dir + "/" + cfg.run_id
+        args.output_dir = args.output_dir + fold_part + "/" + cfg.run_id
 
     # Configure trainer kwargs
     trainer_kwargs = {

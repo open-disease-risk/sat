@@ -149,7 +149,6 @@ class StreamingKFoldSplitter:
             train_split = full_dataset[self.split_names[0]]
             val_split = full_dataset[self.split_names[1]]
             if streaming:
-                # Create a streaming dataset from the splits using chain
                 # This creates a new IterableDataset that chains the two datasets
                 def chain_iterables():
                     for example in train_split:
@@ -167,8 +166,8 @@ class StreamingKFoldSplitter:
                     self._normalize_hash(str(example[self.id_field])) < self.test_ratio
                 )
 
-            test_dataset = full_dataset.filter(is_test)
-            train_val_dataset = full_dataset.filter(lambda x: not is_test(x))
+            test_dataset = full_dataset["train"].filter(is_test)
+            train_val_dataset = full_dataset["train"].filter(lambda x: not is_test(x))
 
         # 2. Compute folds (independent of streaming/in-memory and split strategy)
         def is_val(example: Dict[str, Any]) -> bool:
@@ -189,5 +188,5 @@ class StreamingKFoldSplitter:
 
         result = {"train": train_dataset, "test": test_dataset}
         if val_dataset is not None:
-            result["val"] = val_dataset
+            result["valid"] = val_dataset
         return DatasetDict(result)

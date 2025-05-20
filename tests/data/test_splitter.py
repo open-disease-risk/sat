@@ -9,10 +9,14 @@ from sat.data.splitter import StreamingKFoldSplitter
 
 
 def make_synthetic_dataset(num_items=100, id_field="id"):
-    return Dataset.from_dict(
+    return DatasetDict(
         {
-            id_field: [str(i) for i in range(num_items)],
-            "feature": [i * 2 for i in range(num_items)],
+            "train": Dataset.from_dict(
+                {
+                    id_field: [str(i) for i in range(num_items)],
+                    "feature": [i * 2 for i in range(num_items)],
+                }
+            ),
         }
     )
 
