@@ -25,7 +25,8 @@ defaults:
 task_name: sat-${task}-${modelname}-${dataset}-${job}
 
 cv:
-  kfold: ${oc.select:cv_kfold,0}
+  fold: null
+  k: null
 
 # only one of them can be true. If both are false use fintune directly
 pipeline_use_cv: true
@@ -34,7 +35,6 @@ pipeline_use_ci: false
 # CV config
 multiple_replications: true
 cv_kfold: 3
-cv_kfold_reuse: true
 
 # CI config
 alpha: 0.05
