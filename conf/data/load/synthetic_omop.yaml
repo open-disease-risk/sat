@@ -12,6 +12,8 @@ data:
   modality_col: modality
   numerics_col: numerics
   num_events: 2  # Number of competing events
+  validation_ratio: 0.1
+  test_ratio: 0.3
   transformed_duration_cols:
     - t
     - f
