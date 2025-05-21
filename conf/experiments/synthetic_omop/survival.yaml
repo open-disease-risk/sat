@@ -5,7 +5,7 @@ modelname: survival
 defaults:
   - synthetic_omop/defaults
   - override /data/load: synthetic_omop
-  - override /data/parse: ${data/load}
+  - override /data/parse: synthetic_omop_parse
   - override /tokenizers: default
   - override /transformers: numeric_bert
   - override /tasks: survival

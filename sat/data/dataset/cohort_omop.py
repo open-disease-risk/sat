@@ -202,52 +202,57 @@ class CohortOMOP:
                             label["prediction_time"] = censor_time
         self._record_metadata("Applied competing risk censoring", ds)
 
-    def truncate_events_at_competing(
-        self, labels_dict: Dict[str, List[Any]], anchor_times: List[Any], ds: Dataset
+    def truncate_events_at_anchor(
+        self, anchor_times: List[Any], ds: Dataset
     ) -> Dataset:
         """
-        Truncate all patient events at the earliest competing event time.
-        Assumes 'events' column is present and competing event times are available.
+        Keep only events up to and including the anchor time.
+        Assumes 'events' column is present and anchor times are available.
+        Events with time values are sorted, and events without time values are appended at the end.
         """
         if "events" not in ds.column_names:
             return ds
-        # Select outcome labels with competing_event flag
-        outcome_label_cols = [
-            col
-            for col, labels in labels_dict.items()
-            if labels
-            and isinstance(labels[0], list)
-            and labels[0]
-            and isinstance(labels[0][0], dict)
-            and labels[0][0].get("competing_event", False)
-        ]
+        
         new_events = []
         for i, events in enumerate(ds["events"]):
-            anchor_time = anchor_times[i]
-            competing_times = []
-            for outcome_col in outcome_label_cols:
-                comp_labels = labels_dict[outcome_col][i]
-                if comp_labels and isinstance(comp_labels, list):
-                    for cl in comp_labels:
-                        if cl.get("boolean_value", False):
-                            comp_time = cl.get("prediction_time", None)
-                            if comp_time is not None:
-                                competing_times.append(comp_time)
-            if competing_times:
-                cutoff = min(competing_times)
-                # Truncate events at cutoff
-                if anchor_time is not None:
-                    cutoff_time = cutoff - anchor_time
-                else:
-                    cutoff_time = cutoff
-                truncated = [
-                    e for e in events if e.get("time", float("inf")) <= cutoff_time
-                ]
-                new_events.append(truncated)
-            else:
+            anchor_time = anchor_times[i] if i < len(anchor_times) else None
+            
+            if anchor_time is None:
+                # No anchor time available, keep all events
                 new_events.append(events)
+                continue
+                
+            # For each event, check if it happened before or at the anchor time
+            # We're using 0 as the reference point for the anchor
+            events_with_time = []
+            events_without_time = []
+            
+            for e in events:
+                event_time = e.get("time", None)
+                # Group events with no time information
+                if event_time is None:
+                    events_without_time.append(e)
+                # Keep events with time <= 0 (at or before anchor)
+                elif isinstance(event_time, (int, float)) and event_time <= 0:
+                    events_with_time.append(e)
+                # For datetime objects, compare with anchor time directly
+                elif hasattr(event_time, "timestamp") and event_time <= anchor_time:
+                    events_with_time.append(e)
+            
+            # Sort events with time values by their time
+            sorted_events_with_time = sorted(
+                events_with_time,
+                key=lambda e: e.get("time", float("inf")),
+                # Handle possible comparison errors
+                # between different types by using a safe key function
+            )
+            
+            # Combine sorted events with time first, then events without time
+            truncated = sorted_events_with_time + events_without_time
+            new_events.append(truncated)
+                
         ds = ds.remove_columns(["events"]).add_column("events", new_events)
-        self._record_metadata("Truncated events at competing risk", ds)
+        self._record_metadata("Kept events up to anchor time, sorted by time", ds)
         return ds
 
     def exclude_patients(
@@ -391,6 +396,6 @@ class CohortOMOP:
             labels_dict, anchor_times, ds
         )
         self.apply_competing_risk_censoring(labels_dict, anchor_times, ds)
-        ds = self.truncate_events_at_competing(labels_dict, anchor_times, ds)
+        ds = self.truncate_events_at_anchor(anchor_times, ds)
         self.save_metadata(labels_dict, anchor_times)
         self.save_cohort_dataset(ds)
