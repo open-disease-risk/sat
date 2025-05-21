@@ -156,7 +156,6 @@ class ComputeBrier(SurvivalEvaluationModule):
             logger.debug(f"survival predictions shape {predictions.shape}")
 
         brier_mean = 0.0
-        brier_balanced_mean = 0.0
         brier_n = 0
 
         metrics_dict = {}
@@ -167,7 +166,6 @@ class ComputeBrier(SurvivalEvaluationModule):
                 metrics_dict[f"brier_{i}th_event"]
                 * metrics_dict[f"brier_{i}th_event_n"]
             )
-            brier_balanced_mean += metrics_dict[f"brier_{i}th_event"]
             brier_n += metrics_dict[f"brier_{i}th_event_n"]
 
         # Prevent division by zero
@@ -177,7 +175,6 @@ class ComputeBrier(SurvivalEvaluationModule):
             brier_mean = 0.5  # Default value when no events
 
         metrics_dict["brier_weighted_avg"] = brier_mean
-        metrics_dict["brier_avg"] = brier_balanced_mean / max(1, self.cfg.num_events)
 
         return metrics_dict
 
@@ -249,7 +246,6 @@ class ComputeCIndex(SurvivalEvaluationModule):
         predictions = self.survival_predictions(predictions)
         cindex_mean = 0.0
         cindex_weighted_avg_mean = 0.0
-        cindex_avg_mean = 0.0
         cindex_n = 0
         metrics_dict = {}
 
@@ -263,7 +259,6 @@ class ComputeCIndex(SurvivalEvaluationModule):
                 metrics_dict[f"ipcw_avg_{i}th_event"]
                 * metrics_dict[f"ipcw_{i}th_event_n"]
             )
-            cindex_avg_mean += metrics_dict[f"ipcw_avg_{i}th_event"]
             cindex_n += metrics_dict[f"ipcw_{i}th_event_n"]
 
         # Prevent division by zero
@@ -276,7 +271,6 @@ class ComputeCIndex(SurvivalEvaluationModule):
 
         metrics_dict["ipcw"] = cindex_mean
         metrics_dict["ipcw_weighted_avg"] = weighted_avg
-        metrics_dict["ipcw_avg"] = cindex_avg_mean / max(1, self.cfg.num_events)
 
         return metrics_dict
 
