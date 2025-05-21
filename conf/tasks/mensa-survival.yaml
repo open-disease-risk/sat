@@ -3,7 +3,7 @@ defaults:
   - losses: mensa
   - metrics: default
 
-eval_metric: "eval_ipcw_avg"
+eval_metric: "eval_ipcw_weighted_avg"
 eval_metric_greater_is_better: true
 
 config:
