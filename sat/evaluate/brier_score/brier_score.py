@@ -6,142 +6,21 @@ __status__ = "Development"
 import datasets
 import evaluate
 import numpy as np
-from sksurv.metrics import brier_score as sksurv_brier_score
-from sksurv.metrics import integrated_brier_score as sksurv_integrated_brier_score
-from sksurv.nonparametric import CensoringDistributionEstimator
+import torch
+
+from torchsurv.stats.ipcw import get_ipcw
+from torchsurv.metrics.brier_score import BrierScore as TorchsurvBrierScore
 
 from sat.utils import logging
 
 logger = logging.get_default_logger()
 
 
-def safe_brier_score(survival_train, survival_test, estimate, times):
-    """
-    A safer version of sksurv.metrics.brier_score that handles times larger than
-    the largest observed time in the training data.
-
-    Args:
-        survival_train: Structured array with training survival data
-        survival_test: Structured array with test survival data
-        estimate: Prediction function or array of probabilities
-        times: Time points at which to evaluate the Brier score
-
-    Returns:
-        tuple: (times, scores) where times contains the valid time points
-               and scores contains the corresponding Brier scores
-    """
-    try:
-        # Get the maximum observed time in the training data
-        max_train_time = np.max(survival_train["t"])
-
-        # Filter out times that are too large
-        valid_mask = times <= max_train_time
-        valid_times = times[valid_mask]
-
-        if len(valid_times) == 0:
-            # If no valid times, return empty arrays with a warning
-            logger.warning(
-                f"All requested time points (max={np.max(times)}) exceed the "
-                f"maximum observed time in training data ({max_train_time}). "
-                f"Returning empty Brier score."
-            )
-            return np.array([]), np.array([])
-
-        # Compute Brier score on valid times
-        result = sksurv_brier_score(
-            survival_train, survival_test, estimate, valid_times
-        )
-
-        # If some times were filtered out, log a warning
-        if np.sum(~valid_mask) > 0:
-            logger.warning(
-                f"Filtered out {np.sum(~valid_mask)} time points that exceed the "
-                f"maximum observed time in training data ({max_train_time})."
-            )
-
-        return result
-    except Exception as e:
-        logger.error(f"Error computing Brier score: {str(e)}")
-        # Return empty arrays rather than crashing
-        return np.array([]), np.array([])
-
-
-def safe_integrated_brier_score(survival_train, survival_test, estimate, times):
-    """
-    A safer version of sksurv.metrics.integrated_brier_score that handles times larger than
-    the largest observed time in the training data.
-
-    Args:
-        survival_train: Structured array with training survival data
-        survival_test: Structured array with test survival data
-        estimate: Prediction function or array of probabilities
-        times: Time points at which to evaluate the Brier score
-
-    Returns:
-        float: The integrated Brier score over valid time points,
-               or 0.0 if no valid time points
-    """
-    try:
-        # Get the maximum observed time in the training data
-        max_train_time = np.max(survival_train["t"])
-
-        # Filter out times that are too large
-        valid_mask = times <= max_train_time
-        valid_times = times[valid_mask]
-
-        if len(valid_times) == 0:
-            # If no valid times, return 0.0 with a warning
-            logger.warning(
-                f"All requested time points (max={np.max(times)}) exceed the "
-                f"maximum observed time in training data ({max_train_time}). "
-                f"Returning 0.0 for integrated Brier score."
-            )
-            return 0.0
-
-        # Compute IBS using only valid times
-        try:
-            # First, try with the filtered times directly
-            result = sksurv_integrated_brier_score(
-                survival_train, survival_test, estimate, valid_times
-            )
-        except Exception as inner_e:
-            # If that still fails, use our even safer implementation
-            logger.warning(
-                f"Error in integrated_brier_score with filtered times: {str(inner_e)}. "
-                f"Trying alternative approach with custom censoring model."
-            )
-
-            # Manually calculate IBS using brier_score function
-            # This avoids internal issues in integrated_brier_score
-            cens = CensoringDistributionEstimator()
-            cens.fit(survival_train)
-
-            # Get times and scores
-            valid_times, scores = safe_brier_score(
-                survival_train, survival_test, estimate, valid_times
-            )
-
-            if len(valid_times) < 2:
-                logger.warning(
-                    "Too few valid time points for integration. Returning 0.0."
-                )
-                return 0.0
-
-            # Integrate using trapezoidal rule
-            result = np.trapz(scores, valid_times) / (valid_times[-1] - valid_times[0])
-
-        # If some times were filtered out, log a warning
-        if np.sum(~valid_mask) > 0:
-            logger.warning(
-                f"Filtered out {np.sum(~valid_mask)} time points that exceed the "
-                f"maximum observed time in training data ({max_train_time})."
-            )
-
-        return result
-    except Exception as e:
-        logger.error(f"Error computing integrated Brier score: {str(e)}")
-        # Return 0.0 rather than crashing
-        return 0.0
+def to_tensor(arr, dtype=torch.float32):
+    """Convert array to tensor with specified dtype"""
+    if isinstance(arr, torch.Tensor):
+        return arr.to(dtype)
+    return torch.as_tensor(arr, dtype=dtype)
 
 
 _CITATION = r"""
@@ -247,28 +126,39 @@ _KWARGS_DESCRIPTION = """
 class BrierScore(evaluate.Metric):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Initialize cache for struct arrays and predictions
-        self._array_cache = {}
-        self._prediction_cache = {}
+        # Initialize the torchsurv BrierScore calculator once
+        self._brier_scorer = TorchsurvBrierScore()
 
-    def _clear_cache(self):
-        """Clear the cache to free memory"""
-        self._array_cache.clear()
-        self._prediction_cache.clear()
+        # Initialize cache
+        self._tensor_cache = {}
 
-    def _get_struct_array(self, data, key):
-        """Get or create a structured array for survival data"""
-        # Use cache key based on data id and shape
+    def _get_tensor(self, data, key, is_event=False):
+        """Convert data to appropriate tensors and cache them"""
         cache_key = f"{key}_{id(data)}_{len(data)}"
 
-        if cache_key in self._array_cache:
-            return self._array_cache[cache_key]
+        if cache_key in self._tensor_cache:
+            return self._tensor_cache[cache_key]
 
-        # Create the structured array
-        arr = np.array([tuple(x) for x in data], dtype=[("e", bool), ("t", float)])
-        # Store in cache
-        self._array_cache[cache_key] = arr
-        return arr
+        # Extract event indicators and times from data
+        if isinstance(data[0], dict):
+            if is_event:
+                arr = np.array([x["e"] for x in data])
+            else:  # time
+                arr = np.array([x["t"] for x in data])
+        else:
+            # Assume data is a list of (event, time) tuples
+            if is_event:
+                arr = np.array([x[0] for x in data])
+            else:  # time
+                arr = np.array([x[1] for x in data])
+
+        # Convert to tensor
+        dtype = torch.bool if is_event else torch.float32
+        tensor = to_tensor(arr, dtype=dtype)
+
+        # Cache result
+        self._tensor_cache[cache_key] = tensor
+        return tensor
 
     def _info(self):
         return evaluate.MetricInfo(
@@ -297,34 +187,73 @@ class BrierScore(evaluate.Metric):
         duration_cuts,
         per_horizon=False,
     ):
-        # Get cached arrays or create new ones
-        et_test = self._get_struct_array(references, "test")
-        et_train = self._get_struct_array(train_set, "train")
-
-        # Convert predictions to numpy array for efficiency
-        # Use cache based on predictions ID
-        pred_cache_key = f"pred_{id(predictions)}_{len(predictions)}"
-        if pred_cache_key in self._prediction_cache:
-            preds_np = self._prediction_cache[pred_cache_key]
+        # Handle both dictionary and tuple formats that might come from HF
+        if isinstance(references[0], dict):
+            # For dictionary format (with 'e' and 't' keys)
+            e_test_np = np.array([x["e"] for x in references])
+            t_test_np = np.array([x["t"] for x in references])
         else:
-            preds_np = np.array(predictions)
-            self._prediction_cache[pred_cache_key] = preds_np
+            # For tuple format (event, time)
+            e_test_np = np.array([x[0] for x in references])
+            t_test_np = np.array([x[1] for x in references])
 
-        # Compute scores using our safe versions
-        if per_horizon:
-            # Calculate per-horizon Brier scores with the safe version
-            _, brs = safe_brier_score(et_train, et_test, preds_np, duration_cuts)
-        else:
-            brs = []
+        # Convert test data to tensors
+        e_test = to_tensor(e_test_np, dtype=torch.bool)
+        t_test = to_tensor(t_test_np, dtype=torch.float32)
 
-        # Calculate integrated Brier score with the safe version
-        ibrs = safe_integrated_brier_score(et_train, et_test, preds_np, duration_cuts)
+        # Convert predictions and times to tensors
+        preds = to_tensor(predictions)
+        times = to_tensor(duration_cuts)
+
+        # Add detailed shape diagnostics to help debug size mismatches
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("Tensor shapes before Brier score calculation:")
+            logger.debug(f"  Test events (e_test): {e_test.shape}")
+            logger.debug(f"  Test times (t_test): {t_test.shape}")
+            logger.debug(f"  Predictions (preds): {preds.shape}")
+            logger.debug(f"  Eval times: {times.shape}")
+
+        # Compute IPCWs from the test set itself
+        test_ipcw = get_ipcw(e_test, t_test)  # ipcw at time
+        test_ipcw_new_time = get_ipcw(e_test, t_test, times)  # ipcw at new time
 
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(f"Computed brier score: {brs}")
+            if hasattr(test_ipcw, "shape"):
+                logger.debug(f"  IPCW shape: {test_ipcw.shape}")
+            if hasattr(test_ipcw_new_time, "shape"):
+                logger.debug(f"  IPCW new time shape: {test_ipcw_new_time.shape}")
 
-        # Clear cache if it's getting too large (optional)
-        if len(self._array_cache) > 10 or len(self._prediction_cache) > 10:
-            self._clear_cache()
+        try:
+            # Compute Brier scores using torchsurv with test-based weights
+            brier_scores = self._brier_scorer(
+                estimate=preds,
+                event=e_test,
+                time=t_test,
+                new_time=times,
+                weight=test_ipcw,  # Use test-based weights
+                weight_new_time=test_ipcw_new_time,  # Use test-based weights
+            )
+        except RuntimeError as e:
+            logger.error(f"Error calculating Brier score: {str(e)}")
+            raise
 
-        return ibrs, brs
+        # For integrated Brier score, use the built-in integral method
+        # Note: this will use the weights that were provided in the previous call
+        ibs = self._brier_scorer.integral()
+        integrated_bs = float(ibs.cpu().item())
+
+        # Convert to numpy arrays for the evaluate API
+        if per_horizon:
+            bs_numpy = brier_scores.cpu().numpy()
+        else:
+            bs_numpy = []
+
+        # Clear cache if needed
+        if len(self._tensor_cache) > 20:
+            self._tensor_cache.clear()
+
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Computed brier scores: {bs_numpy}")
+            logger.debug(f"Computed integrated brier score: {integrated_bs}")
+
+        return integrated_bs, bs_numpy
