@@ -183,7 +183,6 @@ class BrierScore(evaluate.Metric):
         self,
         references,
         predictions,
-        train_set,
         duration_cuts,
         per_horizon=False,
     ):
