@@ -73,6 +73,7 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
         logger.info(
             f"Splitting dataset with k-fold configuration: k={cfg.cv.k}; fold={cfg.replication}"
         )
+        fold_index = cfg.cv.k if cfg.cv.k else None
         ds_splitter = splitter.StreamingKFoldSplitter(
             id_field=cfg.data.id_col,
             k=cfg.cv.k,
@@ -81,7 +82,7 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
             test_split_strategy="hash",
             split_names=cfg.data.splits,
         )
-        dataset = ds_splitter.load_split(cfg=cfg.data.load, fold_index=cfg.replication)
+        dataset = ds_splitter.load_split(cfg=cfg.data.load, fold_index=fold_index)
 
         def tokenize_function(
             examples,
