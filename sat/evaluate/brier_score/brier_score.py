@@ -28,98 +28,89 @@ _CITATION = r"""
 author = {Graf, Erika and Schmoor, Claudia and Sauerbrei, Willi and Schumacher, Martin},
 title = {Assessment and comparison of prognostic classification schemes for survival data},
 journal = {Statistics in Medicine},
-volume = {18},
-number = {17-18},
-pages = {2529-2545},
-doi = {https://doi.org/10.1002/(SICI)1097-0258(19990915/30)18:17/18<2529::AID-SIM274>3.0.CO;2-5},
-url = {https://onlinelibrary.wiley.com/doi/abs/10.1002/%28SICI%291097-0258%2819990915/30%2918%3A17/18%3C2529%3A%3AAID-SIM274%3E3.0.CO%3B2-5},
-eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1002/%28SICI%291097-0258%2819990915/30%2918%3A17/18%3C2529%3A%3AAID-SIM274%3E3.0.CO%3B2-5},
-abstract = {Abstract Prognostic classification schemes have often been used in medical applications, but rarely subjected to a rigorous examination of their adequacy. For survival data, the statistical methodology to assess such schemes consists mainly of a range of ad hoc approaches, and there is an alarming lack of commonly accepted standards in this field. We review these methods and develop measures of inaccuracy which may be calculated in a validation study in order to assess the usefulness of estimated patient-specific survival probabilities associated with a prognostic classification scheme. These measures are meaningful even when the estimated probabilities are misspecified, and asymptotically they are not affected by random censorship. In addition, they can be used to derive R2-type measures of explained residual variation. A breast cancer study will serve for illustration throughout the paper. Copyright © 1999 John Wiley \& Sons, Ltd.},
-year = {1999}
 }
-"""
+
+@article{mogensen2012evaluating,
+  title={Evaluating random forests for survival analysis using prediction error curves.},
+  author={Mogensen, Ulla B and Ishwaran, Hemant and Gerds, Thomas A},
+  journal={Journal of statistical software},
+  volume={50},
+  pages={1},
+  year={2012},
+  publisher={NIH Public Access}
+}
+
+@article{torchsurv2023,
+  title={TorchSurv: A PyTorch Package for Accelerated Development of Survival Analysis Methods},
+  author={Zhu, Peng and Kong, Youben and Wever, Marcel and Schulz, Christian and Zitnik, Marinka and Cheng, Jie-Xun and Bachl, Fabian and Theis, Fabian J. and Ray, Pratyush},
+  journal={arXiv preprint arXiv:2302.03686},
+  year={2023}
+}"""
 
 _DESCRIPTION = """
-Estimate the time-dependent Brier score for right censored data.
+Brier Score for survival prediction, implemented using torchsurv.
 
-The time-dependent Brier score is the mean squared error at time point :math:`t`:
-.. math::
-\\mathrm{BS}^c(t) = \\frac{1}{n} \\sum_{i=1}^n I(y_i \\leq t \\land \\delta_i = 1)
-\\frac{(0 - \\hat{\\pi}(t | \\mathbf{x}_i))^2}{\\hat{G}(y_i)} + I(y_i > t)
-\\frac{(1 - \\hat{\\pi}(t | \\mathbf{x}_i))^2}{\\hat{G}(t)} ,
+The Brier score measures the accuracy of probabilistic predictions by calculating the mean squared error
+between predicted survival probabilities and the actual survival status at specific time points.
 
-where :math:`\\hat{\\pi}(t | \\mathbf{x})` is the predicted probability of
-remaining event-free up to time point :math:`t` for a feature vector :math:`\\mathbf{x}`,
-and :math:`1/\\hat{G}(t)` is a inverse probability of censoring weight, estimated by
-the Kaplan-Meier estimator.
+This implementation calculates both:
+1. Time-dependent Brier scores at each specified time horizon (duration cut)
+2. Integrated Brier Score (IBS) - the weighted average of Brier scores across all time points
 
-See the :ref:`User Guide </user_guide/evaluating-survival-models.ipynb#Time-dependent-Brier-Score>`
-and [1]_ for details.
+To account for censoring in survival data, Inverse Probability of Censoring Weights (IPCW) are used.
+The weights are estimated from the test data to ensure compatibility regardless of dataset sizes.
+
+The implementation leverages torchsurv's BrierScore class which provides GPU-acceleration for faster
+computation on large datasets and proper handling of censored observations through IPCW.
+
+References:
+    Graf, E., Schmoor, C., Sauerbrei, W., & Schumacher, M. (1999).
+    "Assessment and comparison of prognostic classification schemes for survival data".
+    Statistics in Medicine, 18(17-18), 2529-2545.
+    
+    Zhu, P. et al. (2023). "TorchSurv: A PyTorch Package for Accelerated Development of
+    Survival Analysis Methods". arXiv preprint arXiv:2302.03686.
 """
-
 
 _KWARGS_DESCRIPTION = """
-    Parameters
-    ----------
-    survival_train : structured array, shape = (n_train_samples,)
-        Survival times for training data to estimate the censoring
-        distribution from.
-        A structured array containing the binary event indicator
-        as first field, and time of event or time of censoring as
-        second field.
-    survival_test : structured array, shape = (n_samples,)
-        Survival times of test data.
-        A structured array containing the binary event indicator
-        as first field, and time of event or time of censoring as
-        second field.
-    estimate : array-like, shape = (n_samples, n_times)
-        Estimated risk of experiencing an event for test data at `times`.
-        The i-th column must contain the estimated probability of
-        remaining event-free up to the i-th time point.
-    times : array-like, shape = (n_times,)
-        The time points for which to estimate the Brier score.
-        Values must be within the range of follow-up times of
-        the test data `survival_test`.
 
-    Returns
-    -------
-    times : array, shape = (n_times,)
-        Unique time points at which the brier scores was estimated.
-    brier_scores : array , shape = (n_times,)
-        Values of the brier score.
+Parameters
+----------
+references : array-like
+    Ground truth survival data containing event indicators and times.
+    Can be provided as a list of tuples (event, time) or as a list of dictionaries
+    with keys 'e' for event indicator and 't' for time.
+    Event indicators should be boolean (True for events, False for censored).
+    Times should be positive floats representing time-to-event or time-to-censoring.
 
-    Examples
-    --------
-    >>> from sksurv.datasets import load_gbsg2
-    >>> from sksurv.linear_model import CoxPHSurvivalAnalysis
-    >>> from sksurv.metrics import brier_score
-    >>> from sksurv.preprocessing import OneHotEncoder
-    Load and prepare data.
-    >>> X, y = load_gbsg2()
-    >>> X.loc[:, "tgrade"] = X.loc[:, "tgrade"].map(len).astype(int)
-    >>> Xt = OneHotEncoder().fit_transform(X)
-    Fit a Cox model.
-    >>> est = CoxPHSurvivalAnalysis(ties="efron").fit(Xt, y)
-    Retrieve individual survival functions and get probability
-    of remaining event free up to 5 years (=1825 days).
-    >>> survs = est.predict_survival_function(Xt)
-    >>> preds = [fn(1825) for fn in survs]
-    Compute the Brier score at 5 years.
-    >>> times, score = brier_score(y, y, preds, 1825)
-    >>> print(score)
-    [0.20881843]
+predictions : array-like
+    Model predictions representing risk scores.
+    Higher values should indicate higher risk (shorter survival time).
+    Can be a single risk score per subject or multiple values for different time horizons.
+    Shape can be (n_samples,) for a single prediction per subject or
+    (n_samples, n_horizons) for risk scores at multiple time points.
 
-    See also
-    --------
-    integrated_brier_score
-        Computes the average Brier score over all time points.
+duration_cuts : array-like
+    Time horizons at which to evaluate the brier score.
+    Each value represents a specific time point for evaluation.
 
-    References
-    ----------
-    .. [1] E. Graf, C. Schmoor, W. Sauerbrei, and M. Schumacher,
-           "Assessment and comparison of prognostic classification schemes for survival data,"
-           Statistics in Medicine, vol. 18, no. 17-18, pp. 2529–2545, 1999.
+per_horizon : bool, optional, default=False
+    If True, return brier scores at each time horizon specified in duration_cuts.
+    If False, only return the integrated brier score.
+
+Returns
+-------
+integrated_bs : float
+    The integrated Brier score (IBS) across all time horizons, weighted by the number of events at each time point.
+    Range is typically [0, 1] where 0 represents perfect prediction and higher values indicate worse performance.
+    For binary outcomes, a random prediction would yield around 0.25.
+
+brier_scores_np : array-like or empty list
+    If per_horizon=True, returns a numpy array containing brier scores for each time horizon in duration_cuts.
+    If per_horizon=False, returns an empty list.
+
 """
+
 
 
 @evaluate.utils.file_utils.add_start_docstrings(_DESCRIPTION, _KWARGS_DESCRIPTION)
