@@ -29,8 +29,8 @@ def _cv(cfg: DictConfig) -> None:
         logger.info("Run training pipeline")
         metrics, test_metrics = _finetune(cfg)
 
-        brier.push(metrics["test_brier_avg"])
-        ipcw.push(metrics["test_ipcw_avg"])
+        brier.push(metrics["test_brier_weighted_avg"])
+        ipcw.push(metrics["test_ipcw_weighted_avg"])
 
         logger.info(f"Finished run of fold number {fold}")
 
