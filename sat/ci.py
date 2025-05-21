@@ -22,7 +22,6 @@ def _ci(cfg: DictConfig) -> None:
     brier = statistics.OnlineStats()
     ipcw = statistics.OnlineStats()
 
-    dataset = cfg.dataset
     while (
         (brier.getNumValues() < cfg.n)
         or (not statistics.isConfidentWithPrecision(brier, cfg.alpha, cfg.error))
@@ -32,7 +31,7 @@ def _ci(cfg: DictConfig) -> None:
             logger.info(f"Stop the runs after {brier.getNumValues()} runs")
             break
 
-        cfg.dataset = dataset + "_" + str(brier.getNumValues())
+        cfg.replication = brier.getNumValues()
         val_metrics, test_metrics = _finetune(cfg)
 
         metrics = val_metrics if cfg.use_val else test_metrics
@@ -56,7 +55,6 @@ def _ci(cfg: DictConfig) -> None:
         },
     }
 
-    cfg.dataset = dataset
     outDir = Path(f"{cfg.trainer.training_arguments.output_dir}/")
     outDir.mkdir(parents=True, exist_ok=True)
 

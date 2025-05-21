@@ -25,7 +25,7 @@ def _cv(cfg: DictConfig) -> None:
     ipcw = statistics.OnlineStats()
 
     for fold in range(cfg.cv.k):
-        cfg.cv.fold = fold
+        cfg.replication = fold
         logger.info("Run training pipeline")
         metrics, test_metrics = _finetune(cfg)
 

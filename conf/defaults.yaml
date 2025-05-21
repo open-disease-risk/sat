@@ -25,7 +25,6 @@ defaults:
 task_name: sat-${task}-${modelname}-${dataset}-${job}
 
 cv:
-  fold: null
   k: null
 
 # only one of them can be true. If both are false use fintune directly
@@ -33,6 +32,8 @@ pipeline_use_cv: true
 pipeline_use_ci: false
 
 # CV config
+replication: null
+
 multiple_replications: true
 cv_kfold: 3
 

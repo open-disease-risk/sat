@@ -71,7 +71,7 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
         mapped_labels_dataset = load_from_disk(cfg.data.preprocess_outdir)
     else:
         logger.info(
-            f"Splitting dataset with k-fold configuration: k={cfg.cv.k}; fold={cfg.cv.fold}"
+            f"Splitting dataset with k-fold configuration: k={cfg.cv.k}; fold={cfg.replication}"
         )
         ds_splitter = splitter.StreamingKFoldSplitter(
             id_field=cfg.data.id_col,
@@ -81,7 +81,7 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
             test_split_strategy="hash",
             split_names=cfg.data.splits,
         )
-        dataset = ds_splitter.load_split(cfg=cfg.data.load, fold_index=cfg.cv.fold)
+        dataset = ds_splitter.load_split(cfg=cfg.data.load, fold_index=cfg.replication)
 
         def tokenize_function(
             examples,
@@ -229,7 +229,7 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
         logger.debug("Use MPS in training argumments")
         args.use_mps_device = True
 
-    fold_part = "_" + str(cfg.cv.fold) if cfg.cv.fold else ""
+    fold_part = "_" + str(cfg.replication) if cfg.replication else ""
     if cfg.do_sweep:
         args.output_dir = args.output_dir + fold_part + "/" + cfg.model_dir
         logger.debug(f"Redirect the sweep output: {args.output_dir}")
