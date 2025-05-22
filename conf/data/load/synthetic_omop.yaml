@@ -6,12 +6,12 @@ data:
   preprocess_data: false
   perform_split: true
   split_col: split
-  id_col: index
-  durations_col: durations
-  events_col: events
+  id_col: patient_id
+  duration_col: time
+  event_col: events
   modality_col: modality
   numerics_col: numerics
-  num_events: 2  # Number of competing events
+  num_events: 4  # Number of competing events
   validation_ratio: 0.1
   test_ratio: 0.3
   transformed_duration_cols:
@@ -23,7 +23,7 @@ data:
     - test
   load:
     _target_: datasets.load_dataset
-    path: json
+    path: arrow
     data_files:
-      - ${modelhub}/${dataset}/${dataset}.json
+      - ${modelhub}/${dataset}/*.arrow
     streaming: false
