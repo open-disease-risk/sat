@@ -15,6 +15,7 @@ from .survival.deephit import DeepHitCalibrationLoss, DeepHitLikelihoodLoss
 from .survival.dsm import DSMLoss
 from .survival.focal import SurvivalFocalLoss
 from .survival.nllpchazard import SATNLLPCHazardLoss
+from .survival.mismatch_rank import IntraEventRankingLoss
 
 __all__ = [
     "Loss",
@@ -31,4 +32,5 @@ __all__ = [
     "DeepHitLikelihoodLoss",
     "DeepHitCalibrationLoss",
     "DSMLoss",
+    "IntraEventRankingLoss",
 ]
