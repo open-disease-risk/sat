@@ -422,14 +422,20 @@ class CohortOMOP:
             except Exception:
                 return str(obj)
 
-    def save_to_json(
-        self, ds: Union[Dataset, pd.DataFrame], output_path: Optional[str] = None
+    def save_to_json_with_labels(
+        self,
+        ds: Union[Dataset, pd.DataFrame],
+        labels_dict: Dict[str, List[Any]],
+        anchor_times: List[Any],
+        output_path: Optional[str] = None,
     ) -> str:
         """
-        Serialize the entire cohort dataset to JSON for debugging purposes.
+        Serialize the entire cohort dataset including labels to JSON for debugging purposes.
 
         Args:
             ds: Dataset or DataFrame to serialize
+            labels_dict: Dictionary of labels for each patient
+            anchor_times: List of anchor times for each patient
             output_path: Optional path to save the JSON file. If None, uses processed_dir/name/cohort_debug.json
 
         Returns:
@@ -449,116 +455,30 @@ class CohortOMOP:
         else:
             df = ds
 
-        # Add a separate debug export file for events with string_value
-        events_debug_path = str(
-            Path(self.processed_dir) / self.name / "events_debug.json"
+        # Convert to list of dictionaries
+        data_dicts = df.to_dict(orient="records")
+
+        # Add labels and anchor times to each patient record
+        for i, record in enumerate(data_dicts):
+            if i < len(anchor_times):
+                record["anchor_time"] = self.make_serializable(anchor_times[i])
+
+            # Add labels for this patient
+            record["labels"] = {}
+            for label_name, label_values in labels_dict.items():
+                if i < len(label_values):
+                    record["labels"][label_name] = self.make_serializable(
+                        label_values[i]
+                    )
+
+        # Save with custom JSON encoder
+        with open(output_path, "w") as f:
+            json.dump(data_dicts, f, indent=2, cls=CustomJSONEncoder)
+
+        logger.info(
+            f"Saved cohort data with labels to JSON for debugging: {output_path}"
         )
 
-        # Add direct examination of the dataset schema and contents before processing
-        logger.info(f"Dataset columns: {df.columns.tolist()}")
-        if isinstance(ds, Dataset):
-            logger.info(f"Dataset features: {ds.features}")
-
-        # Debugging for string_value presence
-        if "string_value" in df.columns:
-            logger.info("string_value column exists at the top level")
-            non_null_count = df["string_value"].notna().sum()
-            logger.info(f"Number of non-null string_values: {non_null_count}")
-        else:
-            logger.info("string_value column NOT found at the top level")
-
-        # Extract and collect all events for a more direct examination
-        if "events" in df.columns:
-            all_events = []
-            string_value_count = 0  # Counter for events with string_value
-
-            for patient_id, events_list in zip(
-                df[self.primary_key], df["events"], strict=False
-            ):
-                # Handle NumPy arrays and pandas objects correctly
-                if isinstance(events_list, (list, tuple)) or (
-                    hasattr(events_list, "__len__") and len(events_list) > 0
-                ):
-                    # Convert to list if it's an array-like object
-                    events_to_process = events_list
-                    if not isinstance(events_list, list):
-                        try:
-                            events_to_process = (
-                                events_list.tolist()
-                                if hasattr(events_list, "tolist")
-                                else list(events_list)
-                            )
-                        except:
-                            # If conversion fails, skip this entry
-                            logger.warning(
-                                f"Could not process events for patient {patient_id}"
-                            )
-                            continue
-
-                    # Sample the first few events for debugging (limit to avoid excessive logs)
-                    if (
-                        len(events_to_process) > 0
-                        and patient_id == df[self.primary_key].iloc[0]
-                    ):
-                        logger.info(
-                            f"Sample event structure for patient {patient_id}: {events_to_process[0]}"
-                        )
-
-                    for event in events_to_process:
-                        # Make a copy with patient ID added
-                        if isinstance(event, dict):
-                            event_copy = dict(event)
-                            event_copy["patient_id"] = patient_id
-
-                            # Explicitly check for string_value and log its presence
-                            if (
-                                "string_value" in event
-                                and event["string_value"] is not None
-                            ):
-                                string_value_count += 1
-
-                            all_events.append(event_copy)
-
-            # Log string_value statistics
-            logger.info(
-                f"Found {string_value_count} events with non-null string_value out of {len(all_events)} total events"
-            )
-
-            # Save the events to a separate file for direct inspection
-            with open(events_debug_path, "w") as f:
-                json.dump(all_events, f, indent=2, cls=CustomJSONEncoder)
-            logger.info(
-                f"Saved events data with string_value for debugging: {events_debug_path}"
-            )
-
-            # Additional debugging output - save a simplified version with only events containing string_value
-            if string_value_count > 0:
-                string_value_events = [
-                    event
-                    for event in all_events
-                    if event.get("string_value") is not None
-                ]
-                string_value_debug_path = str(
-                    Path(self.processed_dir)
-                    / self.name
-                    / "string_value_events_debug.json"
-                )
-                with open(string_value_debug_path, "w") as f:
-                    json.dump(string_value_events, f, indent=2, cls=CustomJSONEncoder)
-                logger.info(
-                    f"Saved {len(string_value_events)} events with string_value to: {string_value_debug_path}"
-                )
-            else:
-                logger.warning("No events with string_value found in the dataset!")
-
-        # Convert to serializable format and save the main dataset
-        data_dict = df.to_dict(orient="records")
-
-        # Use the custom JSON encoder instead of manual serialization
-        with open(output_path, "w") as f:
-            json.dump(data_dict, f, indent=2, cls=CustomJSONEncoder)
-
-        logger.info(f"Saved cohort data to JSON for debugging: {output_path}")
         return output_path
 
     def save_metadata(self, labels_dict, anchor_times):
@@ -578,14 +498,40 @@ class CohortOMOP:
         with open(meta_path, "w") as f:
             json.dump(meta, f, indent=2)
 
-    def save_cohort_dataset(self, ds):
+    def save_cohort_dataset(self, ds, labels_dict=None, anchor_times=None):
         """
         Save the cohort dataset to the output directory. Supports HuggingFace Dataset and pandas DataFrame.
+        Optionally embeds labels_dict and anchor_times as columns in the dataset.
         The output directory is derived from self.processed_dir.
         """
         cohort_path_parquet = Path(self.processed_dir) / self.name / "cohort.parquet"
         cohort_path_csv = Path(self.processed_dir) / self.name / "cohort.csv"
         cohort_path_parquet.parent.mkdir(parents=True, exist_ok=True)
+
+        # If labels_dict and anchor_times are provided, add them as columns
+        if labels_dict is not None and anchor_times is not None:
+            # Convert to pandas for easier manipulation
+            if hasattr(ds, "to_pandas"):
+                df = ds.to_pandas()
+            else:
+                df = ds if hasattr(ds, "loc") else pd.DataFrame(ds)
+
+            # Add anchor_times as a column
+            df["anchor_time"] = anchor_times
+
+            # Add each label type as a separate column
+            for label_name, label_values in labels_dict.items():
+                # Ensure the label values are serializable
+                serializable_labels = [
+                    self.make_serializable(labels) for labels in label_values
+                ]
+                df[f"labels_{label_name}"] = serializable_labels
+
+            # Convert back to dataset if needed
+            if hasattr(ds, "from_pandas"):
+                ds = Dataset.from_pandas(df)
+            else:
+                ds = df
 
         try:
             # HuggingFace Dataset
@@ -614,11 +560,11 @@ class CohortOMOP:
         self.apply_competing_risk_censoring(labels_dict, anchor_times, ds)
         ds = self.truncate_events_at_anchor(anchor_times, ds)
 
-        # Save metadata and dataset
+        # Save metadata and dataset (with labels embedded)
         self.save_metadata(labels_dict, anchor_times)
-        self.save_cohort_dataset(ds)
+        self.save_cohort_dataset(ds, labels_dict, anchor_times)
 
-        # Save JSON for debugging
-        self.save_to_json(ds)
+        # Save JSON for debugging (with labels)
+        self.save_to_json_with_labels(ds, labels_dict, anchor_times)
 
         return ds
