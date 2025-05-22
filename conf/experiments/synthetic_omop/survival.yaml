@@ -6,7 +6,7 @@ defaults:
   - synthetic_omop/defaults
   - override /data/load: synthetic_omop
   - override /data/parse: synthetic_omop_parse
-  - override /tokenizers: default
+  - override /tokenizers: synthetic_omop
   - override /transformers: numeric_bert
   - override /tasks: survival
   - override /trainer: synthetic_omop/default
