@@ -142,6 +142,7 @@ class SyntheticOmopGenerator:
     name: str = "synthetic_omop"
     seed: Optional[int] = 42
     censoring_time: int = 1095  # Default 3 years (max follow-up in days)
+    pre_enrollment_period: int = 365  # Default 1 year of pre-enrollment history (in days)
 
     # Data definitions
     categorical_covariates: List[Dict[str, Any]] = field(
@@ -411,7 +412,7 @@ class SyntheticOmopGenerator:
             "LOINC:2951-2": 150,  # Sodium - high (mmol/L)
             "LOINC:2823-3": 5.5,  # Potassium - high (mmol/L)
         }
-
+        
         return lab_abnormals.get(lab_code, 150)  # Default if code not found
 
     def generate_event_times(self):
@@ -441,7 +442,7 @@ class SyntheticOmopGenerator:
             if death_time_days <= self.censoring_time:
                 death_date = enrollment_date + timedelta(days=int(death_time_days))
                 patient_death_times[patient_id] = death_date
-
+                
                 # Record death event in OMOP format
                 self._omop_events.append(
                     {
@@ -461,19 +462,24 @@ class SyntheticOmopGenerator:
 
             # Generate time-dependent measurements and events
 
+            # Define pre-enrollment period and post-enrollment period
+            pre_enrollment_start = enrollment_date - timedelta(days=self.pre_enrollment_period)
+
             # 1. Generate hospitalizations
             hospitalization_risk = self._patient_risk_scores[patient_id][
                 "HOSPITALIZATION"
             ]
-            # Number of hospitalizations depends on risk and max time
+            # Number of hospitalizations depends on risk and total time (pre + post enrollment)
+            total_time_days = patient_max_time + self.pre_enrollment_period
             num_hospitalizations = np.random.poisson(
-                max(0.5, hospitalization_risk / 50 * (patient_max_time / 365))
+                max(0.5, hospitalization_risk / 50 * (total_time_days / 365))
             )
 
             for _ in range(num_hospitalizations):
-                # Generate hospitalization time (days from enrollment)
-                hosp_time_days = np.random.uniform(0, patient_max_time)
-                hosp_date = enrollment_date + timedelta(days=int(hosp_time_days))
+                # Generate hospitalization time (can be pre or post enrollment)
+                # Uniform distribution across entire timeline (pre-enrollment to end of follow-up)
+                hosp_time_offset = np.random.uniform(-self.pre_enrollment_period, patient_max_time)
+                hosp_date = enrollment_date + timedelta(days=int(hosp_time_offset))
 
                 # Generate length of stay (1-14 days)
                 length_of_stay = np.random.randint(1, 15)
@@ -492,13 +498,13 @@ class SyntheticOmopGenerator:
             # 2. Generate diagnoses (ICD codes)
             diagnosis_risk = self._patient_risk_scores[patient_id]["DIAGNOSIS"]
             num_diagnoses = np.random.poisson(
-                max(1, diagnosis_risk / 20 * (patient_max_time / 365))
+                max(1, diagnosis_risk / 20 * (total_time_days / 365))
             )
 
             for _ in range(num_diagnoses):
-                # Generate diagnosis time
-                diag_time_days = np.random.uniform(0, patient_max_time)
-                diag_date = enrollment_date + timedelta(days=int(diag_time_days))
+                # Generate diagnosis time (can be pre or post enrollment)
+                diag_time_offset = np.random.uniform(-self.pre_enrollment_period, patient_max_time)
+                diag_date = enrollment_date + timedelta(days=int(diag_time_offset))
 
                 # Select a diagnosis code randomly
                 icd_info = random.choice(self.icd_codes)
@@ -517,13 +523,13 @@ class SyntheticOmopGenerator:
             # 3. Generate medications
             medication_risk = self._patient_risk_scores[patient_id]["MEDICATION"]
             num_medications = np.random.poisson(
-                max(1, medication_risk / 15 * (patient_max_time / 365))
+                max(1, medication_risk / 15 * (total_time_days / 365))
             )
 
             for _ in range(num_medications):
-                # Generate medication time
-                med_time_days = np.random.uniform(0, patient_max_time)
-                med_date = enrollment_date + timedelta(days=int(med_time_days))
+                # Generate medication time (can be pre or post enrollment)
+                med_time_offset = np.random.uniform(-self.pre_enrollment_period, patient_max_time)
+                med_date = enrollment_date + timedelta(days=int(med_time_offset))
 
                 # Select a medication randomly
                 med_info = random.choice(self.omop_codes)
@@ -542,13 +548,13 @@ class SyntheticOmopGenerator:
             # 4. Generate lab results
             lab_risk = self._patient_risk_scores[patient_id]["LAB_RESULT"]
             num_labs = np.random.poisson(
-                max(2, lab_risk / 10 * (patient_max_time / 365))
+                max(2, lab_risk / 10 * (total_time_days / 365))
             )
 
             for _ in range(num_labs):
-                # Generate lab time
-                lab_time_days = np.random.uniform(0, patient_max_time)
-                lab_date = enrollment_date + timedelta(days=int(lab_time_days))
+                # Generate lab time (can be pre or post enrollment)
+                lab_time_offset = np.random.uniform(-self.pre_enrollment_period, patient_max_time)
+                lab_date = enrollment_date + timedelta(days=int(lab_time_offset))
 
                 # Select a lab test randomly
                 lab_info = random.choice(self.lab_codes)
@@ -646,6 +652,108 @@ class SyntheticOmopGenerator:
                         )
 
         return self._omop_events
+
+    def log_statistics(self):
+        """Print summary statistics for the generated data."""
+        if self._df_omop is None:
+            logger.warning("No OMOP data to analyze. Generate data first.")
+            return
+
+        # Count events by type from the combined dataframe
+        event_types = self._df_omop["code"].value_counts().to_dict()
+
+        # Count pre-enrollment and post-enrollment events
+        if 'time' in self._df_omop.columns and 'OMOP_ENROLLMENT' in event_types:
+            enrollment_dates = {}
+            for _, row in self._df_omop[self._df_omop['code'] == 'OMOP_ENROLLMENT'].iterrows():
+                enrollment_dates[row['patient_id']] = row['time']
+
+            # Count events before enrollment
+            pre_enrollment_count = 0
+            post_enrollment_count = 0
+            for _, row in self._df_omop.iterrows():
+                if pd.isnull(row['time']) or row['code'] == 'OMOP_ENROLLMENT' or row['patient_id'] not in enrollment_dates:
+                    continue
+
+                if row['time'] < enrollment_dates[row['patient_id']]:
+                    pre_enrollment_count += 1
+                else:
+                    post_enrollment_count += 1
+
+            logger.info(f"Pre-enrollment events: {pre_enrollment_count}")
+            logger.info(f"Post-enrollment events: {post_enrollment_count}")
+            logger.info(f"Pre/Post ratio: {pre_enrollment_count/max(1, post_enrollment_count):.2f}")
+
+        logger.info("Event type statistics:")
+        for code, count in sorted(
+            event_types.items(), key=lambda x: x[1], reverse=True
+        ):
+            n_patients = self._df_omop[self._df_omop["code"] == code][
+                "patient_id"
+            ].nunique()
+            if n_patients > 0:
+                avg_per_patient = count / n_patients
+                logger.info(
+                    f"  - {code}: {count} events across {n_patients} patients (avg {avg_per_patient:.1f} per patient)"
+                )
+
+        # Count patients with death events
+        death_patients = self._df_omop[self._df_omop["code"] == "OMOP_DEATH"][
+            "patient_id"
+        ].unique()
+        logger.info(
+            f"Patients with death events: {len(death_patients)} ({len(death_patients)/self.num_patients:.1%} of total)"
+        )
+
+        # Count variable length features by patient
+        patient_event_counts = (
+            self._df_omop[self._df_omop["time"].notna()]
+            .groupby("patient_id")
+            .size()
+            .to_dict()
+        )
+
+        # Calculate statistics on variable-length histories
+        if patient_event_counts:
+            min_events = min(patient_event_counts.values())
+            max_events = max(patient_event_counts.values())
+            avg_events = sum(patient_event_counts.values()) / len(patient_event_counts)
+            logger.info("Patient history statistics:")
+            logger.info(f"  - Minimum events per patient: {min_events}")
+            logger.info(f"  - Maximum events per patient: {max_events}")
+            logger.info(f"  - Average events per patient: {avg_events:.1f}")
+
+    def save_to_json(self, output_path=None):
+        """Save the OMOP data to JSON format for debugging.
+
+        Args:
+            output_path: Optional path to save the JSON file. If None, uses processed_dir.
+
+        Returns:
+            Path to the saved JSON file
+        """
+        if self._df_omop is None:
+            logger.warning("No OMOP data to save to JSON. Generate data first.")
+            return None
+
+        if output_path is None:
+            dataset_folder = Path(f"{self.processed_dir}/{self.name}")
+            output_path = os.path.join(dataset_folder, "omop_data.json")
+
+        # Ensure directory exists
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+        # Convert DataFrame to JSON
+        # Handle datetime objects by converting to ISO format strings
+        df_json = self._df_omop.copy()
+        df_json['time'] = df_json['time'].apply(lambda x: x.isoformat() if pd.notnull(x) else None)
+
+        # Save to JSON file with indentation for readability
+        with open(output_path, 'w') as f:
+            json.dump(df_json.to_dict(orient='records'), f, indent=2)
+
+        logger.info(f"Saved OMOP data to JSON: {output_path}")
+        return output_path
 
     def create_omop_tables(self):
         """Create a single OMOP-formatted table from generated events.
@@ -853,61 +961,13 @@ class SyntheticOmopGenerator:
 
         return dataset_folder
 
-    def log_statistics(self):
-        """Print summary statistics for the generated data."""
-        if self._df_omop is None:
-            logger.warning("No OMOP data to analyze. Generate data first.")
-            return
-
-        # Count events by type from the combined dataframe
-        event_types = self._df_omop["code"].value_counts().to_dict()
-
-        logger.info("Event type statistics:")
-        for code, count in sorted(
-            event_types.items(), key=lambda x: x[1], reverse=True
-        ):
-            n_patients = self._df_omop[self._df_omop["code"] == code][
-                "patient_id"
-            ].nunique()
-            if n_patients > 0:
-                avg_per_patient = count / n_patients
-                logger.info(
-                    f"  - {code}: {count} events across {n_patients} patients (avg {avg_per_patient:.1f} per patient)"
-                )
-
-        # Count patients with death events
-        death_patients = self._df_omop[self._df_omop["code"] == "OMOP_DEATH"][
-            "patient_id"
-        ].unique()
-        logger.info(
-            f"Patients with death events: {len(death_patients)} ({len(death_patients)/self.num_patients:.1%} of total)"
-        )
-
-        # Count variable length features by patient
-        patient_event_counts = (
-            self._df_omop[self._df_omop["time"].notna()]
-            .groupby("patient_id")
-            .size()
-            .to_dict()
-        )
-
-        # Calculate statistics on variable-length histories
-        if patient_event_counts:
-            min_events = min(patient_event_counts.values())
-            max_events = max(patient_event_counts.values())
-            avg_events = sum(patient_event_counts.values()) / len(patient_event_counts)
-            logger.info("Patient history statistics:")
-            logger.info(f"  - Minimum events per patient: {min_events}")
-            logger.info(f"  - Maximum events per patient: {max_events}")
-            logger.info(f"  - Average events per patient: {avg_events:.1f}")
-
     def __call__(self):
         """Generate a complete synthetic OMOP dataset.
 
         This is the main method that orchestrates the full data generation process.
         """
         logger.info(
-            f"Generating synthetic OMOP dataset with {self.num_patients} patients"
+            f"Generating synthetic OMOP dataset with {self.num_patients} patients (pre-enrollment period: {self.pre_enrollment_period} days)"
         )
 
         # 1. Generate patient data and static features
@@ -919,17 +979,18 @@ class SyntheticOmopGenerator:
         # 2. Generate risk scores for each event type based on patient characteristics
         self.generate_event_risk_scores()
         logger.info(
-            f"Generated risk scores for {len(self._patient_risk_scores)} patients"
+            "Generated patient risk scores for events (diagnoses, hospitalizations, etc.)"
         )
 
-        # 3. Generate medical events for each patient
+        # 3. Generate time-dependent events
         self.generate_event_times()
-        logger.info(f"Generated {len(self._omop_events)} medical events")
+        logger.info(f"Generated {len(self._omop_events)} dynamic events")
 
-        # 4. Create single OMOP table from all events
+        # 4. Combine all data into OMOP format
         self.create_omop_tables()
+        logger.info(f"Created OMOP tables with {len(self._df_omop)} rows")
 
-        # 5. Save to Parquet in OMOP format
+        # 5. Save to Parquet format
         dataset_metadata = {
             "dataset_name": os.path.basename(self.processed_dir).split(".")[0],
             "description": "Synthetic OMOP-format dataset for survival analysis",
@@ -938,17 +999,20 @@ class SyntheticOmopGenerator:
             "date_generated": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "version": "1.0",
             "censoring_time": self.censoring_time,
+            "pre_enrollment_period": self.pre_enrollment_period,
         }
 
         output_dir = self.save_omop_to_parquet(dataset_metadata)
 
-        # 6. Print summary statistics
+        # 6. Save to JSON for debugging
+        self.save_to_json()
+
+        # 7. Print summary statistics
         self.log_statistics()
 
         logger.info(f"OMOP dataset generation complete: {output_dir}")
 
         return output_dir
-
 
 def generate_omop_data(config):
     """Generate synthetic OMOP data from a configuration.
@@ -967,6 +1031,8 @@ def generate_omop_data(config):
         processed_dir=getattr(config, "processed_dir", "synthetic_omop"),
         seed=getattr(config, "seed", 42),
         censoring_time=getattr(config, "censoring_time", 1095),
+        pre_enrollment_period=getattr(config, "pre_enrollment_period", 365),
+        name=getattr(config, "name", "synthetic_omop"),
     )
 
     # Optional: use custom covariate definitions if provided
@@ -1013,6 +1079,12 @@ def main():
         default=1095,
         help="Maximum follow-up time in days",
     )
+    parser.add_argument(
+        "--pre_enrollment_period",
+        type=int,
+        default=365,
+        help="History period before enrollment in days",
+    )
     args = parser.parse_args()
 
     # Create a simple config object from args
@@ -1024,6 +1096,7 @@ def main():
     config.processed_dir = args.output
     config.seed = args.seed
     config.censoring_time = args.censoring_time
+    config.pre_enrollment_period = args.pre_enrollment_period
 
     # Use the same function as Hydra would use
     generate_omop_data(config)
