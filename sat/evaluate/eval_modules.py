@@ -181,7 +181,7 @@ class ComputeCIndex(SurvivalEvaluationModule):
 
     def compute_event(self, predictions, references, event):
         n = len(references)
-        
+
         # Check if predictions is valid for computing metrics
         if predictions.size == 0 or predictions.ndim < 4:
             logger.warning(
@@ -217,16 +217,18 @@ class ComputeCIndex(SurvivalEvaluationModule):
 
         # Record integrated/weighted C-index
         metric_dict[f"ipcw_{event}th_event"] = integrated_cindex
-        
+
         # Record per-horizon C-indices if available
         if len(per_horizon_cindeces) > 0:
-            for j, horizon in enumerate(horizons[:len(per_horizon_cindeces)]):
+            for j, horizon in enumerate(horizons[: len(per_horizon_cindeces)]):
                 if j < len(per_horizon_cindeces):
-                    metric_dict[f"ipcw_{event}th_event_{horizon:.2f}"] = per_horizon_cindeces[j]
+                    metric_dict[f"ipcw_{event}th_event_{horizon:.2f}"] = (
+                        per_horizon_cindeces[j]
+                    )
 
         # Always record sample size
         metric_dict[f"ipcw_{event}th_event_n"] = n
-        
+
         return metric_dict
 
     def compute(self, predictions, references):
@@ -250,7 +252,7 @@ class ComputeCIndex(SurvivalEvaluationModule):
 
         # The weighted average across events
         metrics_dict["ipcw_weighted_avg"] = cindex_mean
-        
+
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f"Final C-index (weighted avg across events): {cindex_mean}")
 

@@ -18,7 +18,7 @@ from pathlib import Path
 import hydra
 import numpy as np
 import pandas as pd
-from datasets import concatenate_datasets, DatasetDict, IterableDataset
+from datasets import DatasetDict, IterableDataset, concatenate_datasets
 from logdecorator import log_on_end, log_on_error, log_on_start
 from omegaconf import DictConfig, OmegaConf
 

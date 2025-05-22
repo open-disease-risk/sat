@@ -7,7 +7,6 @@ import datasets
 import evaluate
 import numpy as np
 import torch
-
 from torchsurv.metrics.cindex import ConcordanceIndex
 from torchsurv.stats.ipcw import get_ipcw
 
@@ -21,6 +20,7 @@ def to_tensor(arr, dtype=torch.float32):
     if isinstance(arr, torch.Tensor):
         return arr.to(dtype)
     return torch.as_tensor(arr, dtype=dtype)
+
 
 _CITATION = """
 @article{Uno2011OnTC,
@@ -141,14 +141,14 @@ class CIIPCW(evaluate.Metric):
             # For tuple format (event, time)
             e_test_np = np.array([x[0] for x in references])
             t_test_np = np.array([x[1] for x in references])
-            
+
         # Convert test data to tensors
         e_test = to_tensor(e_test_np, dtype=torch.bool)
         t_test = to_tensor(t_test_np, dtype=torch.float32)
-        
+
         # Convert predictions to tensor
         preds = to_tensor(predictions)
-        
+
         # Add detailed shape diagnostics for debugging
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("Tensor shapes before C-Index calculation:")
@@ -156,16 +156,16 @@ class CIIPCW(evaluate.Metric):
             logger.debug(f"  Test times (t_test): {t_test.shape}")
             logger.debug(f"  Predictions (preds): {preds.shape}")
             logger.debug(f"  Eval times: {len(duration_cuts)}")
-        
+
         # Initialize C-Index calculator
         c_index_calculator = ConcordanceIndex()
         ipcw = get_ipcw(e_test, t_test)
-        
+
         # Calculate C-Index for each duration cut
         cindeces = []
         total_events = 0
         event_counts = []
-        
+
         for i, tau in enumerate(duration_cuts):
             try:
                 # Extract predictions for this time point
@@ -173,13 +173,13 @@ class CIIPCW(evaluate.Metric):
                     pred_at_time = preds[:, i]
                 else:
                     pred_at_time = preds
-                
+
                 # Calculate number of events before this time for weighting
                 event_mask = (e_test_np == 1) & (t_test_np <= tau)
                 event_count = event_mask.sum()
                 event_counts.append(event_count)
                 total_events += event_count
-                
+
                 # Calculate C-Index for this timepoint
                 cindex = c_index_calculator(
                     event=e_test,
@@ -187,17 +187,19 @@ class CIIPCW(evaluate.Metric):
                     estimate=pred_at_time,
                     weight=ipcw,
                 )
-                
+
                 cindeces.append(float(cindex.item()))
-                
+
                 if logger.isEnabledFor(logging.DEBUG):
-                    logger.debug(f"C-index at tau={tau}: {cindeces[-1]} with {event_count} events")
-                    
+                    logger.debug(
+                        f"C-index at tau={tau}: {cindeces[-1]} with {event_count} events"
+                    )
+
             except Exception as e:
                 logger.error(f"Error calculating C-Index at tau={tau}: {str(e)}")
-                cindeces.append(float('nan'))
+                cindeces.append(float("nan"))
                 event_counts.append(0)
-        
+
         # Calculate integrated/weighted C-index
         if total_events > 0:
             # Weight by number of events at each time point
@@ -205,16 +207,16 @@ class CIIPCW(evaluate.Metric):
             integrated_cindex = float(np.sum(np.array(cindeces) * weights))
         else:
             integrated_cindex = 0.5  # Default for no events
-        
+
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f"Computed C-indices: {cindeces}")
             logger.debug(f"Event counts: {event_counts}")
             logger.debug(f"Integrated C-index: {integrated_cindex}")
-        
+
         # Convert to numpy arrays for the evaluate API
         if per_horizon:
             cindeces_np = np.array(cindeces)
         else:
             cindeces_np = []
-        
+
         return integrated_cindex, cindeces_np

@@ -7,9 +7,8 @@ import datasets
 import evaluate
 import numpy as np
 import torch
-
-from torchsurv.stats.ipcw import get_ipcw
 from torchsurv.metrics.brier_score import BrierScore as TorchsurvBrierScore
+from torchsurv.stats.ipcw import get_ipcw
 
 from sat.utils import logging
 
@@ -110,7 +109,6 @@ brier_scores_np : array-like or empty list
     If per_horizon=False, returns an empty list.
 
 """
-
 
 
 @evaluate.utils.file_utils.add_start_docstrings(_DESCRIPTION, _KWARGS_DESCRIPTION)
