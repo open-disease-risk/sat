@@ -5,13 +5,58 @@ import datetime
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
+import numpy as np
+import pandas as pd
 from datasets import Dataset
 
 from sat.data.dataset.femr_extensions.schema import LabelType
 
 logger = logging.getLogger(__name__)
+
+
+# Custom JSON encoder to handle datetime objects and other non-serializable types
+class CustomJSONEncoder(json.JSONEncoder):
+    """Custom JSON encoder that handles datetime objects, NumPy arrays, and other non-serializable types."""
+
+    def default(self, obj):
+        # Handle datetime objects
+        if isinstance(obj, (datetime.datetime, datetime.date)):
+            return obj.isoformat()
+        # Handle NumPy arrays
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        # Handle NumPy scalar types
+        elif np.isscalar(obj) and isinstance(obj, (np.integer, np.floating, np.bool_)):
+            return obj.item()
+        # Handle other NumPy types
+        elif isinstance(
+            obj,
+            (
+                np.int_,
+                np.intc,
+                np.intp,
+                np.int8,
+                np.int16,
+                np.int32,
+                np.int64,
+                np.uint8,
+                np.uint16,
+                np.uint32,
+                np.uint64,
+            ),
+        ):
+            return int(obj)
+        elif isinstance(obj, (np.float_, np.float16, np.float32, np.float64)):
+            return float(obj)
+        elif isinstance(obj, (np.bool_)):
+            return bool(obj)
+        # Default
+        try:
+            return super().default(obj)
+        except TypeError:
+            return str(obj)
 
 
 class CohortOMOP:
@@ -68,13 +113,14 @@ class CohortOMOP:
     def group_events(self, ds: Dataset) -> Dataset:
         if "events" not in ds.column_names:
             df = ds.to_pandas()
+            # Include string_value in the list of columns to be grouped
+            columns_to_keep = [self.time_field, "code", "numeric_value", "string_value"]
+            # Filter to include only columns that exist in the dataframe
+            existing_columns = [col for col in columns_to_keep if col in df.columns]
+
             grouped = (
                 df.groupby(self.primary_key)
-                .apply(
-                    lambda x: x[[self.time_field, "code", "numeric_value"]].to_dict(
-                        orient="records"
-                    )
-                )
+                .apply(lambda x: x[existing_columns].to_dict(orient="records"))
                 .reset_index(name="events")
             )
             ds = Dataset.from_pandas(grouped)
@@ -212,21 +258,21 @@ class CohortOMOP:
         """
         if "events" not in ds.column_names:
             return ds
-        
+
         new_events = []
         for i, events in enumerate(ds["events"]):
             anchor_time = anchor_times[i] if i < len(anchor_times) else None
-            
+
             if anchor_time is None:
                 # No anchor time available, keep all events
                 new_events.append(events)
                 continue
-                
+
             # For each event, check if it happened before or at the anchor time
             # We're using 0 as the reference point for the anchor
             events_with_time = []
             events_without_time = []
-            
+
             for e in events:
                 event_time = e.get("time", None)
                 # Group events with no time information
@@ -238,7 +284,7 @@ class CohortOMOP:
                 # For datetime objects, compare with anchor time directly
                 elif hasattr(event_time, "timestamp") and event_time <= anchor_time:
                     events_with_time.append(e)
-            
+
             # Sort events with time values by their time
             sorted_events_with_time = sorted(
                 events_with_time,
@@ -246,11 +292,11 @@ class CohortOMOP:
                 # Handle possible comparison errors
                 # between different types by using a safe key function
             )
-            
+
             # Combine sorted events with time first, then events without time
             truncated = sorted_events_with_time + events_without_time
             new_events.append(truncated)
-                
+
         ds = ds.remove_columns(["events"]).add_column("events", new_events)
         self._record_metadata("Kept events up to anchor time, sorted by time", ds)
         return ds
@@ -328,33 +374,203 @@ class CohortOMOP:
         anchor_times = [anchor_times[i] for i in keep_indices]
         return ds, labels_dict, anchor_times
 
+    def make_serializable(self, obj):
+        """
+        Recursively convert objects to JSON serializable forms.
+        Handles datetime objects, nested structures, and custom objects.
+        """
+        if isinstance(obj, dict):
+            # Ensure we're not dropping any keys in the dict
+            return {k: self.make_serializable(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self.make_serializable(v) for v in obj]
+        elif hasattr(obj, "isoformat"):  # datetime objects
+            return obj.isoformat()
+        elif hasattr(obj, "__dict__"):  # custom objects
+            return self.make_serializable(vars(obj))
+        elif obj is None:
+            # Explicitly handle None values to ensure they're not dropped
+            return None
+        # Handle NumPy arrays and pandas objects
+        elif hasattr(obj, "shape") and hasattr(obj, "dtype"):
+            # This is likely a NumPy array
+            try:
+                # If it's a scalar-like array (0-dim or 1-element), get the scalar value
+                if obj.size == 1:
+                    return obj.item()
+                # Otherwise, convert to a list
+                return obj.tolist()
+            except:
+                # If conversion fails, just stringify it
+                return str(obj)
+        elif hasattr(obj, "iloc") and hasattr(obj, "loc"):
+            # This is likely a pandas Series or DataFrame
+            try:
+                return obj.to_dict()
+            except:
+                try:
+                    return obj.tolist()
+                except:
+                    return str(obj)
+        # Check for scalar NA values (safer than pd.isna() which can handle arrays)
+        elif pd.api.types.is_scalar(obj) and pd.isna(obj):
+            return None
+        else:
+            try:
+                json.dumps(obj)
+                return obj
+            except Exception:
+                return str(obj)
+
+    def save_to_json(
+        self, ds: Union[Dataset, pd.DataFrame], output_path: Optional[str] = None
+    ) -> str:
+        """
+        Serialize the entire cohort dataset to JSON for debugging purposes.
+
+        Args:
+            ds: Dataset or DataFrame to serialize
+            output_path: Optional path to save the JSON file. If None, uses processed_dir/name/cohort_debug.json
+
+        Returns:
+            Path to the saved JSON file
+        """
+        if output_path is None:
+            output_path = str(
+                Path(self.processed_dir) / self.name / "cohort_debug.json"
+            )
+
+        # Ensure directory exists
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+
+        # Convert Dataset to pandas if needed
+        if isinstance(ds, Dataset):
+            df = ds.to_pandas()
+        else:
+            df = ds
+
+        # Add a separate debug export file for events with string_value
+        events_debug_path = str(
+            Path(self.processed_dir) / self.name / "events_debug.json"
+        )
+
+        # Add direct examination of the dataset schema and contents before processing
+        logger.info(f"Dataset columns: {df.columns.tolist()}")
+        if isinstance(ds, Dataset):
+            logger.info(f"Dataset features: {ds.features}")
+
+        # Debugging for string_value presence
+        if "string_value" in df.columns:
+            logger.info("string_value column exists at the top level")
+            non_null_count = df["string_value"].notna().sum()
+            logger.info(f"Number of non-null string_values: {non_null_count}")
+        else:
+            logger.info("string_value column NOT found at the top level")
+
+        # Extract and collect all events for a more direct examination
+        if "events" in df.columns:
+            all_events = []
+            string_value_count = 0  # Counter for events with string_value
+
+            for patient_id, events_list in zip(
+                df[self.primary_key], df["events"], strict=False
+            ):
+                # Handle NumPy arrays and pandas objects correctly
+                if isinstance(events_list, (list, tuple)) or (
+                    hasattr(events_list, "__len__") and len(events_list) > 0
+                ):
+                    # Convert to list if it's an array-like object
+                    events_to_process = events_list
+                    if not isinstance(events_list, list):
+                        try:
+                            events_to_process = (
+                                events_list.tolist()
+                                if hasattr(events_list, "tolist")
+                                else list(events_list)
+                            )
+                        except:
+                            # If conversion fails, skip this entry
+                            logger.warning(
+                                f"Could not process events for patient {patient_id}"
+                            )
+                            continue
+
+                    # Sample the first few events for debugging (limit to avoid excessive logs)
+                    if (
+                        len(events_to_process) > 0
+                        and patient_id == df[self.primary_key].iloc[0]
+                    ):
+                        logger.info(
+                            f"Sample event structure for patient {patient_id}: {events_to_process[0]}"
+                        )
+
+                    for event in events_to_process:
+                        # Make a copy with patient ID added
+                        if isinstance(event, dict):
+                            event_copy = dict(event)
+                            event_copy["patient_id"] = patient_id
+
+                            # Explicitly check for string_value and log its presence
+                            if (
+                                "string_value" in event
+                                and event["string_value"] is not None
+                            ):
+                                string_value_count += 1
+
+                            all_events.append(event_copy)
+
+            # Log string_value statistics
+            logger.info(
+                f"Found {string_value_count} events with non-null string_value out of {len(all_events)} total events"
+            )
+
+            # Save the events to a separate file for direct inspection
+            with open(events_debug_path, "w") as f:
+                json.dump(all_events, f, indent=2, cls=CustomJSONEncoder)
+            logger.info(
+                f"Saved events data with string_value for debugging: {events_debug_path}"
+            )
+
+            # Additional debugging output - save a simplified version with only events containing string_value
+            if string_value_count > 0:
+                string_value_events = [
+                    event
+                    for event in all_events
+                    if event.get("string_value") is not None
+                ]
+                string_value_debug_path = str(
+                    Path(self.processed_dir)
+                    / self.name
+                    / "string_value_events_debug.json"
+                )
+                with open(string_value_debug_path, "w") as f:
+                    json.dump(string_value_events, f, indent=2, cls=CustomJSONEncoder)
+                logger.info(
+                    f"Saved {len(string_value_events)} events with string_value to: {string_value_debug_path}"
+                )
+            else:
+                logger.warning("No events with string_value found in the dataset!")
+
+        # Convert to serializable format and save the main dataset
+        data_dict = df.to_dict(orient="records")
+
+        # Use the custom JSON encoder instead of manual serialization
+        with open(output_path, "w") as f:
+            json.dump(data_dict, f, indent=2, cls=CustomJSONEncoder)
+
+        logger.info(f"Saved cohort data to JSON for debugging: {output_path}")
+        return output_path
+
     def save_metadata(self, labels_dict, anchor_times):
         """
         Save cohort metadata (labels_dict, anchor_times, and provenance) to a JSON file in the output directory.
         The output directory is derived from self.processed_dir.
         """
 
-        def make_serializable(obj):
-            # Recursively convert objects to serializable forms
-            if isinstance(obj, dict):
-                return {k: make_serializable(v) for k, v in obj.items()}
-            elif isinstance(obj, list):
-                return [make_serializable(v) for v in obj]
-            elif hasattr(obj, "isoformat"):
-                return obj.isoformat()
-            elif hasattr(obj, "__dict__"):
-                return make_serializable(vars(obj))
-            else:
-                try:
-                    json.dumps(obj)
-                    return obj
-                except Exception:
-                    return str(obj)
-
         # Determine output directory
         meta = {
-            "labels_dict": make_serializable(labels_dict),
-            "anchor_times": make_serializable(anchor_times),
+            "labels_dict": self.make_serializable(labels_dict),
+            "anchor_times": self.make_serializable(anchor_times),
             "provenance": self.metadata,
         }
         meta_path = Path(self.processed_dir) / self.name / "cohort_metadata.json"
@@ -397,5 +613,12 @@ class CohortOMOP:
         )
         self.apply_competing_risk_censoring(labels_dict, anchor_times, ds)
         ds = self.truncate_events_at_anchor(anchor_times, ds)
+
+        # Save metadata and dataset
         self.save_metadata(labels_dict, anchor_times)
         self.save_cohort_dataset(ds)
+
+        # Save JSON for debugging
+        self.save_to_json(ds)
+
+        return ds
