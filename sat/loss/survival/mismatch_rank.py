@@ -165,22 +165,10 @@ class IntraEventRankingLoss(Loss):
         A2 = A1 * I_T  # (n x e x e)
         A3 = A1 * I_censored_T  # (n x e x e)
 
-        # Apply margin-based ranking penalties if margin > 0
-        if hasattr(self, "margin") and self.margin > 0:
-            # Calculate margin penalties where applicable
-            margin_dS1 = torch.clamp(self.margin - dS1, min=0.0) * A1
-            margin_dS2 = torch.clamp(self.margin - dS2, min=0.0) * A2
-            margin_dS3 = torch.clamp(self.margin - dS3, min=0.0) * A3
-
-            # Combine exponential and margin components
-            loss_dS1 = torch.exp(dS1 / self.sigma) + margin_dS1
-            loss_dS2 = torch.exp(dS2 / self.sigma) + margin_dS2
-            loss_dS3 = torch.exp(dS3 / self.sigma) + margin_dS3
-        else:
-            # Traditional loss using only exponential scaling
-            loss_dS1 = torch.exp(dS1 / self.sigma)
-            loss_dS2 = torch.exp(dS2 / self.sigma)
-            loss_dS3 = torch.exp(dS3 / self.sigma)
+        # Traditional loss using only exponential scaling
+        loss_dS1 = torch.exp(dS1 / self.sigma)
+        loss_dS2 = torch.exp(dS2 / self.sigma)
+        loss_dS3 = torch.exp(dS3 / self.sigma)
 
         # Apply weights if provided
         if weights is not None:
