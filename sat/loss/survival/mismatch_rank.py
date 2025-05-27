@@ -31,6 +31,8 @@ class IntraEventRankingLoss(Loss):
         self.register_buffer("duration_cuts", torch.tensor(df.cuts.values, dtype=torch.float32))
         self.num_time_bins = len(df.cuts)
         
+        
+        
     def ranking_loss(
         self, events, durations, survival, hazard, weights
     ) -> torch.Tensor:
@@ -139,9 +141,9 @@ class IntraEventRankingLoss(Loss):
         durations_j = durations.unsqueeze(0).repeat(e, 1, 1)  # (e x e x n)
         comp = torch.sign(durations_i - durations_j)  # (e x e x n)
         
-        # Mismatch mask (Here, we only consider i > j, event i should be before event j)
-        upper_mask = torch.tril(torch.ones_like(durations_i[:, :, 0]), diagonal=1).unsqueeze(-1)
-        mask = (comp > 0) & (upper_mask.bool())
+        # Mismatch mask (Here, Only consider i > j -> event i should be before event j)
+        lower_mask = torch.tril(torch.ones_like(durations_i[:, :, 0]), diagonal=1).unsqueeze(-1)
+        mask = (comp > 0) & (lower_mask.bool())
         comp = comp.masked_fill(mask, 0) # (e x e x n)
         
 
@@ -192,13 +194,8 @@ class IntraEventRankingLoss(Loss):
         # Count number of non-zero elements for proper normalization
         num_valid = torch.sum((A1 + A2 + A3) > 0)
 
-        if num_valid > 0:
-            eta = torch.sum(loss_term) / num_valid
-        else:
-            # Return zero tensor with gradient if no valid comparisons
-            eta = torch.tensor(0.0, device=device, requires_grad=True)
-
-        return eta
+        # Return zero tensor with gradient if no valid comparisons
+        return torch.sum(loss_term) / num_valid if num_valid > 0 else torch.tensor(0.0, device=device, requires_grad=True)
 
 
     def forward(self, predictions: SAOutput, references: torch.Tensor) -> torch.Tensor:
@@ -229,7 +226,7 @@ class IntraEventRankingLoss(Loss):
 
         # Use the vectorized ranking loss from the parent class
         # with permuted tensors to compare observations instead of events
-        eta = self.ranking_loss(
+        return self.ranking_loss(
             events,
             self.durations(references).permute(1, 0),
             predictions.survival.permute(1, 0, 2),
@@ -237,6 +234,6 @@ class IntraEventRankingLoss(Loss):
             weights_expanded,
         )
 
-        return eta
+        
 
 
