@@ -1,59 +1,85 @@
+import logging
+from datetime import datetime, timedelta
+
+import pandas as pd
 import pytest
+from datasets import Dataset
 
 from sat.data.dataset.cohort_omop import CohortOMOP
 from sat.data.dataset.femr_extensions.schema import LabelType
 
+logger = logging.getLogger(__name__)
+
 
 class DummyLabeler:
-    def __init__(self, name, label_type, output):
+    def __init__(self, name, label_type, output_labels_for_all_patients):
         self.name = name
         self.label_type = label_type
-        self.output = output
+        # Process output_labels_for_all_patients to include label_type in each dict
+        self.processed_labels_for_all_patients = []
+        if output_labels_for_all_patients:
+            for patient_labels_list in output_labels_for_all_patients:
+                new_patient_labels_list = []
+                if patient_labels_list:
+                    for label_dict in patient_labels_list:
+                        if isinstance(label_dict, dict):
+                            new_label_dict = label_dict.copy()
+                            # Ensure label_type is correctly set from the instance's label_type
+                            new_label_dict["label_type"] = self.label_type
+                            new_patient_labels_list.append(new_label_dict)
+                        else:
+                            # This case should ideally not happen if inputs are structured ExtendedLabel dicts
+                            new_patient_labels_list.append(label_dict)
+                self.processed_labels_for_all_patients.append(new_patient_labels_list)
 
-    def apply(self, ds):
-        return self.output
+    def __call__(self, patient_group_df, anchor_label_for_patient=None):
+        # Get the patient ID from the dataframe to return the correct patient's labels
+        if isinstance(patient_group_df, pd.DataFrame) and not patient_group_df.empty:
+            # Look for primary_key or patient_id column
+            id_column = next(
+                (
+                    col
+                    for col in ["primary_key", "patient_id"]
+                    if col in patient_group_df.columns
+                ),
+                None,
+            )
+
+            if id_column:
+                patient_id = patient_group_df[id_column].iloc[0]
+                # Convert to 0-based index (assuming patient IDs start from 1)
+                patient_idx = int(patient_id) - 1
+
+                # Return the corresponding patient's labels if available
+                if 0 <= patient_idx < len(self.processed_labels_for_all_patients):
+                    return self.processed_labels_for_all_patients[patient_idx]
+
+        # If no valid patient ID found or index out of range, return empty list
+        logger.debug(
+            "DummyLabeler: Could not find valid patient ID in dataframe or index out of range"
+        )
+        return []
 
     def __repr__(self):
-        return f"DummyLabeler({self.name})"
+        return f"DummyLabeler({self.name}, type={self.label_type})"
 
 
-def make_dummy_dataset():
-    class DummyDataset:
-        def __init__(self):
-            self.column_names = ["patient_id", "events"]
-            self.data = {
-                "patient_id": [1, 2],
-                "events": [
-                    [{"time": 1}, {"time": 5}, {"time": 9}],
-                    [{"time": 2}, {"time": 4}, {"time": 10}],
-                ],
-            }
-
-        def __getitem__(self, key):
-            return self.data[key]
-
-        def add_column(self, name, values):
-            self.data[name] = values
-            self.column_names.append(name)
-            return self
-
-        def remove_columns(self, names):
-            for name in names:
-                self.column_names.remove(name)
-                del self.data[name]
-            return self
-
-        def __len__(self):
-            return len(self.data["patient_id"])
-
-        def select(self, indices):
-            # Create a new DummyDataset with only the selected indices
-            new_ds = type(self)()
-            for key in self.data:
-                new_ds.data[key] = [self.data[key][i] for i in indices]
-            return new_ds
-
-    return DummyDataset()
+def make_dummy_dataset(patient_event_data=None):
+    """Creates a HuggingFace Dataset for testing."""
+    if patient_event_data is None:
+        data_dict = {
+            "patient_id": [1, 2],
+            "events": [
+                [{"time": 1}, {"time": 5}, {"time": 9}],
+                [{"time": 2}, {"time": 4}, {"time": 10}],
+            ],
+        }
+    else:
+        data_dict = {
+            "patient_id": list(range(1, len(patient_event_data) + 1)),
+            "events": patient_event_data,
+        }
+    return Dataset.from_dict(data_dict)
 
 
 # def test_cohort_omop_end_to_end():
@@ -67,16 +93,18 @@ def make_dummy_dataset():
 #     competing_labeler = DummyLabeler('competing_labels', LabelType.OUTCOME, competing_labels)
 #
 #     cohort = CohortOMOP(
-#         source=None,
+#         source=str(parquet_path), # Source is now the path to the parquet file
 #         labelers=[anchor_labeler, outcome_labeler, competing_labeler],
 #         filters=[],
 #         featurizers=[],
-#         date_diff_unit='days'
+#         date_diff_unit='days',
+#         limit_num_patients=1, # Focus on the single patient in the dummy dataset
+#         save_cohort_path=None, # Don't save during unit test
 #     )
 #
 #     ds = make_dummy_dataset()
 #     labels_dict, anchor_times = cohort.apply_labelers(ds)
-#     cohort.apply_competing_risk_censoring(labels_dict, anchor_times, ds)
+#     cohort.apply_competing_risk_censoring(labels_dict, anchor_times)
 #     # Check that outcome label for patient 0 is censored at time 5
 #     print(labels_dict)
 #     assert labels_dict['outcome_labels'][0][0]['boolean_value'] is False
@@ -112,7 +140,7 @@ def test_apply_labelers_no_anchor_raises():
 
 
 def test_competing_risk_censoring_censors():
-    ds = make_dummy_dataset()
+    make_dummy_dataset()
     labels_dict = {
         "outcome_labels": [
             [
@@ -137,14 +165,15 @@ def test_competing_risk_censoring_censors():
     }
     anchor_times = [0]
     cohort = CohortOMOP(source=None, labelers=[])
-    cohort.apply_competing_risk_censoring(labels_dict, anchor_times, ds)
+    cohort.apply_competing_risk_censoring(labels_dict, anchor_times)
 
     assert labels_dict["outcome_labels"][0][0]["boolean_value"] is False
+    assert labels_dict["outcome_labels"][0][0]["competing_event"] is False
     assert labels_dict["outcome_labels"][0][0]["prediction_time"] == 5
 
 
 def test_competing_risk_censoring_no_competing():
-    ds = make_dummy_dataset()
+    make_dummy_dataset()
     labels_dict = {
         "outcome_labels": [
             [
@@ -169,87 +198,53 @@ def test_competing_risk_censoring_no_competing():
     }
     anchor_times = [0]
     cohort = CohortOMOP(source=None, labelers=[])
-    cohort.apply_competing_risk_censoring(labels_dict, anchor_times, ds)
+    cohort.apply_competing_risk_censoring(labels_dict, anchor_times)
     assert labels_dict["outcome_labels"][0][0]["boolean_value"] is True
     assert labels_dict["outcome_labels"][0][0]["prediction_time"] == 8
 
 
-def test_truncate_events_at_competing():
+def test_truncate_events_at_anchor_with_integer_times():
+    # Using default make_dummy_dataset with integer times: P0: [1,5,9], P1: [2,4,10]
     ds = make_dummy_dataset()
-    labels_dict = {
-        "competing_labels": [
-            [
-                {
-                    "label_type": LabelType.OUTCOME,
-                    "prediction_time": 5,
-                    "boolean_value": True,
-                    "competing_event": True,
-                }
-            ],
-            [
-                {
-                    "label_type": LabelType.OUTCOME,
-                    "prediction_time": 10,
-                    "boolean_value": True,
-                    "competing_event": True,
-                }
-            ],
-        ]
-    }
+    # Anchor times are 0 for both patients. truncate_events_at_anchor keeps events <= anchor_time.
+    # Since event times are positive integers, no events should remain.
+    anchor_times = [0, 0]
     cohort = CohortOMOP(source=None, labelers=[])
-    ds = cohort.truncate_events_at_competing(labels_dict, anchor_times=[0, 0], ds=ds)
-    # Patient 0: events at 1, 5, 9; cutoff is 5, so only 1, 5 remain
-    assert ds["events"][0] == [{"time": 1}, {"time": 5}]
-    # Patient 1: cutoff is 10, so all events remain
-    assert ds["events"][1] == [{"time": 2}, {"time": 4}, {"time": 10}]
+    ds_truncated = cohort.truncate_events_at_anchor(anchor_times, ds)
+    assert (
+        ds_truncated["events"][0] == []
+    ), "Patient 0 events should be empty after truncating at anchor_time 0"
+    assert (
+        ds_truncated["events"][1] == []
+    ), "Patient 1 events should be empty after truncating at anchor_time 0"
+
+    # Test with anchor times that should keep some events
+    ds = make_dummy_dataset()
+    anchor_times_p0_at_5 = [5, 10]  # P0 anchor at 5, P1 anchor at 10
+    cohort = CohortOMOP(source=None, labelers=[])
+    ds_truncated_some = cohort.truncate_events_at_anchor(anchor_times_p0_at_5, ds)
+    # Patient 0: events at 1, 5, 9; anchor is 5, so 1, 5 remain (assuming inclusive)
+    assert ds_truncated_some["events"][0] == [{"time": 1}, {"time": 5}]
+    # Patient 1: events at 2, 4, 10; anchor is 10, so 2, 4, 10 remain
+    assert ds_truncated_some["events"][1] == [{"time": 2}, {"time": 4}, {"time": 10}]
 
 
-def test_truncate_events_no_competing():
+def test_truncate_events_at_anchor_no_effect_if_anchor_late():
     ds = make_dummy_dataset()
-    labels_dict = {
-        "competing_labels": [
-            [
-                {
-                    "label_type": LabelType.OUTCOME,
-                    "prediction_time": 15,
-                    "boolean_value": False,
-                    "competing_event": False,
-                }
-            ],
-            [
-                {
-                    "label_type": LabelType.OUTCOME,
-                    "prediction_time": 20,
-                    "boolean_value": False,
-                    "competing_event": False,
-                }
-            ],
-        ]
-    }
+    # Anchor times are very late, so all events should remain.
+    anchor_times = [100, 100]
     cohort = CohortOMOP(source=None, labelers=[])
-    ds = cohort.truncate_events_at_competing(labels_dict, anchor_times=[0, 0], ds=ds)
-    # No truncation should occur
-    assert ds["events"][0] == [{"time": 1}, {"time": 5}, {"time": 9}]
-    assert ds["events"][1] == [{"time": 2}, {"time": 4}, {"time": 10}]
+    ds_truncated = cohort.truncate_events_at_anchor(anchor_times, ds)
+    assert ds_truncated["events"][0] == [{"time": 1}, {"time": 5}, {"time": 9}]
+    assert ds_truncated["events"][1] == [{"time": 2}, {"time": 4}, {"time": 10}]
 
 
 def test_truncate_events_no_events_column():
     ds = make_dummy_dataset()
-    ds.remove_columns(["events"])
-    labels_dict = {
-        "competing_labels": [
-            [
-                {
-                    "label_type": LabelType.OUTCOME,
-                    "prediction_time": 5,
-                    "boolean_value": True,
-                    "competing_event": True,
-                }
-            ]
-        ]
-    }
+    # HuggingFace's remove_columns returns a new dataset, not modifies in place
+    ds = ds.remove_columns(["events"])
     cohort = CohortOMOP(source=None, labelers=[])
-    ds2 = cohort.truncate_events_at_competing(labels_dict, anchor_times=[0], ds=ds)
+    ds2 = cohort.truncate_events_at_anchor(anchor_times=[0], ds=ds)
     assert "events" not in ds2.column_names
 
 
@@ -344,5 +339,288 @@ def test_apply_labelers_empty_patients():
     assert anchor_times == []
 
 
+@pytest.mark.parametrize(
+    (
+        "scenario_name",
+        "patient_events_timedeltas",
+        "anchor_delta_days",
+        "o1_delta_days",
+        "o2_delta_days",
+        "expected_o2_value",
+        "expected_o2_time_delta_days",
+        "expected_o2_competing_event_flag",
+        "expected_event_count_at_anchor",
+    ),
+    [
+        # Scenario 1: O2 after O1, no competing risk before O2
+        (
+            "O2 after O1, no competing",
+            [timedelta(days=-10), timedelta(days=-5)],  # patient events
+            0,  # anchor_delta_days from t_anchor_base
+            5,  # o1_delta_days from anchor_time
+            10,  # o2_delta_days from anchor_time
+            False,  # expected_o2_value - censored by O1 at day 5
+            5,  # expected_o2_time_delta_days - censoring time = competing event time
+            False,  # expected_o2_competing_event_flag - should remain false (nature of event)
+            2,  # expected_event_count_at_anchor (events at -10, -5, anchor at 0)
+        ),
+        # Scenario 2: O1 (competing) before O2, O2 should be censored
+        (
+            "O1 competing before O2",
+            [timedelta(days=-10), timedelta(days=-5)],
+            0,
+            2,  # O1 (competing) at anchor + 2 days
+            10,  # O2 at anchor + 10 days
+            False,  # O2 is censored
+            2,  # Censoring time is O1's time
+            False,  # competing_event flag should remain False (nature of event)
+            2,
+        ),
+        # Scenario 3: O2 before O1 (competing), O2 should occur
+        (
+            "O2 before O1 competing",
+            [timedelta(days=-10), timedelta(days=-5)],
+            0,
+            10,  # O1 (competing) at anchor + 10 days
+            2,  # O2 at anchor + 2 days
+            True,  # O2 occurs
+            2,  # O2 time
+            False,  # competing_event flag should be False for O2
+            2,
+        ),
+        # Scenario 4: O1 (competing) and O2 at the same time, O2 should be censored (competing wins ties)
+        (
+            "O1 competing same time as O2",
+            [timedelta(days=-10), timedelta(days=-5)],
+            0,
+            5,  # O1 (competing) at anchor + 5 days
+            5,  # O2 at anchor + 5 days
+            False,  # O2 is censored
+            5,  # Censoring time
+            False,  # competing_event flag should remain False (nature of event)
+            2,
+        ),
+        # Scenario 5: No outcome O1 (competing), O2 should occur
+        (
+            "No O1 competing, O2 occurs",
+            [timedelta(days=-10), timedelta(days=-5)],
+            0,
+            None,  # No O1
+            5,  # O2 at anchor + 5 days
+            True,  # O2 occurs
+            5,  # O2 time
+            False,  # competing_event flag should be False for O2
+            2,
+        ),
+        # Scenario 6: Anchor event is the only event
+        (
+            "Anchor event is only event",
+            [],  # No prior events
+            0,  # Anchor at t_anchor_base
+            None,  # No O1
+            5,  # O2 at anchor + 5 days
+            True,  # O2 occurs
+            5,  # O2 time
+            False,  # competing_event flag should be False for O2
+            0,  # No events at or before anchor if anchor is the first conceptual event
+        ),
+        # Scenario 7: All events after anchor, O2 should occur
+        # (truncate_events_at_anchor should handle this by keeping no events if they are all after anchor)
+        (
+            "All events after anchor, O2 occurs",
+            [timedelta(days=1), timedelta(days=2)],  # Events after t_anchor_base
+            0,  # Anchor at t_anchor_base
+            None,  # No O1
+            5,  # O2 at anchor + 5 days
+            True,  # O2 occurs
+            5,  # O2 time
+            False,  # competing_event flag should be False for O2
+            0,  # No events at or before anchor
+        ),
+        # Scenario 8: O1 (competing) occurs, O2 is None (no O2 event defined)
+        (
+            "O1 competing, O2 is None",
+            [timedelta(days=-10), timedelta(days=-5)],
+            0,
+            2,  # O1 (competing) at anchor + 2 days
+            None,  # No O2 defined
+            None,  # Expected O2 value (will check if label is missing or appropriately handled)
+            None,  # Expected O2 time
+            None,  # Expected O2 competing flag
+            2,
+        ),
+        # Scenario 9: Anchor is far after events, O2 relative to new anchor
+        (
+            "Anchor after events, O2 relative to new anchor",
+            [timedelta(days=-100), timedelta(days=-90)],
+            0,  # Anchor at t_anchor_base
+            5,  # O1 (competing) at t_anchor_base + 5 days
+            10,  # O2 at t_anchor_base + 10 days
+            False,  # O2 is censored by O1 (competing) which occurs at day 5
+            5,  # O2 censoring time should match the competing event time (day 5)
+            False,  # competing_event flag should remain False (nature of event)
+            2,
+        ),
+        # Scenario 10: Events include exact anchor time
+        (
+            "Events include exact anchor time",
+            [timedelta(days=-10), timedelta(days=0)],  # Event at t_anchor_base
+            0,  # Anchor at t_anchor_base
+            None,  # No O1
+            5,  # O2 at anchor + 5 days
+            True,  # O2 occurs
+            5,  # O2 time
+            False,  # competing_event flag should be False for O2
+            2,  # Events at -10 and 0 (anchor)
+        ),
+    ],
+)
+def test_cohort_omop_datetime_processing_scenarios(
+    tmp_path,  # Added tmp_path fixture
+    scenario_name,
+    patient_events_timedeltas,
+    anchor_delta_days,
+    o1_delta_days,
+    o2_delta_days,
+    expected_o2_value,
+    expected_o2_time_delta_days,
+    expected_o2_competing_event_flag,
+    expected_event_count_at_anchor,
+):
+    t_anchor_base = datetime(2023, 1, 1, 12, 0, 0)
+
+    # Create a dummy dataset for a single patient
+    # Events are datetime objects
+    patient_events = [
+        {"time": t_anchor_base + delta} for delta in patient_events_timedeltas
+    ]
+    raw_ds = make_dummy_dataset(patient_event_data=[patient_events])
+
+    # Save to temporary parquet file
+    parquet_path = tmp_path / f"{scenario_name.replace(' ', '_')}_data.parquet"
+    raw_ds.to_parquet(parquet_path)
+
+    # Define anchor time based on t_anchor_base and anchor_delta_days
+    anchor_time = t_anchor_base + timedelta(days=anchor_delta_days)
+
+    # Define labelers
+    labelers = []
+    anchor_labeler = DummyLabeler(
+        "anchor",
+        LabelType.ANCHOR,
+        [[{"prediction_time": anchor_time, "boolean_value": True}]],
+    )
+    labelers.append(anchor_labeler)
+
+    outcome2_labeler_name = "outcome_target"
+    if o2_delta_days is not None:
+        outcome2_time = t_anchor_base + timedelta(days=o2_delta_days)
+        outcome2_labeler = DummyLabeler(
+            outcome2_labeler_name,
+            LabelType.OUTCOME,
+            [
+                [
+                    {
+                        "prediction_time": outcome2_time,
+                        "boolean_value": True,
+                        "competing_event": False,
+                    }
+                ]
+            ],
+        )
+        labelers.append(outcome2_labeler)
+    elif (
+        outcome2_labeler_name
+    ):  # Ensure O2 labeler is added if name exists, even if no event time
+        # This case might be for testing if a label type is present even if no events qualify
+        # For now, we'll assume if o2_delta_days is None, the labeler isn't added unless specifically needed
+        # for presence checks. The current parametrization expects None for values if o2_delta_days is None.
+        pass
+
+    if o1_delta_days is not None:
+        outcome1_time = t_anchor_base + timedelta(days=o1_delta_days)
+        outcome1_labeler = DummyLabeler(
+            "outcome_competing",
+            LabelType.OUTCOME,
+            [
+                [
+                    {
+                        "prediction_time": outcome1_time,
+                        "boolean_value": True,
+                        "competing_event": True,
+                    }
+                ]
+            ],
+        )
+        labelers.append(outcome1_labeler)
+
+    cohort = CohortOMOP(
+        source=str(parquet_path),
+        labelers=labelers,
+        date_diff_unit="days",
+        primary_key="patient_id",
+    )
+
+    # Run the full cohort generation process
+    ds = cohort.extract_cohort_data()
+
+    # Assertions on the returned dataset
+    assert isinstance(ds, Dataset), "CohortOMOP should return a Dataset"
+    assert len(ds) == 1, "Expected one patient in the output"
+
+    # If we expect a target outcome (O2), verify it's present
+    if o2_delta_days is not None:
+        # Verify the patient has the correct outcome label column
+        assert (
+            "labels_outcome_target" in ds.column_names
+        ), f"Dataset must have 'labels_outcome_target' column, got: {ds.column_names}"
+
+        # Get labels for the first (only) patient
+        target_label_list = ds["labels_outcome_target"][0]
+        assert (
+            isinstance(target_label_list, list) and len(target_label_list) > 0
+        ), "Target label should be a non-empty list"
+    else:
+        # If no target outcome is expected, verify the competing risk is present instead
+        competing_column = "labels_outcome_competing"
+        assert (
+            competing_column in ds.column_names
+        ), f"Dataset must have '{competing_column}' column when no target outcome, got: {ds.column_names}"
+
+    # For scenarios where O2 is None, we don't expect to find the outcome2_labeler_name in the results
+    # Skip subsequent checks for these scenarios
+    if o2_delta_days is None:
+        # Just verify we don't have unexpected O2 values when none should be present
+        label_column_name = f"labels_{outcome2_labeler_name}"
+        assert (
+            label_column_name not in ds.column_names
+        ), f"Target outcome '{outcome2_labeler_name}' found in dataset columns when it should be None"
+        return
+
+    # Check the target outcome label (O2) for all other scenarios
+    outcome2_column = f"labels_{outcome2_labeler_name}"
+    assert (
+        outcome2_column in ds.column_names
+    ), f"Dataset missing expected outcome column '{outcome2_column}'"
+
+    # Get the outcome labels for the first patient
+    target_label_list = ds[outcome2_column][0]
+    assert isinstance(target_label_list, list), "Target label data should be a list"
+    assert len(target_label_list) == 1, "Expected one instance for the target label"
+    target_label = target_label_list[0]
+
+    # Verify the label contents match expectations
+    assert (
+        target_label["boolean_value"] == expected_o2_value
+    ), f"Scenario: {scenario_name} - O2 boolean_value failed. Got {target_label['boolean_value']}, expected {expected_o2_value}"
+    assert (
+        target_label["prediction_time"] == expected_o2_time_delta_days
+    ), f"Scenario: {scenario_name} - O2 prediction_time (relative days) failed. Got {target_label['prediction_time']}, expected {expected_o2_time_delta_days}"
+    assert (
+        target_label["competing_event"] == expected_o2_competing_event_flag
+    ), f"Scenario: {scenario_name} - O2 competing_event flag failed. Got {target_label['competing_event']}, expected {expected_o2_competing_event_flag}"
+
+
 if __name__ == "__main__":
+
     pytest.main([__file__])
