@@ -66,7 +66,7 @@ References:
     Graf, E., Schmoor, C., Sauerbrei, W., & Schumacher, M. (1999).
     "Assessment and comparison of prognostic classification schemes for survival data".
     Statistics in Medicine, 18(17-18), 2529-2545.
-    
+
     Zhu, P. et al. (2023). "TorchSurv: A PyTorch Package for Accelerated Development of
     Survival Analysis Methods". arXiv preprint arXiv:2302.03686.
 """

@@ -48,8 +48,8 @@ estimate that is free of censoring and does not depend on the censoring distribu
 The metric calculates C-index at multiple time horizons (duration cuts) and provides both individual
 time point C-indices and an integrated C-index weighted by the number of events at each time horizon.
 
-Unlike traditional C-index which cannot handle censored observations properly, the IPCW-based C-index 
-properly accounts for censoring by weighting each comparable pair of observations using the inverse 
+Unlike traditional C-index which cannot handle censored observations properly, the IPCW-based C-index
+properly accounts for censoring by weighting each comparable pair of observations using the inverse
 probability of censoring weight at the observed event time.
 
 Implementation is based on torchsurv's ConcordanceIndex class which provides GPU-acceleration
