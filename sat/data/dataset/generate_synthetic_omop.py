@@ -465,9 +465,7 @@ class SyntheticOmopGenerator:
             # Generate time-dependent measurements and events
 
             # Define pre-enrollment period and post-enrollment period
-            pre_enrollment_start = enrollment_date - timedelta(
-                days=self.pre_enrollment_period
-            )
+            enrollment_date - timedelta(days=self.pre_enrollment_period)
 
             # 1. Generate hospitalizations
             hospitalization_risk = self._patient_risk_scores[patient_id][
