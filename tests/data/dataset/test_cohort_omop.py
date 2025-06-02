@@ -562,7 +562,7 @@ def test_cohort_omop_datetime_processing_scenarios(
     )
 
     # Run the full cohort generation process
-    ds = cohort.extract_cohort_data()
+    ds = cohort()
 
     # Assertions on the returned dataset
     assert isinstance(ds, Dataset), "CohortOMOP should return a Dataset"
@@ -622,5 +622,4 @@ def test_cohort_omop_datetime_processing_scenarios(
 
 
 if __name__ == "__main__":
-
     pytest.main([__file__])

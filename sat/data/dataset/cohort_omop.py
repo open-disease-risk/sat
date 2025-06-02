@@ -5,7 +5,6 @@ OMOP-based cohort extraction and labeling.
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
-import logging
 from datetime import date, datetime
 from enum import Enum
 from pathlib import Path
@@ -14,9 +13,12 @@ from typing import Any, Dict, List, Tuple
 import pandas as pd
 from datasets import Dataset
 
-from sat.data.dataset.femr_extensions.schema import LabelType
+from sat.data.dataset.serialization import serialize_dataset
 
-logger = logging.getLogger(__name__)
+from sat.data.dataset.femr_extensions.schema import LabelType
+from sat.utils import logging
+
+logger = logging.get_default_logger()
 
 
 def _ensure_datetime(time_value):
@@ -62,6 +64,9 @@ class CohortOMOP:
         labelers=None,
         primary_key="patient_id",
         date_diff_unit="days",
+        time_field="time",
+        processed_dir=None,
+        name=None,
     ):
         """
         Initialize the CohortOMOP extractor.
@@ -71,11 +76,17 @@ class CohortOMOP:
             labelers: List of labeler functions
             primary_key: Patient identifier column
             date_diff_unit: Unit for time differences ("days", "hours", etc.)
+            time_field: Field name for event timestamps (default: "time")
+            processed_dir: Directory to save the processed dataset (optional)
+            name: Name for the processed dataset file (optional)
         """
         self.source = source
         self.labelers = labelers or []
         self.primary_key = primary_key
         self.date_diff_unit = date_diff_unit
+        self.time_field = time_field
+        self.processed_dir = processed_dir
+        self.name = name
 
     def _record_metadata(self, info, ds):
         """Add metadata to the dataset if possible."""
@@ -182,8 +193,8 @@ class CohortOMOP:
             # Filter events that occur at or before the anchor time
             filtered_patient_events = []
             for event in events:
-                if "time" in event:
-                    event_time = _ensure_datetime(event["time"])
+                if self.time_field in event:
+                    event_time = _ensure_datetime(event[self.time_field])
                     if event_time is not None and event_time <= anchor_time:
                         filtered_patient_events.append(event)
                 else:
@@ -193,7 +204,7 @@ class CohortOMOP:
             # Sort events by time if present
             filtered_patient_events.sort(
                 key=lambda x: (
-                    _ensure_datetime(x.get("time")) if "time" in x else datetime.min
+                    _ensure_datetime(x.get(self.time_field)) if self.time_field in x else datetime.min
                 )
             )
 
@@ -367,7 +378,7 @@ class CohortOMOP:
             )
 
             # Get anchor labels for this patient
-            anchor_labels = anchor_labeler(patient_group_df)
+            anchor_labels = anchor_labeler.label(patient_group_df)
             logger.debug(
                 f"APPLY_LABELERS: Anchor labeler {anchor_labeler.name} for patient {patient_id} returned: {anchor_labels}"
             )
@@ -398,9 +409,9 @@ class CohortOMOP:
                             [] for _ in range(len(patient_groups))
                         ]
 
-                    # Apply the labeler
+                    # Apply the labeler using the label() method
                     try:
-                        labeler_results = labeler(patient_group_df, anchor_label)
+                        labeler_results = labeler.label(patient_group_df, anchor_label)
                         all_labels_by_type[labeler.name][patient_idx] = labeler_results
                     except Exception as e:
                         logger.error(
@@ -710,4 +721,25 @@ class CohortOMOP:
             ds = ds.add_column(f"labels_{label_name}", column_data)
 
         logger.info(f"Cohort extraction complete. Returning {len(ds)} patient records.")
+        
+        # Serialize the dataset if processed_dir and name are provided
+        if self.processed_dir is not None and self.name is not None:
+            # Use the serialization module with JSON option when debug is enabled
+            include_json = logger.isEnabledFor(logging.get_debug_level())
+            serialize_dataset(
+                dataset=ds,
+                output_dir=self.processed_dir,
+                name=self.name,
+                include_json=include_json
+            )
+            
         return ds
+        
+    def __call__(self):
+        """
+        Make the CohortOMOP instance callable. Calls extract_cohort_data.
+        
+        Returns:
+            Dataset: A HuggingFace Dataset containing patient records with processed labels
+        """
+        return self.extract_cohort_data()
