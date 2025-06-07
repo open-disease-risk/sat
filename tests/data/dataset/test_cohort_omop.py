@@ -32,7 +32,7 @@ class DummyLabeler:
                             new_patient_labels_list.append(label_dict)
                 self.processed_labels_for_all_patients.append(new_patient_labels_list)
 
-    def __call__(self, patient_group_df, anchor_label_for_patient=None):
+    def label(self, patient_group_df):
         # Get the patient ID from the dataframe to return the correct patient's labels
         if isinstance(patient_group_df, pd.DataFrame) and not patient_group_df.empty:
             # Look for primary_key or patient_id column
@@ -50,31 +50,110 @@ class DummyLabeler:
                 # Convert to 0-based index (assuming patient IDs start from 1)
                 patient_idx = int(patient_id) - 1
 
-                # Return the corresponding patient's labels if available
-                if 0 <= patient_idx < len(self.processed_labels_for_all_patients):
+                if patient_idx < len(self.processed_labels_for_all_patients):
                     return self.processed_labels_for_all_patients[patient_idx]
 
-        # If no valid patient ID found or index out of range, return empty list
-        logger.debug(
-            "DummyLabeler: Could not find valid patient ID in dataframe or index out of range"
-        )
+        # Default: return empty list if no labels found
         return []
 
     def __repr__(self):
         return f"DummyLabeler({self.name}, type={self.label_type})"
 
 
-def make_dummy_dataset(patient_event_data=None):
-    """Creates a HuggingFace Dataset for testing."""
+def make_dummy_dataset(patient_event_data=None, force_integer_times=False):
+    """Creates a HuggingFace Dataset for testing with the nested OMOP patient-events structure."""
+
+    def default_events():
+        if force_integer_times:
+            # For legacy tests that expect integer times
+            return [
+                [
+                    {
+                        "time": 1,
+                        "code": "OMOP_ENROLLMENT",
+                        "numeric_value": None,
+                        "string_value": None,
+                    },
+                    {
+                        "time": 5,
+                        "code": "OMOP_ENROLLMENT",
+                        "numeric_value": None,
+                        "string_value": None,
+                    },
+                    {
+                        "time": 9,
+                        "code": "OMOP_DEATH",
+                        "numeric_value": None,
+                        "string_value": None,
+                    },
+                ],
+                [
+                    {
+                        "time": 2,
+                        "code": "OMOP_ENROLLMENT",
+                        "numeric_value": None,
+                        "string_value": None,
+                    },
+                    {
+                        "time": 4,
+                        "code": "OMOP_ENROLLMENT",
+                        "numeric_value": None,
+                        "string_value": None,
+                    },
+                    {
+                        "time": 10,
+                        "code": "OMOP_DEATH",
+                        "numeric_value": None,
+                        "string_value": None,
+                    },
+                ],
+            ]
+        else:
+            return [
+                [
+                    {
+                        "time": "2020-01-01T00:00:00",
+                        "code": "OMOP_ENROLLMENT",
+                        "numeric_value": None,
+                        "string_value": None,
+                    },
+                    {
+                        "time": "2020-06-01T00:00:00",
+                        "code": "OMOP_DEATH",
+                        "numeric_value": None,
+                        "string_value": None,
+                    },
+                ],
+                [
+                    {
+                        "time": "2021-01-01T00:00:00",
+                        "code": "OMOP_ENROLLMENT",
+                        "numeric_value": None,
+                        "string_value": None,
+                    },
+                ],
+            ]
+
     if patient_event_data is None:
         data_dict = {
             "patient_id": [1, 2],
-            "events": [
-                [{"time": 1}, {"time": 5}, {"time": 9}],
-                [{"time": 2}, {"time": 4}, {"time": 10}],
-            ],
+            "events": default_events(),
         }
     else:
+        # Ensure all events have the required keys and correct types
+        for patient_events in patient_event_data:
+            for event in patient_events:
+                if "time" not in event:
+                    event["time"] = "1970-01-01T00:00:00"
+                # Only convert to string if not forcing integer times
+                if not force_integer_times and not isinstance(event["time"], str):
+                    event["time"] = str(event["time"])
+                if "code" not in event:
+                    event["code"] = "OMOP_UNKNOWN"
+                if "numeric_value" not in event:
+                    event["numeric_value"] = None
+                if "string_value" not in event:
+                    event["string_value"] = None
         data_dict = {
             "patient_id": list(range(1, len(patient_event_data) + 1)),
             "events": patient_event_data,
@@ -204,8 +283,8 @@ def test_competing_risk_censoring_no_competing():
 
 
 def test_truncate_events_at_anchor_with_integer_times():
-    # Using default make_dummy_dataset with integer times: P0: [1,5,9], P1: [2,4,10]
-    ds = make_dummy_dataset()
+    # Using make_dummy_dataset with integer times and all required fields
+    ds = make_dummy_dataset(force_integer_times=True)
     # Anchor times are 0 for both patients. truncate_events_at_anchor keeps events <= anchor_time.
     # Since event times are positive integers, no events should remain.
     anchor_times = [0, 0]
@@ -219,24 +298,83 @@ def test_truncate_events_at_anchor_with_integer_times():
     ), "Patient 1 events should be empty after truncating at anchor_time 0"
 
     # Test with anchor times that should keep some events
-    ds = make_dummy_dataset()
+    ds = make_dummy_dataset(force_integer_times=True)
     anchor_times_p0_at_5 = [5, 10]  # P0 anchor at 5, P1 anchor at 10
     cohort = CohortOMOP(source=None, labelers=[])
     ds_truncated_some = cohort.truncate_events_at_anchor(anchor_times_p0_at_5, ds)
     # Patient 0: events at 1, 5, 9; anchor is 5, so 1, 5 remain (assuming inclusive)
-    assert ds_truncated_some["events"][0] == [{"time": 1}, {"time": 5}]
+    expected_events_p0 = [
+        {
+            "time": 1,
+            "code": "OMOP_ENROLLMENT",
+            "numeric_value": None,
+            "string_value": None,
+        },
+        {
+            "time": 5,
+            "code": "OMOP_ENROLLMENT",
+            "numeric_value": None,
+            "string_value": None,
+        },
+    ]
+    assert ds_truncated_some["events"][0] == expected_events_p0
     # Patient 1: events at 2, 4, 10; anchor is 10, so 2, 4, 10 remain
-    assert ds_truncated_some["events"][1] == [{"time": 2}, {"time": 4}, {"time": 10}]
+    expected_events_p1 = [
+        {
+            "time": 2,
+            "code": "OMOP_ENROLLMENT",
+            "numeric_value": None,
+            "string_value": None,
+        },
+        {
+            "time": 4,
+            "code": "OMOP_ENROLLMENT",
+            "numeric_value": None,
+            "string_value": None,
+        },
+        {"time": 10, "code": "OMOP_DEATH", "numeric_value": None, "string_value": None},
+    ]
+    assert ds_truncated_some["events"][1] == expected_events_p1
 
 
 def test_truncate_events_at_anchor_no_effect_if_anchor_late():
-    ds = make_dummy_dataset()
+    ds = make_dummy_dataset(force_integer_times=True)
     # Anchor times are very late, so all events should remain.
     anchor_times = [100, 100]
     cohort = CohortOMOP(source=None, labelers=[])
     ds_truncated = cohort.truncate_events_at_anchor(anchor_times, ds)
-    assert ds_truncated["events"][0] == [{"time": 1}, {"time": 5}, {"time": 9}]
-    assert ds_truncated["events"][1] == [{"time": 2}, {"time": 4}, {"time": 10}]
+    expected_events_p0 = [
+        {
+            "time": 1,
+            "code": "OMOP_ENROLLMENT",
+            "numeric_value": None,
+            "string_value": None,
+        },
+        {
+            "time": 5,
+            "code": "OMOP_ENROLLMENT",
+            "numeric_value": None,
+            "string_value": None,
+        },
+        {"time": 9, "code": "OMOP_DEATH", "numeric_value": None, "string_value": None},
+    ]
+    expected_events_p1 = [
+        {
+            "time": 2,
+            "code": "OMOP_ENROLLMENT",
+            "numeric_value": None,
+            "string_value": None,
+        },
+        {
+            "time": 4,
+            "code": "OMOP_ENROLLMENT",
+            "numeric_value": None,
+            "string_value": None,
+        },
+        {"time": 10, "code": "OMOP_DEATH", "numeric_value": None, "string_value": None},
+    ]
+    assert ds_truncated["events"][0] == expected_events_p0
+    assert ds_truncated["events"][1] == expected_events_p1
 
 
 def test_truncate_events_no_events_column():

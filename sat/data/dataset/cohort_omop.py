@@ -13,9 +13,8 @@ from typing import Any, Dict, List, Tuple
 import pandas as pd
 from datasets import Dataset
 
-from sat.data.dataset.serialization import serialize_dataset
-
 from sat.data.dataset.femr_extensions.schema import LabelType
+from sat.data.dataset.serialization import serialize_dataset
 from sat.utils import logging
 
 logger = logging.get_default_logger()
@@ -204,7 +203,9 @@ class CohortOMOP:
             # Sort events by time if present
             filtered_patient_events.sort(
                 key=lambda x: (
-                    _ensure_datetime(x.get(self.time_field)) if self.time_field in x else datetime.min
+                    _ensure_datetime(x.get(self.time_field))
+                    if self.time_field in x
+                    else datetime.min
                 )
             )
 
@@ -359,26 +360,21 @@ class CohortOMOP:
             empty_result = {labeler.name: [] for labeler in self.labelers}
             return empty_result, []
 
-        # Group patients for processing
-        try:
-            patient_groups = list(ds.to_pandas().groupby(self.primary_key))
-        except Exception as e:
-            logger.error(f"Error grouping patients: {e}")
-            return {}, []
-
         # Initialize data structures to store results
         all_labels_by_type = {}
         all_anchor_times = []
 
-        # Process each patient
-        for patient_idx, (patient_id, patient_group_df) in enumerate(patient_groups):
-            # Apply the anchor labeler first
+        # Process each patient in a streaming-safe way
+        for patient_idx, patient in enumerate(ds):
+            patient_id = patient.get(
+                self.primary_key, patient.get("patient_id", patient_idx)
+            )
             logger.debug(
                 f"APPLY_LABELERS: Calling anchor labeler {anchor_labeler.name} for patient {patient_id}"
             )
 
             # Get anchor labels for this patient
-            anchor_labels = anchor_labeler.label(patient_group_df)
+            anchor_labels = anchor_labeler.label(patient)
             logger.debug(
                 f"APPLY_LABELERS: Anchor labeler {anchor_labeler.name} for patient {patient_id} returned: {anchor_labels}"
             )
@@ -405,13 +401,11 @@ class CohortOMOP:
                 for labeler in labelers:
                     # Initialize the labeler's result list if needed
                     if labeler.name not in all_labels_by_type:
-                        all_labels_by_type[labeler.name] = [
-                            [] for _ in range(len(patient_groups))
-                        ]
+                        all_labels_by_type[labeler.name] = [[] for _ in range(len(ds))]
 
                     # Apply the labeler using the label() method
                     try:
-                        labeler_results = labeler.label(patient_group_df, anchor_label)
+                        labeler_results = labeler.label(patient)
                         all_labels_by_type[labeler.name][patient_idx] = labeler_results
                     except Exception as e:
                         logger.error(
@@ -721,24 +715,24 @@ class CohortOMOP:
             ds = ds.add_column(f"labels_{label_name}", column_data)
 
         logger.info(f"Cohort extraction complete. Returning {len(ds)} patient records.")
-        
+
         # Serialize the dataset if processed_dir and name are provided
         if self.processed_dir is not None and self.name is not None:
             # Use the serialization module with JSON option when debug is enabled
-            include_json = logger.isEnabledFor(logging.get_debug_level())
+            include_json = logger.isEnabledFor(logging.DEBUG)
             serialize_dataset(
                 dataset=ds,
                 output_dir=self.processed_dir,
                 name=self.name,
-                include_json=include_json
+                include_json=include_json,
             )
-            
+
         return ds
-        
+
     def __call__(self):
         """
         Make the CohortOMOP instance callable. Calls extract_cohort_data.
-        
+
         Returns:
             Dataset: A HuggingFace Dataset containing patient records with processed labels
         """
