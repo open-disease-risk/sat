@@ -1,6 +1,6 @@
 # FEMR-based Omop configuration for synthetic_omop dataset
 _target_: sat.data.dataset.cohort_omop.CohortOMOP
-source: ${base_dir}/data/synthetic_omop/data/data.parquet
+source: ${base_dir}/data/synthetic_omop/patients_with_events.parquet
 processed_dir: ${modelhub}/cohort
 name: ${dataset}
 time_field: "time"
