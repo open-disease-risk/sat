@@ -9,7 +9,6 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 import argparse
-import json
 import logging
 import os
 import random
@@ -741,40 +740,6 @@ class SyntheticOmopGenerator:
             logger.info(f"  - Maximum events per patient: {max_events}")
             logger.info(f"  - Average events per patient: {avg_events:.1f}")
 
-    def save_to_json(self, output_path=None):
-        """Save the OMOP data to JSON format for debugging.
-
-        Args:
-            output_path: Optional path to save the JSON file. If None, uses processed_dir.
-
-        Returns:
-            Path to the saved JSON file
-        """
-        if self._df_omop is None:
-            logger.warning("No OMOP data to save to JSON. Generate data first.")
-            return None
-
-        if output_path is None:
-            dataset_folder = Path(f"{self.processed_dir}/{self.name}")
-            output_path = os.path.join(dataset_folder, "omop_data.json")
-
-        # Ensure directory exists
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
-        # Convert DataFrame to JSON
-        # Handle datetime objects by converting to ISO format strings
-        df_json = self._df_omop.copy()
-        df_json["time"] = df_json["time"].apply(
-            lambda x: x.isoformat() if pd.notnull(x) else None
-        )
-
-        # Save to JSON file with indentation for readability
-        with open(output_path, "w") as f:
-            json.dump(df_json.to_dict(orient="records"), f, indent=2)
-
-        logger.info(f"Saved OMOP data to JSON: {output_path}")
-        return output_path
-
     def create_omop_tables(self):
         """Create a single OMOP-formatted table from generated events.
 
@@ -812,6 +777,45 @@ class SyntheticOmopGenerator:
         self._df_omop = self._df_omop[column_order]
 
         return self._df_omop
+
+    def create_patient_events_structure(self):
+        """Transform flat OMOP data into patient-events nested structure expected by labelers.
+
+        Returns:
+            Dict mapping patient_id to a patient object with events list
+        """
+        # Group events by patient
+        patient_events = {}
+
+        # Process all events and group by patient_id
+        for _, row in self._df_omop.iterrows():
+            patient_id = row["patient_id"]
+
+            # Create patient record if not exists
+            if patient_id not in patient_events:
+                patient_events[patient_id] = {"events": []}
+
+            # Create event dictionary
+            event = {
+                "time": row["time"],
+                "code": row["code"],
+            }
+
+            # Add additional fields if they exist and aren't null
+            for field in ["numeric_value", "string_value"]:
+                if field in row and not pd.isna(row[field]):
+                    event[field] = row[field]
+
+            # Add event to patient's events list
+            patient_events[patient_id]["events"].append(event)
+
+        # Sort events by time for each patient
+        for patient_id in patient_events:
+            patient_events[patient_id]["events"].sort(
+                key=lambda x: x["time"] if not pd.isna(x["time"]) else datetime.min
+            )
+
+        return patient_events
 
     def save_omop_to_parquet(self, metadata: Dict[str, Any] = None):
         """Save OMOP format data to a Parquet file following the required format:
@@ -949,6 +953,52 @@ class SyntheticOmopGenerator:
         except Exception as e:
             logger.error(f"Error saving codes.parquet: {e}")
 
+        # Create the patient-events structure for labeler compatibility
+        logger.info(
+            "Generating patient-events nested structure for labeler compatibility"
+        )
+        patient_events = self.create_patient_events_structure()
+
+        # Convert to a list of patient dictionaries for easier storage
+        patients_list = [
+            {"patient_id": patient_id, **patient_data}
+            for patient_id, patient_data in patient_events.items()
+        ]
+
+        # Save as parquet for efficient loading
+        patients_df = pd.DataFrame(patients_list)
+        patients_parquet_path = os.path.join(
+            dataset_folder, "patients_with_events.parquet"
+        )
+
+        try:
+            patients_df.to_parquet(patients_parquet_path, index=False)
+            logger.info(
+                f"Saved patients_with_events.parquet with {len(patients_df)} patients"
+            )
+
+            # Save as JSON for debugging if debug logging is enabled
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(
+                    "Debug logging enabled: Saving patient-events structure as JSON"
+                )
+                patient_events_json_path = os.path.join(
+                    dataset_folder, "patients_with_events.json"
+                )
+                try:
+                    from sat.data.dataset.serialization import OMOPJsonSerializer
+
+                    OMOPJsonSerializer.serialize_patients_to_json_file(
+                        patient_events, patient_events_json_path
+                    )
+                    logger.debug(
+                        "Successfully saved patients_with_events.json for debugging"
+                    )
+                except Exception as e:
+                    logger.error(f"Error during JSON file creation: {e}")
+        except Exception as e:
+            logger.error(f"Error saving patients_with_events data: {e}")
+
         # Add subject splits for train/val/test (all train by default)
         # This can be enhanced in the future with more sophisticated splitting
         unique_patients = df_omop_copy["patient_id"].unique()
@@ -974,7 +1024,10 @@ class SyntheticOmopGenerator:
 
         metadata_path = os.path.join(dataset_folder, "_metadata.json")
         with open(metadata_path, "w") as f:
-            json.dump(metadata, f, indent=2)
+            # Use the global json module import
+            import json as json_module
+
+            json_module.dump(metadata, f, indent=2)
             logger.info(f"Saved metadata to {metadata_path}")
 
         logger.info(f"OMOP data saved successfully in the format: {dataset_folder}/")
@@ -1027,10 +1080,7 @@ class SyntheticOmopGenerator:
 
         output_dir = self.save_omop_to_parquet(dataset_metadata)
 
-        # 6. Save to JSON for debugging
-        self.save_to_json()
-
-        # 7. Print summary statistics
+        # 6. Print summary statistics
         self.log_statistics()
 
         logger.info(f"OMOP dataset generation complete: {output_dir}")
