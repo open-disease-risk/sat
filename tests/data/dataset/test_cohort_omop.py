@@ -32,27 +32,35 @@ class DummyLabeler:
                             new_patient_labels_list.append(label_dict)
                 self.processed_labels_for_all_patients.append(new_patient_labels_list)
 
-    def label(self, patient_group_df):
-        # Get the patient ID from the dataframe to return the correct patient's labels
-        if isinstance(patient_group_df, pd.DataFrame) and not patient_group_df.empty:
-            # Look for primary_key or patient_id column
+    def label(self, patient):
+        # Preferred: handle dicts (real labeler compatibility)
+        if isinstance(patient, dict):
+            patient_id = patient.get("patient_id")
+            if patient_id is not None:
+                try:
+                    patient_idx = int(patient_id) - 1  # patient_id is 1-based
+                    if 0 <= patient_idx < len(self.processed_labels_for_all_patients):
+                        return self.processed_labels_for_all_patients[patient_idx]
+                except Exception:
+                    pass
+        # Legacy: handle DataFrames for old-style tests
+        elif hasattr(patient, "columns") and hasattr(patient, "iloc"):
             id_column = next(
                 (
                     col
                     for col in ["primary_key", "patient_id"]
-                    if col in patient_group_df.columns
+                    if col in patient.columns
                 ),
                 None,
             )
-
             if id_column:
-                patient_id = patient_group_df[id_column].iloc[0]
-                # Convert to 0-based index (assuming patient IDs start from 1)
-                patient_idx = int(patient_id) - 1
-
-                if patient_idx < len(self.processed_labels_for_all_patients):
-                    return self.processed_labels_for_all_patients[patient_idx]
-
+                patient_id = patient[id_column].iloc[0]
+                try:
+                    patient_idx = int(patient_id) - 1
+                    if 0 <= patient_idx < len(self.processed_labels_for_all_patients):
+                        return self.processed_labels_for_all_patients[patient_idx]
+                except Exception:
+                    pass
         # Default: return empty list if no labels found
         return []
 
