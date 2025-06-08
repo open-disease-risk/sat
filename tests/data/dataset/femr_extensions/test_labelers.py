@@ -14,27 +14,41 @@ def make_patient(patient_id, events):
 
 
 def test_anchor_event():
+    tmax = datetime.datetime(2025, 12, 31)
     labeler = CustomEventLabeler(
-        "anchor", label_type=LabelType.ANCHOR, event_codes=["X"], max_time=10
+        "anchor", label_type=LabelType.ANCHOR, event_codes=["X"], max_time=tmax
     )
     t = datetime.datetime(2025, 4, 5)
     patient = make_patient("p0", [make_event("X", t)])
     labels = labeler.label(patient)
-    assert labels[0]["boolean_value"] is True
-    assert labels[0]["competing_event"] is False
-    assert labels[0]["prediction_time"] == t
+    assert (
+        labels[0]["boolean_value"] is True
+    ), f'boolean_value was {labels[0]["boolean_value"]}'
+    assert (
+        labels[0]["competing_event"] is False
+    ), f'competing_event was {labels[0]["competing_event"]}'
+    assert (
+        labels[0]["prediction_time"] == t
+    ), f'prediction_time was {labels[0]["prediction_time"]}'
 
 
 def test_anchor_event_2():
+    tmax = datetime.datetime(2025, 12, 31)
     labeler = CustomEventLabeler(
-        "anchor", label_type=LabelType.ANCHOR, event_codes=["X"], max_time=10
+        "anchor", label_type=LabelType.ANCHOR, event_codes=["X"], max_time=tmax
     )
     t = datetime.datetime(2025, 4, 5)
     patient = make_patient("p0", [make_event("A", t)])
     labels = labeler.label(patient)
-    assert labels[0]["boolean_value"] is False
-    assert labels[0]["competing_event"] is False
-    assert labels[0]["prediction_time"] == t
+    assert (
+        labels[0]["boolean_value"] is False
+    ), f'boolean_value was {labels[0]["boolean_value"]}'
+    assert (
+        labels[0]["competing_event"] is False
+    ), f'competing_event was {labels[0]["competing_event"]}'
+    assert (
+        labels[0]["prediction_time"] == t
+    ), f'prediction_time was {labels[0]["prediction_time"]}'
 
 
 def test_competing_risk_no_events():
@@ -58,8 +72,13 @@ def test_competing_risk_no_events():
 
 def test_competing_risk():
     # Competing events the labelling here does not take into account dependencies between labels
-    labeler_a = CustomEventLabeler("A", event_codes=["X"], competing_event=True)
-    labeler_b = CustomEventLabeler("B", event_codes=["Y"], competing_event=True)
+    tmax = datetime.datetime(2025, 12, 31)
+    labeler_a = CustomEventLabeler(
+        "A", event_codes=["X"], competing_event=True, max_time=tmax
+    )
+    labeler_b = CustomEventLabeler(
+        "B", event_codes=["Y"], competing_event=True, max_time=tmax
+    )
     t1 = datetime.datetime(2025, 4, 2)
     t2 = datetime.datetime(2025, 4, 5)
     patient = make_patient("p1", [make_event("Y", t1), make_event("X", t2)])
@@ -74,8 +93,13 @@ def test_competing_risk():
 
 
 def test_competing_risk_no_matching_events():
-    labeler_a = CustomEventLabeler("A", event_codes=["X"], competing_event=True)
-    labeler_b = CustomEventLabeler("B", event_codes=["Y"], competing_event=True)
+    tmax = datetime.datetime(2025, 12, 31)
+    labeler_a = CustomEventLabeler(
+        "A", event_codes=["X"], competing_event=True, max_time=tmax
+    )
+    labeler_b = CustomEventLabeler(
+        "B", event_codes=["Y"], competing_event=True, max_time=tmax
+    )
     t1 = datetime.datetime(2025, 4, 3)
     t2 = datetime.datetime(2025, 4, 5)
     patient = make_patient("p2", [make_event("Z", t1), make_event("W", t2)])
@@ -95,9 +119,15 @@ def test_survival_no_events():
     labeler = CustomEventLabeler("surv", event_codes=["X"], max_time=t)
     patient = make_patient("p3", [])
     labels = labeler.label(patient)
-    assert labels[0]["boolean_value"] is False, labels[0]
-    assert labels[0]["competing_event"] is False, labels[0]
-    assert labels[0]["prediction_time"] == t, labels[0]
+    assert (
+        labels[0]["boolean_value"] is False
+    ), f'boolean_value was {labels[0]["boolean_value"]}'
+    assert (
+        labels[0]["competing_event"] is False
+    ), f'competing_event was {labels[0]["competing_event"]}'
+    assert (
+        labels[0]["prediction_time"] == t
+    ), f'prediction_time was {labels[0]["prediction_time"]}'
 
 
 def test_survival_event_found():
@@ -110,9 +140,15 @@ def test_survival_event_found():
         "p4", [make_event("A", t1), make_event("X", t2), make_event("X", t3)]
     )
     labels = labeler.label(patient)
-    assert labels[0]["boolean_value"] is True, labels[0]
-    assert labels[0]["competing_event"] is False, labels[0]
-    assert labels[0]["prediction_time"] == t2, labels[0]
+    assert (
+        labels[0]["boolean_value"] is True
+    ), f'boolean_value was {labels[0]["boolean_value"]}'
+    assert (
+        labels[0]["competing_event"] is False
+    ), f'competing_event was {labels[0]["competing_event"]}'
+    assert (
+        labels[0]["prediction_time"] == t2
+    ), f'prediction_time was {labels[0]["prediction_time"]}'
 
 
 def test_survival_event_not_found():
@@ -122,103 +158,185 @@ def test_survival_event_not_found():
     labeler = CustomEventLabeler("surv", event_codes=["X"], max_time=tmax)
     patient = make_patient("p5", [make_event("A", t1), make_event("B", t2)])
     labels = labeler.label(patient)
-    assert labels[0]["boolean_value"] is False, labels[0]
-    assert labels[0]["competing_event"] is False, labels[0]
-    assert labels[0]["prediction_time"] == t2, labels[0]
+    assert (
+        labels[0]["boolean_value"] is False
+    ), f'boolean_value was {labels[0]["boolean_value"]}'
+    assert (
+        labels[0]["competing_event"] is False
+    ), f'competing_event was {labels[0]["competing_event"]}'
+    assert (
+        labels[0]["prediction_time"] == t2
+    ), f'prediction_time was {labels[0]["prediction_time"]}'
 
 
 # ---- CustomEventLabeler Tests ----
 def test_custom_event_exclusion():
+    tmax = datetime.datetime(2025, 12, 31)
     labeler = CustomEventLabeler(
-        "custom", label_type=LabelType.EXCLUSION, event_codes=["Y"]
+        "custom", label_type=LabelType.EXCLUSION, event_codes=["Y"], max_time=tmax
     )
     t1 = datetime.datetime(2025, 4, 1)
     t2 = datetime.datetime(2025, 4, 2)
     patient = make_patient("p6", [make_event("X", t1), make_event("Y", t2)])
     labels = labeler.label(patient)
-    assert labels[0]["boolean_value"] is True, labels[0]
-    assert labels[0]["competing_event"] is False, labels[0]
-    assert labels[0]["prediction_time"] == t2, labels[0]
+    assert (
+        labels[0]["boolean_value"] is True
+    ), f'boolean_value was {labels[0]["boolean_value"]}'
+    assert (
+        labels[0]["competing_event"] is False
+    ), f'competing_event was {labels[0]["competing_event"]}'
+    assert (
+        labels[0]["prediction_time"] == t2
+    ), f'prediction_time was {labels[0]["prediction_time"]}'
 
 
 def test_custom_event_primary_and_condition():
-    labeler = CustomEventLabeler("custom", event_codes=["X"], condition_codes=["C"])
+    tmax = datetime.datetime(2025, 12, 31)
+    labeler = CustomEventLabeler(
+        "custom", event_codes=["X"], condition_codes=["C"], max_time=tmax
+    )
     t1 = datetime.datetime(2025, 4, 1)
     t2 = datetime.datetime(2025, 4, 2)
     patient = make_patient("p7", [make_event("X", t1), make_event("C", t2)])
     labels = labeler.label(patient)
-    assert labels[0]["boolean_value"] is True, labels[0]
-    assert labels[0]["prediction_time"] == t1, labels[0]
+    assert (
+        labels[0]["boolean_value"] is True
+    ), f'boolean_value was {labels[0]["boolean_value"]}'
+    assert (
+        labels[0]["competing_event"] is False
+    ), f'competing_event was {labels[0]["competing_event"]}'
+    assert (
+        labels[0]["prediction_time"] == t1
+    ), f'prediction_time was {labels[0]["prediction_time"]}'
 
 
 def test_custom_event_primary_but_no_condition():
-    labeler = CustomEventLabeler("custom", event_codes=["X"], condition_codes=["C"])
+    labeler = CustomEventLabeler(
+        "custom",
+        event_codes=["X"],
+        condition_codes=["C"],
+        max_time=datetime.datetime(2025, 12, 31),
+    )
     t1 = datetime.datetime(2025, 4, 1)
     t2 = datetime.datetime(2025, 4, 2)
     patient = make_patient("p8", [make_event("X", t1), make_event("A", t2)])
     labels = labeler.label(patient)
-    assert labels[0]["boolean_value"] is False, labels[0]
-    assert labels[0]["competing_event"] is False, labels[0]
-    assert labels[0]["prediction_time"] == t2, labels[0]
+    assert (
+        labels[0]["boolean_value"] is False
+    ), f'boolean_value was {labels[0]["boolean_value"]}'
+    assert (
+        labels[0]["competing_event"] is False
+    ), f'competing_event was {labels[0]["competing_event"]}'
+    assert (
+        labels[0]["prediction_time"] == t2
+    ), f'prediction_time was {labels[0]["prediction_time"]}'
 
 
 def test_custom_event_no_primary():
-    labeler = CustomEventLabeler("custom", event_codes=["X"])
+    labeler = CustomEventLabeler(
+        "custom", event_codes=["X"], max_time=datetime.datetime(2025, 12, 31)
+    )
     t1 = datetime.datetime(2025, 4, 1)
     patient = make_patient("p9", [make_event("A", t1)])
     labels = labeler.label(patient)
-    assert labels[0]["boolean_value"] is False, labels[0]
-    assert labels[0]["competing_event"] is False, labels[0]
-    assert labels[0]["prediction_time"] == t1, labels[0]
+    assert (
+        labels[0]["boolean_value"] is False
+    ), f'boolean_value was {labels[0]["boolean_value"]}'
+    assert (
+        labels[0]["competing_event"] is False
+    ), f'competing_event was {labels[0]["competing_event"]}'
+    assert (
+        labels[0]["prediction_time"] == t1
+    ), f'prediction_time was {labels[0]["prediction_time"]}'
 
 
 def test_custom_event_time_window():
     labeler = CustomEventLabeler(
-        "custom", event_codes=["X"], condition_codes=["C"], time_window=1
+        "custom",
+        event_codes=["X"],
+        condition_codes=["C"],
+        time_window=1,
+        max_time=datetime.datetime(2025, 12, 31),
     )
     t1 = datetime.datetime(2025, 4, 1)
     t2 = datetime.datetime(2025, 4, 5)
     patient = make_patient("p10", [make_event("X", t1), make_event("C", t2)])
     labels = labeler.label(patient)
-    assert labels[0]["boolean_value"] is False, labels[0]
-    assert labels[0]["competing_event"] is False, labels[0]
-    assert labels[0]["prediction_time"] == t2, labels[0]
+    assert (
+        labels[0]["boolean_value"] is False
+    ), f'boolean_value was {labels[0]["boolean_value"]}'
+    assert (
+        labels[0]["competing_event"] is False
+    ), f'competing_event was {labels[0]["competing_event"]}'
+    assert (
+        labels[0]["prediction_time"] == t2
+    ), f'prediction_time was {labels[0]["prediction_time"]}'
 
 
 def test_custom_event_time_window_2():
     labeler = CustomEventLabeler(
-        "custom", event_codes=["X"], condition_codes=["C"], time_window=5
+        "custom",
+        event_codes=["X"],
+        condition_codes=["C"],
+        time_window=5,
+        max_time=datetime.datetime(2025, 12, 31),
     )
     t1 = datetime.datetime(2025, 4, 1)
     t2 = datetime.datetime(2025, 4, 5)
     patient = make_patient("p10", [make_event("X", t1), make_event("C", t2)])
     labels = labeler.label(patient)
-    assert labels[0]["boolean_value"] is True, labels[0]
-    assert labels[0]["competing_event"] is False, labels[0]
-    assert labels[0]["prediction_time"] == t1, labels[0]
+    assert (
+        labels[0]["boolean_value"] is True
+    ), f'boolean_value was {labels[0]["boolean_value"]}'
+    assert (
+        labels[0]["competing_event"] is False
+    ), f'competing_event was {labels[0]["competing_event"]}'
+    assert (
+        labels[0]["prediction_time"] == t1
+    ), f'prediction_time was {labels[0]["prediction_time"]}'
 
 
 def test_custom_event_sequence_required():
     labeler = CustomEventLabeler(
-        "custom", event_codes=["X"], condition_codes=["C"], sequence_required=True
+        "custom",
+        event_codes=["X"],
+        condition_codes=["C"],
+        sequence_required=True,
+        max_time=datetime.datetime(2025, 12, 31),
     )
     t1 = datetime.datetime(2025, 4, 1)
     t2 = datetime.datetime(2025, 4, 5)
     patient = make_patient("p11", [make_event("C", t1), make_event("X", t2)])
     labels = labeler.label(patient)
-    assert labels[0]["boolean_value"] is False, labels[0]
-    assert labels[0]["competing_event"] is False, labels[0]
-    assert labels[0]["prediction_time"] == t2, labels[0]
+    assert (
+        labels[0]["boolean_value"] is False
+    ), f'boolean_value was {labels[0]["boolean_value"]}'
+    assert (
+        labels[0]["competing_event"] is False
+    ), f'competing_event was {labels[0]["competing_event"]}'
+    assert (
+        labels[0]["prediction_time"] == t2
+    ), f'prediction_time was {labels[0]["prediction_time"]}'
 
 
 def test_custom_event_sequence_required_2():
     labeler = CustomEventLabeler(
-        "custom", event_codes=["X"], condition_codes=["C"], sequence_required=True
+        "custom",
+        event_codes=["X"],
+        condition_codes=["C"],
+        sequence_required=True,
+        max_time=datetime.datetime(2025, 12, 31),
     )
     t1 = datetime.datetime(2025, 4, 3)
     t2 = datetime.datetime(2025, 4, 5)
     patient = make_patient("p11", [make_event("C", t2), make_event("X", t1)])
     labels = labeler.label(patient)
-    assert labels[0]["boolean_value"] is True, labels[0]
-    assert labels[0]["competing_event"] is False, labels[0]
-    assert labels[0]["prediction_time"] == t1, labels[0]
+    assert (
+        labels[0]["boolean_value"] is True
+    ), f'boolean_value was {labels[0]["boolean_value"]}'
+    assert (
+        labels[0]["competing_event"] is False
+    ), f'competing_event was {labels[0]["competing_event"]}'
+    assert (
+        labels[0]["prediction_time"] == t1
+    ), f'prediction_time was {labels[0]["prediction_time"]}'

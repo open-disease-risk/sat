@@ -96,44 +96,47 @@ class CustomEventLabeler(CohortLabeler):
             },
         }
 
-    def label(self, patient: Patient) -> List[ExtendedLabel]:
-        """
-        Create a label for the patient using first-match logic for this event type.
-        Sets boolean_value and competing_event flags appropriately.
-        If condition_codes are provided, only set boolean_value=True if at least one condition event is present (optionally within time_window and/or after the primary event if sequence_required).
-        """
-        if patient["events"]:
-            last_event_time = patient["events"][-1][self.time_field]
-        else:
-            last_event_time = self.max_time
+    def _make_label_for_event(
+        self,
+        patient: Patient,
+        event_time: float,
+        event_code: str,
+        effective_time: float,
+        condition_met: bool,
+    ) -> ExtendedLabel:
+        """Create a label for a given event."""
+        return ExtendedLabel(
+            event_category=self.name,
+            label_type=self.label_type,
+            prediction_time=effective_time,
+            boolean_value=condition_met,
+            competing_event=self.competing_event,
+        )
 
-        first_event_time = datetime.datetime(9999, 12, 31)
+    def label(self, patient: Patient, mode: str = "all") -> List[ExtendedLabel]:
+        """Label a patient based on the event codes and conditions."""
+        assert isinstance(
+            self.max_time, datetime.datetime
+        ), "max_time must be a datetime object"
         for event in patient["events"]:
+            assert isinstance(
+                event[self.time_field], datetime.datetime
+            ), "event time must be a datetime object"
+        labels = []
+        for event in patient["events"]:
+            event_time = event[self.time_field]
+            if event_time > self.max_time:
+                continue
             if event["code"] in self.event_codes:
-                event_time = event[self.time_field]
-                if event_time < first_event_time:
-                    first_event_time = event_time
-
-        # Determine effective time and condition
-        if first_event_time != datetime.datetime(9999, 12, 31):
-            effective_time = first_event_time
-            # Check condition codes if provided
-            condition_met = True
-            if self.condition_codes:
-                condition_met = False
-                for event in patient["events"]:
-                    if event["code"] not in self.condition_codes:
-                        continue
-                    cond_time = event[self.time_field]
-                    # Sequence requirement: condition after primary event
-                    if self.sequence_required and cond_time < first_event_time:
-                        continue
-                    # Time window requirement
-                    if self.time_window is not None:
-                        # Calculate time difference based on data type
-                        if isinstance(cond_time, (datetime.datetime, datetime.date)):
-                            delta = cond_time - first_event_time
-                            # Convert to the appropriate unit
+                condition_met = True
+                if self.condition_codes:
+                    condition_met = False
+                    for cond_event in patient["events"]:
+                        if cond_event["code"] in self.condition_codes:
+                            cond_time = cond_event[self.time_field]
+                            if self.sequence_required and cond_time <= event_time:
+                                continue
+                            delta = cond_time - event_time
                             if self.time_unit == "days":
                                 time_diff = abs(delta.days)
                             elif self.time_unit == "hours":
@@ -142,30 +145,47 @@ class CustomEventLabeler(CohortLabeler):
                                 time_diff = abs(delta.total_seconds() / 60)
                             else:  # seconds
                                 time_diff = abs(delta.total_seconds())
-                        else:
-                            time_diff = abs(cond_time - first_event_time)
 
-                        if time_diff > self.time_window:
-                            continue
-                    condition_met = True
-                    break
-            if condition_met:
-                return [
+                            if (
+                                self.time_window is None
+                                or time_diff <= self.time_window
+                            ):
+                                condition_met = True
+                                break
+                if condition_met:
+                    if mode == "first" and labels:
+                        break
+                    labels.append(
+                        self._make_label_for_event(
+                            patient,
+                            event_time,
+                            event["code"],
+                            event_time,
+                            condition_met,
+                        )
+                    )
+        if not labels:
+            if patient["events"]:
+                last_event_time = max(
+                    event[self.time_field] for event in patient["events"]
+                )
+                labels.append(
                     ExtendedLabel(
                         event_category=self.name,
                         label_type=self.label_type,
-                        prediction_time=effective_time,
-                        boolean_value=condition_met,
+                        prediction_time=last_event_time,
+                        boolean_value=False,
                         competing_event=self.competing_event,
                     )
-                ]
-
-        return [
-            ExtendedLabel(
-                event_category=self.name,
-                label_type=self.label_type,
-                prediction_time=last_event_time,
-                boolean_value=False,
-                competing_event=self.competing_event,
-            )
-        ]
+                )
+            else:
+                labels.append(
+                    ExtendedLabel(
+                        event_category=self.name,
+                        label_type=self.label_type,
+                        prediction_time=self.max_time,
+                        boolean_value=False,
+                        competing_event=self.competing_event,
+                    )
+                )
+        return labels
