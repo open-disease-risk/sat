@@ -71,6 +71,7 @@ class CustomEventLabeler(CohortLabeler):
         time_window: Optional[float] = None,
         sequence_required: bool = False,
         time_unit: str = "days",  # Unit for time differences: 'days', 'hours', 'minutes', 'seconds'
+        mode: str = "all",  # New mode parameter
     ):
         super().__init__(name, label_type)
         self.event_codes = set(event_codes)
@@ -81,6 +82,7 @@ class CustomEventLabeler(CohortLabeler):
         self.time_window = time_window
         self.sequence_required = sequence_required
         self.time_unit = time_unit
+        self.mode = mode  # Store mode as an instance attribute
 
     def get_schema(self) -> Dict:
         """Return the schema for this labeler."""
@@ -96,24 +98,7 @@ class CustomEventLabeler(CohortLabeler):
             },
         }
 
-    def _make_label_for_event(
-        self,
-        patient: Patient,
-        event_time: float,
-        event_code: str,
-        effective_time: float,
-        condition_met: bool,
-    ) -> ExtendedLabel:
-        """Create a label for a given event."""
-        return ExtendedLabel(
-            event_category=self.name,
-            label_type=self.label_type,
-            prediction_time=effective_time,
-            boolean_value=condition_met,
-            competing_event=self.competing_event,
-        )
-
-    def label(self, patient: Patient, mode: str = "all") -> List[ExtendedLabel]:
+    def label(self, patient: Patient) -> List[ExtendedLabel]:
         """Label a patient based on the event codes and conditions."""
         assert isinstance(
             self.max_time, datetime.datetime
@@ -153,15 +138,15 @@ class CustomEventLabeler(CohortLabeler):
                                 condition_met = True
                                 break
                 if condition_met:
-                    if mode == "first" and labels:
+                    if self.mode == "first" and labels:
                         break
                     labels.append(
-                        self._make_label_for_event(
-                            patient,
-                            event_time,
-                            event["code"],
-                            event_time,
-                            condition_met,
+                        ExtendedLabel(
+                            event_category=self.name,
+                            label_type=self.label_type,
+                            prediction_time=event_time,
+                            boolean_value=condition_met,
+                            competing_event=self.competing_event,
                         )
                     )
         if not labels:

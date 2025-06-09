@@ -1,7 +1,6 @@
 import logging
 from datetime import datetime, timedelta
 
-import pandas as pd
 import pytest
 from datasets import Dataset
 
@@ -33,6 +32,11 @@ class DummyLabeler:
                 self.processed_labels_for_all_patients.append(new_patient_labels_list)
 
     def label(self, patient):
+        """
+        Return the pre-canned label list for the given patient.
+        - Supports both dict (preferred, real labeler compatibility) and DataFrame (legacy tests).
+        - Uses patient_id as a 1-based index into processed_labels_for_all_patients.
+        """
         # Preferred: handle dicts (real labeler compatibility)
         if isinstance(patient, dict):
             patient_id = patient.get("patient_id")
@@ -42,7 +46,7 @@ class DummyLabeler:
                     if 0 <= patient_idx < len(self.processed_labels_for_all_patients):
                         return self.processed_labels_for_all_patients[patient_idx]
                 except Exception:
-                    pass
+                    pass  # fallback to empty list below
         # Legacy: handle DataFrames for old-style tests
         elif hasattr(patient, "columns") and hasattr(patient, "iloc"):
             id_column = next(
@@ -60,7 +64,7 @@ class DummyLabeler:
                     if 0 <= patient_idx < len(self.processed_labels_for_all_patients):
                         return self.processed_labels_for_all_patients[patient_idx]
                 except Exception:
-                    pass
+                    pass  # fallback to empty list below
         # Default: return empty list if no labels found
         return []
 
