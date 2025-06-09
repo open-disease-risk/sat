@@ -11,15 +11,17 @@ __status__ = "Development"
 
 import abc
 import datetime
-import logging
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from femr.labelers import Labeler
 from meds import Patient
 
+from sat.utils import logging
+
+from ..utils import ensure_datetime
 from .schema import ExtendedLabel, LabelType
 
-logger = logging.getLogger(__name__)
+logger = logging.get_default_logger()
 
 
 class CohortLabeler(Labeler, abc.ABC):
@@ -48,7 +50,12 @@ class CustomEventLabeler(CohortLabeler):
         competing_event: bool, whether this labeler represents a competing event
         label_type: Type of event this labeler is associated with
         time_field: Name of the time field to use (default: 'time')
-        max_time: Maximum time for censoring (default: 3650.0)
+        max_time: Maximum time for censoring. Accepts:
+            - ISO8601 string (e.g. "2023-12-31T23:59:59")
+            - float/int (days since epoch, 1970-01-01)
+            - datetime.datetime
+            - None (default: datetime.max)
+
         condition_codes: Optional list of codes that must also be present
         time_window: Optional float specifying the time window for condition codes
         sequence_required: Whether condition must follow primary event
@@ -67,7 +74,7 @@ class CustomEventLabeler(CohortLabeler):
         competing_event: bool = False,
         label_type: LabelType = LabelType.OUTCOME,
         time_field: str = "time",
-        max_time: float = 3650.0,
+        max_time: Union[str, float, int, datetime.datetime, None] = None,
         condition_codes: Optional[List[str]] = None,
         time_window: Optional[float] = None,
         sequence_required: bool = False,
@@ -77,13 +84,37 @@ class CustomEventLabeler(CohortLabeler):
         super().__init__(name, label_type)
         self.event_codes = set(event_codes)
         self.competing_event = competing_event
+        self.label_type = label_type
         self.time_field = time_field
-        self.max_time = max_time
-        self.condition_codes = set(condition_codes or [])
+
+        # Ensure max_time is always a datetime object
+        if max_time is None:
+            self.max_time = datetime.datetime.max
+        elif isinstance(max_time, (float, int)):
+            # Interpret as days from epoch
+            self.max_time = datetime.datetime(1970, 1, 1) + datetime.timedelta(
+                days=max_time
+            )
+        elif isinstance(max_time, str):
+            try:
+                # Accept ISO8601 strings
+                self.max_time = datetime.datetime.fromisoformat(max_time)
+            except Exception as e:
+                raise ValueError(
+                    f"Could not parse max_time string '{max_time}' as datetime: {e}"
+                )
+        elif isinstance(max_time, datetime.datetime):
+            self.max_time = max_time
+        else:
+            raise ValueError(
+                "max_time must be a string (ISO8601), datetime, or float/int (days since epoch)"
+            )
+
+        self.condition_codes = set(condition_codes) if condition_codes else set()
         self.time_window = time_window
         self.sequence_required = sequence_required
         self.time_unit = time_unit
-        self.mode = mode  # Store mode as an instance attribute
+        self.mode = mode  # Store mode as instance attribute
 
     def get_schema(self) -> Dict:
         """Return the schema for this labeler."""
@@ -101,18 +132,13 @@ class CustomEventLabeler(CohortLabeler):
 
     def label(self, patient: Patient) -> List[ExtendedLabel]:
         """Label a patient based on the event codes and conditions."""
-        assert isinstance(
-            self.max_time, datetime.datetime
-        ), "max_time must be a datetime object"
-        for event in patient["events"]:
-            assert isinstance(
-                event[self.time_field], datetime.datetime
-            ), "event time must be a datetime object"
         labels = []
         for event in patient["events"]:
+            event[self.time_field] = ensure_datetime(event[self.time_field])
+        for event in patient["events"]:
             event_time = event[self.time_field]
-            if event_time > self.max_time:
-                continue
+            if event_time is None or event_time > self.max_time:
+                continue  # skip events with no valid time or after max_time
             if event["code"] in self.event_codes:
                 condition_met = True
                 if self.condition_codes:
@@ -120,6 +146,8 @@ class CustomEventLabeler(CohortLabeler):
                     for cond_event in patient["events"]:
                         if cond_event["code"] in self.condition_codes:
                             cond_time = cond_event[self.time_field]
+                            if cond_time is None:
+                                continue  # skip events with no valid time (e.g., demographic)
                             if self.sequence_required and cond_time <= event_time:
                                 continue
                             delta = cond_time - event_time
@@ -152,9 +180,12 @@ class CustomEventLabeler(CohortLabeler):
                     )
         if not labels:
             if patient["events"]:
-                last_event_time = max(
-                    event[self.time_field] for event in patient["events"]
-                )
+                valid_times = [
+                    event[self.time_field]
+                    for event in patient["events"]
+                    if event[self.time_field] is not None
+                ]
+                last_event_time = max(valid_times) if valid_times else self.max_time
                 labels.append(
                     ExtendedLabel(
                         event_category=self.name,
