@@ -8,7 +8,13 @@ __status__ = "Development"
 
 __all__ = ["tokens", "numerics"]
 
+import datetime
+
 import numpy as np
+
+from sat.utils import logging
+
+logger = logging.get_default_logger()
 
 
 def tokens(row, modalities, offset=0):
@@ -69,3 +75,48 @@ def numerics(row, modalities, offset=0, default_value=1.0):
         except (ValueError, TypeError):
             result[i] = float(default_value)
     return result
+
+
+def ensure_datetime(time_value):
+    """
+    Convert various time formats to datetime.datetime objects.
+    Handles string ISO format, pandas Timestamp, and native datetime.
+    Returns None if conversion fails.
+    """
+    if time_value is None:
+        return None
+
+    if isinstance(time_value, datetime.datetime):
+        return time_value
+
+    if hasattr(time_value, "to_pydatetime"):  # pandas Timestamp
+        return time_value.to_pydatetime()
+
+    if isinstance(time_value, str):
+        try:
+            # Handle 'Z' (UTC) or no timezone
+            return datetime.datetime.fromisoformat(time_value.replace("Z", "+00:00"))
+        except (ValueError, AttributeError):
+            try:
+                # Try common ISO format without timezone
+                return datetime.datetime.strptime(time_value, "%Y-%m-%dT%H:%M:%S")
+            except ValueError:
+                try:
+                    # Try date only
+                    return datetime.datetime.strptime(time_value, "%Y-%m-%d")
+                except ValueError:
+                    logger.error(
+                        f"ensure_datetime: Could not convert string to datetime: {time_value}"
+                    )
+                    raise ValueError(
+                        f"Could not convert string to datetime: {time_value}"
+                    )
+
+    # Try direct conversion for other types
+    try:
+        return datetime.datetime.fromtimestamp(float(time_value))
+    except (ValueError, TypeError, OverflowError):
+        logger.warning(
+            f"Could not convert value to datetime: {time_value} (type: {type(time_value)})"
+        )
+        return None
