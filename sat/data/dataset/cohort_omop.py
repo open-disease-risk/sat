@@ -17,39 +17,9 @@ from sat.data.dataset.femr_extensions.schema import LabelType
 from sat.data.dataset.serialization import serialize_dataset
 from sat.utils import logging
 
+from .utils import ensure_datetime
+
 logger = logging.get_default_logger()
-
-
-def _ensure_datetime(time_value):
-    """
-    Convert various time formats to datetime objects.
-    Handles string ISO format, pandas Timestamp, and native datetime.
-    Returns None if conversion fails.
-    """
-    if time_value is None:
-        return None
-
-    if isinstance(time_value, datetime):
-        return time_value
-
-    if hasattr(time_value, "to_pydatetime"):  # pandas Timestamp
-        return time_value.to_pydatetime()
-
-    if isinstance(time_value, str):
-        try:
-            return datetime.fromisoformat(time_value.replace("Z", "+00:00"))
-        except (ValueError, AttributeError):
-            logger.warning(f"Could not convert string to datetime: {time_value}")
-            return None
-
-    # Try direct conversion for other types
-    try:
-        return datetime.fromtimestamp(float(time_value))
-    except (ValueError, TypeError, OverflowError):
-        logger.warning(
-            f"Could not convert value to datetime: {time_value} (type: {type(time_value)})"
-        )
-        return None
 
 
 class CohortOMOP:
@@ -184,7 +154,7 @@ class CohortOMOP:
                 continue
 
             # Ensure anchor_time is a datetime
-            anchor_time = _ensure_datetime(anchor_time)
+            anchor_time = ensure_datetime(anchor_time)
             if anchor_time is None:
                 filtered_events.append(events)
                 continue
@@ -193,7 +163,7 @@ class CohortOMOP:
             filtered_patient_events = []
             for event in events:
                 if self.time_field in event:
-                    event_time = _ensure_datetime(event[self.time_field])
+                    event_time = ensure_datetime(event[self.time_field])
                     if event_time is not None and event_time <= anchor_time:
                         filtered_patient_events.append(event)
                 else:
@@ -203,7 +173,7 @@ class CohortOMOP:
             # Sort events by time if present
             filtered_patient_events.sort(
                 key=lambda x: (
-                    _ensure_datetime(x.get(self.time_field))
+                    ensure_datetime(x.get(self.time_field))
                     if self.time_field in x
                     else datetime.min
                 )
@@ -301,6 +271,33 @@ class CohortOMOP:
 
         return filtered_ds, filtered_labels_dict, filtered_anchor_times
 
+    def _select_first_label_after_anchor(self, label_list, anchor_time):
+        """
+        From a list of label dicts, return a list containing only the first label whose prediction_time is >= anchor_time.
+        If none found, return an empty list.
+        """
+        if not label_list or anchor_time is None:
+            return []
+        for label in label_list:
+            pred_time = label.get("prediction_time")
+            logger.debug(f"Label: {label}")
+            logger.debug(f"Anchor time: {anchor_time}")
+            # Support both datetime and numeric anchor_time
+            if pred_time is not None:
+                # If both are datetime, compare directly
+                if hasattr(anchor_time, "isoformat") and hasattr(
+                    pred_time, "isoformat"
+                ):
+                    if pred_time >= anchor_time:
+                        return [label]
+                else:
+                    try:
+                        if float(pred_time) >= float(anchor_time):
+                            return [label]
+                    except Exception:
+                        continue
+        return []
+
     def apply_labelers(self, ds: Dataset) -> Tuple[Dict[str, List[Any]], List[Any]]:
         """
         Apply labelers in the following order based on LabelType:
@@ -318,7 +315,7 @@ class CohortOMOP:
         labeler_names = [
             getattr(labeler, "name", str(labeler)) for labeler in self.labelers
         ]
-        logger.debug(f"APPLY_LABELERS: Initial self.labelers: {labeler_names}")
+        logger.debug(f"Initial self.labelers: {labeler_names}")
 
         # Identify the anchor labeler and group other labelers by type
         labelers_by_type = {}
@@ -347,7 +344,7 @@ class CohortOMOP:
 
         # Log anchor labeler
         logger.info(
-            f"APPLY_LABELERS: Processing ANCHOR labeler: {anchor_labeler.name} (Type: {anchor_labeler.label_type})"
+            f"Processing ANCHOR labeler: {anchor_labeler.name} (Type: {anchor_labeler.label_type})"
         )
 
         # Check for empty dataset
@@ -366,17 +363,18 @@ class CohortOMOP:
 
         # Process each patient in a streaming-safe way
         for patient_idx, patient in enumerate(ds):
+            logger.debug(f"Processing patient {patient}")
             patient_id = patient.get(
                 self.primary_key, patient.get("patient_id", patient_idx)
             )
             logger.debug(
-                f"APPLY_LABELERS: Calling anchor labeler {anchor_labeler.name} for patient {patient_id}"
+                f"Calling anchor labeler {anchor_labeler.name} for patient {patient_id}"
             )
 
             # Get anchor labels for this patient
             anchor_labels = anchor_labeler.label(patient)
             logger.debug(
-                f"APPLY_LABELERS: Anchor labeler {anchor_labeler.name} for patient {patient_id} returned: {anchor_labels}"
+                f"Anchor labeler {anchor_labeler.name} for patient {patient_id} returned: {anchor_labels}"
             )
 
             # Extract anchor time
@@ -398,7 +396,9 @@ class CohortOMOP:
 
             # Apply all other labelers
             for _label_type, labelers in labelers_by_type.items():
+                logger.debug(f"Processing labeler type: {_label_type}")
                 for labeler in labelers:
+                    logger.debug(f"Processing labeler: {labeler.name}")
                     # Initialize the labeler's result list if needed
                     if labeler.name not in all_labels_by_type:
                         all_labels_by_type[labeler.name] = [[] for _ in range(len(ds))]
@@ -406,7 +406,15 @@ class CohortOMOP:
                     # Apply the labeler using the label() method
                     try:
                         labeler_results = labeler.label(patient)
-                        all_labels_by_type[labeler.name][patient_idx] = labeler_results
+                        logger.debug(f"Labeler results: {labeler_results}")
+
+                        # Select the first label after anchor time if applicable
+                        anchor_time = all_anchor_times[patient_idx]
+                        filtered_label = self._select_first_label_after_anchor(
+                            labeler_results, anchor_time
+                        )
+                        logger.debug(f"Filtered label: {filtered_label}")
+                        all_labels_by_type[labeler.name][patient_idx] = filtered_label
                     except Exception as e:
                         logger.error(
                             f"Error applying labeler {labeler.name} to patient {patient_id}: {e}"
@@ -414,9 +422,7 @@ class CohortOMOP:
                         all_labels_by_type[labeler.name][patient_idx] = []
 
         # Record metadata about completed labelers
-        logger.info(
-            f"APPLY_LABELERS: Finished processing for anchor labeler: {anchor_labeler.name}"
-        )
+        logger.info(f"Finished processing for anchor labeler: {anchor_labeler.name}")
         self._record_metadata(f"Applied labeler: {anchor_labeler.name}", ds)
 
         # Record metadata for other labelers
@@ -429,9 +435,7 @@ class CohortOMOP:
         for labeler_name, labels_for_all_patients in all_labels_by_type.items():
             labels_dict[labeler_name] = labels_for_all_patients
 
-        logger.debug(
-            f"APPLY_LABELERS: Returning labels_dict with keys: {list(labels_dict.keys())}"
-        )
+        logger.debug(f"Returning labels_dict with keys: {list(labels_dict.keys())}")
         return labels_dict, all_anchor_times
 
     def apply_competing_risk_censoring(
@@ -528,8 +532,6 @@ class CohortOMOP:
                         # Only consider competing events marked as true
                         if label.get("boolean_value"):
                             competing_time = label.get("prediction_time")
-
-                            # Store the raw competing time before normalization
 
                             # Convert datetime to relative time if needed
                             if competing_time is not None and isinstance(
