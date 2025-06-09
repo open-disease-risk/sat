@@ -16,7 +16,7 @@ labelers:
     competing_event: false
     label_type: anchor
     mode: first
-    max_time: 3650.0
+    max_time: "2023-12-31T23:59:59"
   
   # mortality (single-event)
   - _target_: sat.data.dataset.femr_extensions.labelers.CustomEventLabeler
@@ -25,7 +25,7 @@ labelers:
     competing_event: true
     label_type: outcome
     mode: first
-    max_time: 3650.0
+    max_time: "2023-12-31T23:59:59"
   
   # stroke (single-event)
   - _target_: sat.data.dataset.femr_extensions.labelers.CustomEventLabeler
@@ -34,7 +34,7 @@ labelers:
     competing_event: false
     label_type: outcome
     mode: all
-    max_time: 3650.0
+    max_time: "2023-12-31T23:59:59"
   
   # kidney failure (single-event)
   - _target_: sat.data.dataset.femr_extensions.labelers.CustomEventLabeler
@@ -43,7 +43,7 @@ labelers:
     competing_event: false
     label_type: outcome
     mode: all
-    max_time: 3650.0
+    max_time: "2023-12-31T23:59:59"
 
   # myocardial infarction (single-event)
   - _target_: sat.data.dataset.femr_extensions.labelers.CustomEventLabeler
@@ -52,4 +52,4 @@ labelers:
     competing_event: false
     label_type: outcome
     mode: all
-    max_time: 3650.0
+    max_time: "2023-12-31T23:59:59"
