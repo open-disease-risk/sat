@@ -15,6 +15,7 @@ labelers:
     event_codes: ["OMOP_ENROLLMENT"]
     competing_event: false
     label_type: anchor
+    mode: first
     max_time: 3650.0
   
   # mortality (single-event)
@@ -23,6 +24,7 @@ labelers:
     event_codes: ["OMOP_DEATH"]
     competing_event: true
     label_type: outcome
+    mode: first
     max_time: 3650.0
   
   # stroke (single-event)
@@ -31,6 +33,7 @@ labelers:
     event_codes: ["OMOP_STROKE", "ICD10:I63"]
     competing_event: false
     label_type: outcome
+    mode: all
     max_time: 3650.0
   
   # kidney failure (single-event)
@@ -39,6 +42,7 @@ labelers:
     event_codes: ["ICD10:N18"]
     competing_event: false
     label_type: outcome
+    mode: all
     max_time: 3650.0
 
   # myocardial infarction (single-event)
@@ -47,4 +51,5 @@ labelers:
     event_codes: ["OMOP_MI", "ICD10:I21"]
     competing_event: false
     label_type: outcome
+    mode: all
     max_time: 3650.0

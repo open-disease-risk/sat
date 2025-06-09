@@ -53,6 +53,7 @@ class CustomEventLabeler(CohortLabeler):
         time_window: Optional float specifying the time window for condition codes
         sequence_required: Whether condition must follow primary event
         time_unit: Unit for time differences ('days', 'hours', 'minutes', 'seconds', default: 'days')
+        mode: Mode for label generation ('all' or 'first')
 
     Note: Instantiate one labeler per event type (including competing events).
     When using time_window with datetime data, the time_unit determines how the
