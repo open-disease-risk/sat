@@ -5,3 +5,7 @@ processed_dir: ${base_dir}/data/
 name: ${dataset}
 seed: 42
 censoring_time: 1095  # Default 3 years (max follow-up in days)
+pre_enrollment_period: 365  # Default 1 year of pre-enrollment history (in days)
+min_post_enrollment_obs: 180  # Minimum days between enrollment and event/censoring
+max_obs_window: 1460  # Maximum days between enrollment and event/censoring (4 years)
+mortality_rate: 0.3

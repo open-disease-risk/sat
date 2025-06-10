@@ -112,18 +112,78 @@ OMOP_CODES = [
     {"code": "RxNorm:C09CA03", "description": "Valsartan"},
 ]
 
-# Define lab result codes
+# Define lab result codes with normal ranges
 LAB_CODES = [
-    {"code": "LOINC:2093-3", "description": "Cholesterol", "unit": "mg/dL"},
-    {"code": "LOINC:2571-8", "description": "Triglycerides", "unit": "mg/dL"},
-    {"code": "LOINC:2085-9", "description": "HDL Cholesterol", "unit": "mg/dL"},
-    {"code": "LOINC:2089-1", "description": "LDL Cholesterol", "unit": "mg/dL"},
-    {"code": "LOINC:2339-0", "description": "Glucose", "unit": "mg/dL"},
-    {"code": "LOINC:4548-4", "description": "Hemoglobin A1c", "unit": "%"},
-    {"code": "LOINC:2160-0", "description": "Creatinine", "unit": "mg/dL"},
-    {"code": "LOINC:3094-0", "description": "BUN", "unit": "mg/dL"},
-    {"code": "LOINC:2951-2", "description": "Sodium", "unit": "mmol/L"},
-    {"code": "LOINC:2823-3", "description": "Potassium", "unit": "mmol/L"},
+    {
+        "code": "LOINC:2093-3",
+        "description": "Cholesterol",
+        "unit": "mg/dL",
+        "normal_mean": 190,
+        "normal_std": 20,
+    },
+    {
+        "code": "LOINC:2571-8",
+        "description": "Triglycerides",
+        "unit": "mg/dL",
+        "normal_mean": 120,
+        "normal_std": 30,
+    },
+    {
+        "code": "LOINC:2085-9",
+        "description": "HDL Cholesterol",
+        "unit": "mg/dL",
+        "normal_mean": 55,
+        "normal_std": 10,
+    },
+    {
+        "code": "LOINC:2089-1",
+        "description": "LDL Cholesterol",
+        "unit": "mg/dL",
+        "normal_mean": 110,
+        "normal_std": 25,
+    },
+    {
+        "code": "LOINC:2339-0",
+        "description": "Glucose",
+        "unit": "mg/dL",
+        "normal_mean": 95,
+        "normal_std": 10,
+    },
+    {
+        "code": "LOINC:4548-4",
+        "description": "Hemoglobin A1c",
+        "unit": "%",
+        "normal_mean": 5.7,
+        "normal_std": 0.3,
+    },
+    {
+        "code": "LOINC:2160-0",
+        "description": "Creatinine",
+        "unit": "mg/dL",
+        "normal_mean": 0.9,
+        "normal_std": 0.2,
+    },
+    {
+        "code": "LOINC:3094-0",
+        "description": "BUN",
+        "unit": "mg/dL",
+        "normal_mean": 15,
+        "normal_std": 4,
+    },
+    {
+        "code": "LOINC:2951-2",
+        "description": "Sodium",
+        "unit": "mmol/L",
+        "normal_mean": 140,
+        "normal_std": 2,
+    },
+    {
+        "code": "LOINC:2823-3",
+        "description": "Potassium",
+        "unit": "mmol/L",
+        "normal_mean": 4.2,
+        "normal_std": 0.3,
+    },
 ]
 
 
@@ -133,6 +193,11 @@ class SyntheticOmopGenerator:
 
     This class creates a realistic synthetic dataset following the OMOP Common Data Model
     for use in testing and demonstration of survival analysis pipelines.
+
+    Enrollment logic:
+    - For each patient, event/censoring time is sampled.
+    - Enrollment is sampled so there is at least `min_post_enrollment_obs` days between enrollment and event/censoring, and at most `max_obs_window`.
+    - Pre-enrollment period is honored as before.
     """
 
     # Configuration parameters
@@ -143,6 +208,15 @@ class SyntheticOmopGenerator:
     censoring_time: int = 1095  # Default 3 years (max follow-up in days)
     pre_enrollment_period: int = (
         365  # Default 1 year of pre-enrollment history (in days)
+    )
+    min_post_enrollment_obs: int = (
+        180  # Minimum days between enrollment and event/censoring (increased for better observation window)
+    )
+    max_obs_window: int = (
+        1460  # Maximum days between enrollment and event/censoring (increased to 4 years)
+    )
+    mortality_rate: float = (
+        0.3  # Probability that a patient will die during observation (30% default)
     )
 
     # Data definitions
@@ -208,8 +282,8 @@ class SyntheticOmopGenerator:
         # Add birth date and enrollment date for each patient
         start_date = datetime(1940, 1, 1)
         end_date = datetime(2000, 12, 31)
-        enrollment_start = datetime(2018, 1, 1)
-        enrollment_end = datetime(2020, 12, 31)
+        datetime(2018, 1, 1)
+        datetime(2020, 12, 31)
 
         # Reset state dictionaries
         self._patient_birth_dates = {}
@@ -223,11 +297,8 @@ class SyntheticOmopGenerator:
             birth_date = start_date + timedelta(days=int(birth_offset))
             self._patient_birth_dates[patient_id] = birth_date
 
-            # Generate enrollment date
-            enrollment_days_range = (enrollment_end - enrollment_start).days
-            enrollment_offset = np.random.randint(0, enrollment_days_range)
-            enrollment_date = enrollment_start + timedelta(days=int(enrollment_offset))
-            self._patient_enrollment_dates[patient_id] = enrollment_date
+            # Do not assign enrollment date here; will be set during event generation
+            self._patient_enrollment_dates[patient_id] = None
 
             # Initialize patient data structure
             self._patient_derived_features[patient_id] = {}
@@ -242,17 +313,7 @@ class SyntheticOmopGenerator:
                     "string_value": birth_date.strftime("%Y-%m-%d"),
                 }
             )
-
-            # Add enrollment event with proper OMOP code
-            omop_data.append(
-                {
-                    "patient_id": patient_id,
-                    "time": enrollment_date,
-                    "code": "OMOP_ENROLLMENT",
-                    "numeric_value": None,
-                    "string_value": None,
-                }
-            )
+            # Enrollment event will be added in event generation
 
         # Add static categorical features
         for feature in self.categorical_covariates:
@@ -419,6 +480,12 @@ class SyntheticOmopGenerator:
     def generate_event_times(self):
         """Generate medical events for each patient in OMOP format.
 
+        Implements improved enrollment logic:
+        - Sample event_time (death/censoring) for each patient
+        - Sample enrollment_time to ensure at least min_post_enrollment_obs days between
+          enrollment and event/censoring, and at most max_obs_window days
+        - Generate events in pre-enrollment and post-enrollment periods
+
         Returns:
             List of OMOP-formatted events
         """
@@ -433,18 +500,122 @@ class SyntheticOmopGenerator:
             time = np.random.weibull(shape) / lambda_param
             return time
 
-        # Process each patient
-        for patient_id, enrollment_date in self._patient_enrollment_dates.items():
-            # Generate death time (if it occurs)
-            death_risk = self._patient_risk_scores[patient_id]["OMOP_DEATH"]
-            death_time_days = generate_time(death_risk)
+        # Process each patient with completely restructured enrollment-death timing logic
+        for patient_id in self._patient_enrollment_dates.keys():
+            # STEP 1: Create a baseline enrollment date with variability across patients
+            # Use a wide range (2015-2019) for enrollment base dates
+            base_year = 2015 + np.random.randint(0, 5)  # Random year between 2015-2019
+            base_month = np.random.randint(1, 13)  # Random month 1-12
+            base_day = np.random.randint(1, 29)  # Random day 1-28 (safe for all months)
+            enrollment_date = datetime(base_year, base_month, base_day)
 
-            # If death occurs within follow-up period
-            if death_time_days <= self.censoring_time:
-                death_date = enrollment_date + timedelta(days=int(death_time_days))
+            # STEP 2: Determine observation window length using a mixture model
+            # that emphasizes realistic post-enrollment observation periods
+            min_gap = self.min_post_enrollment_obs  # Minimum 180 days (6 months)
+            max_gap = self.max_obs_window  # Maximum 1460 days (4 years)
+
+            # Sample from carefully designed distributions:
+            # - Weighted toward medium-to-long observation periods
+            # - Some chance of very long observation periods
+            # - Never below minimum threshold
+            p = np.random.random()
+
+            if p < 0.5:  # 50%: Normal distribution centered toward longer periods
+                # Mean at 2 years (730 days), SD of ~6 months
+                mean_gap = min_gap + (max_gap - min_gap) * 0.75
+                std_gap = (max_gap - min_gap) * 0.2
+                gap = int(np.random.normal(mean_gap, std_gap))
+            elif p < 0.8:  # 30%: Uniform across most of the range
+                # Uniform between ~8 months and ~3.5 years
+                gap = int(np.random.uniform(min_gap * 1.3, max_gap * 0.9))
+            else:  # 20%: Long tail distribution
+                # Either short observation (1 year) or very long (up to 5 years)
+                if np.random.random() < 0.3:
+                    # Some shorter periods
+                    gap = int(np.random.uniform(min_gap, 365))
+                else:
+                    # Very long periods (up to 5 years)
+                    extended_max = 1825  # 5 years in days
+                    gap = int(np.random.uniform(max_gap, extended_max))
+
+            # Ensure minimum gap is respected
+            gap = max(gap, min_gap)
+
+            # STEP 3: Determine whether this patient will experience a death event at all
+            # First apply overall mortality rate as a filter
+            will_die_eventually = np.random.random() < self.mortality_rate
+
+            # STEP 4: For patients who will die, sample when they die based on risk
+            if will_die_eventually:
+                # Get the death risk score for this patient
+                death_risk = self._patient_risk_scores[patient_id]["OMOP_DEATH"]
+
+                # Create a more realistic distribution for death times
+                # We want to sample from a distribution that starts at min_gap and extends to gap
+                # with a shape influenced by the patient's risk score
+
+                # First, calculate the valid range for death time
+                death_time_range = gap - min_gap
+
+                if (
+                    death_time_range > 0
+                ):  # Only if there's space between min_gap and gap
+                    # Use a beta distribution for more natural distribution
+                    # Higher risk = more deaths closer to min_gap
+                    # Lower risk = more deaths spread throughout the range or closer to gap
+
+                    # Scale alpha/beta parameters based on risk (inverse relationship)
+                    # High risk -> alpha=1, beta=3 (skewed toward earlier deaths)
+                    # Low risk -> alpha=3, beta=1 (skewed toward later deaths)
+                    alpha = max(1.0, 4.0 - death_risk * 3.0)
+                    beta = max(1.0, death_risk * 3.0)
+
+                    # Sample from beta distribution [0,1] and scale to [min_gap, gap]
+                    beta_sample = np.random.beta(alpha, beta)
+                    death_time = min_gap + beta_sample * death_time_range
+                    death_occurs = True
+                else:
+                    # In the edge case where min_gap = gap, use exactly min_gap
+                    death_time = min_gap
+                    death_occurs = True
+            else:
+                # This patient will not die during observation
+                death_occurs = False
+                death_time = 0  # Not used but initialized for clarity
+
+            # STEP 5: Store enrollment date and create enrollment event
+            self._patient_enrollment_dates[patient_id] = enrollment_date
+            self._omop_events.append(
+                {
+                    "patient_id": patient_id,
+                    "time": enrollment_date,
+                    "code": "OMOP_ENROLLMENT",
+                    "numeric_value": None,
+                    "string_value": None,
+                }
+            )
+
+            # STEP 6: Add death event if it occurs within observation window
+            if death_occurs:
+                # Death occurs at enrollment + death_time, which was already constrained
+                # to be between min_gap and gap in our beta distribution sampling above
+                death_date = enrollment_date + timedelta(days=int(death_time))
+
+                # This sanity check is just a verification, should never actually trigger
+                # thanks to our improved death time calculation above
+                actual_days = (death_date - enrollment_date).days
+                if actual_days < min_gap:
+                    print(
+                        f"WARNING: Gap violation! Patient {patient_id}: {actual_days} days between enrollment and death"
+                    )
+                    # Force minimum gap if somehow it gets violated
+                    death_date = enrollment_date + timedelta(days=min_gap)
+                    death_time = min_gap
+
                 patient_death_times[patient_id] = death_date
+                gap = death_time  # Adjust gap to match death time
 
-                # Record death event in OMOP format
+                # Add death event
                 self._omop_events.append(
                     {
                         "patient_id": patient_id,
@@ -455,37 +626,36 @@ class SyntheticOmopGenerator:
                     }
                 )
 
-                # For this patient, other events can only occur before death
-                patient_max_time = death_time_days
-            else:
-                # Patient survived the entire follow-up period
-                patient_max_time = self.censoring_time
+            # STEP 7: Generate time-dependent measurements and events within observation window
+            # The observation window spans from (enrollment_date - pre_enrollment_period) to (enrollment_date + gap)
 
-            # Generate time-dependent measurements and events
-
-            # Define pre-enrollment period and post-enrollment period
+            # Define pre-enrollment and post-enrollment periods
             enrollment_date - timedelta(days=self.pre_enrollment_period)
+            enrollment_date + timedelta(days=gap)
+
+            # Calculate total observation time for event generation
+            total_time_days = gap + self.pre_enrollment_period
 
             # 1. Generate hospitalizations
             hospitalization_risk = self._patient_risk_scores[patient_id][
                 "HOSPITALIZATION"
             ]
-            # Number of hospitalizations depends on risk and total time (pre + post enrollment)
-            total_time_days = patient_max_time + self.pre_enrollment_period
+            # Number of hospitalizations depends on risk and total observation time
             num_hospitalizations = np.random.poisson(
                 max(0.5, hospitalization_risk / 50 * (total_time_days / 365))
             )
 
             for _ in range(num_hospitalizations):
-                # Generate hospitalization time (can be pre or post enrollment)
-                # Uniform distribution across entire timeline (pre-enrollment to end of follow-up)
-                hosp_time_offset = np.random.uniform(
-                    -self.pre_enrollment_period, patient_max_time
-                )
+                # Generate hospitalization time within the full observation window
+                # Time offset can be negative (pre-enrollment) or positive (post-enrollment)
+                hosp_time_offset = np.random.uniform(-self.pre_enrollment_period, gap)
                 hosp_date = enrollment_date + timedelta(days=int(hosp_time_offset))
 
-                # Generate length of stay (1-14 days)
-                length_of_stay = np.random.randint(1, 15)
+                # Generate length of stay (1-14 days, risk-adjusted)
+                base_stay = max(
+                    1, int(np.random.exponential(3)) + 1
+                )  # Right-skewed distribution
+                length_of_stay = min(base_stay, 14)  # Cap at 14 days
 
                 # Add hospitalization event
                 self._omop_events.append(
@@ -500,15 +670,21 @@ class SyntheticOmopGenerator:
 
             # 2. Generate diagnoses (ICD codes)
             diagnosis_risk = self._patient_risk_scores[patient_id]["DIAGNOSIS"]
+            # More diagnoses for higher-risk patients and longer observation periods
             num_diagnoses = np.random.poisson(
                 max(1, diagnosis_risk / 20 * (total_time_days / 365))
             )
 
             for _ in range(num_diagnoses):
-                # Generate diagnosis time (can be pre or post enrollment)
-                diag_time_offset = np.random.uniform(
-                    -self.pre_enrollment_period, patient_max_time
-                )
+                # Generate diagnosis time across observation period
+                # Distribution weighted slightly toward post-enrollment (60% post, 40% pre)
+                if np.random.random() < 0.6:
+                    # Post-enrollment diagnosis (more likely)
+                    diag_time_offset = np.random.uniform(0, gap)
+                else:
+                    # Pre-enrollment diagnosis
+                    diag_time_offset = np.random.uniform(-self.pre_enrollment_period, 0)
+
                 diag_date = enrollment_date + timedelta(days=int(diag_time_offset))
 
                 # Select a diagnosis code randomly
@@ -532,10 +708,15 @@ class SyntheticOmopGenerator:
             )
 
             for _ in range(num_medications):
-                # Generate medication time (can be pre or post enrollment)
-                med_time_offset = np.random.uniform(
-                    -self.pre_enrollment_period, patient_max_time
-                )
+                # Generate medication time
+                # Higher chance of medications post-enrollment (70% post, 30% pre)
+                if np.random.random() < 0.7:
+                    # Post-enrollment medication (more likely)
+                    med_time_offset = np.random.uniform(0, gap)
+                else:
+                    # Pre-enrollment medication
+                    med_time_offset = np.random.uniform(-self.pre_enrollment_period, 0)
+
                 med_date = enrollment_date + timedelta(days=int(med_time_offset))
 
                 # Select a medication randomly
@@ -548,7 +729,7 @@ class SyntheticOmopGenerator:
                         "time": med_date,
                         "code": med_info["code"],
                         "numeric_value": None,
-                        "string_value": med_info["description"],
+                        "string_value": None,
                     }
                 )
 
@@ -560,9 +741,7 @@ class SyntheticOmopGenerator:
 
             for _ in range(num_labs):
                 # Generate lab time (can be pre or post enrollment)
-                lab_time_offset = np.random.uniform(
-                    -self.pre_enrollment_period, patient_max_time
-                )
+                lab_time_offset = np.random.uniform(-self.pre_enrollment_period, gap)
                 lab_date = enrollment_date + timedelta(days=int(lab_time_offset))
 
                 # Select a lab test randomly
@@ -570,14 +749,22 @@ class SyntheticOmopGenerator:
 
                 # Generate a value with some random variation
                 # Randomly determine if value should be normal or abnormal
-                if np.random.random() < 0.3:  # 30% chance of abnormal
-                    base_value = self.get_abnormal_lab_value(lab_info["code"])
-                    variation = np.random.normal(0, base_value * 0.1)  # 10% variation
-                else:
-                    base_value = self.get_normal_lab_value(lab_info["code"])
-                    variation = np.random.normal(0, base_value * 0.05)  # 5% variation
-
-                lab_value = max(0, base_value + variation)
+                if np.random.random() < 0.8:  # 80% normal values
+                    value = np.random.normal(
+                        lab_info["normal_mean"], lab_info["normal_std"]
+                    )
+                else:  # 20% abnormal values
+                    # Abnormal values are more extreme (either higher or lower)
+                    if np.random.random() < 0.5:  # Higher than normal
+                        value = np.random.normal(
+                            lab_info["normal_mean"] + 2 * lab_info["normal_std"],
+                            lab_info["normal_std"],
+                        )
+                    else:  # Lower than normal
+                        value = np.random.normal(
+                            lab_info["normal_mean"] - 2 * lab_info["normal_std"],
+                            lab_info["normal_std"],
+                        )
 
                 # Add lab result event
                 self._omop_events.append(
@@ -585,7 +772,7 @@ class SyntheticOmopGenerator:
                         "patient_id": patient_id,
                         "time": lab_date,
                         "code": lab_info["code"],
-                        "numeric_value": float(lab_value),
+                        "numeric_value": float(value),
                         "string_value": lab_info["unit"],
                     }
                 )
@@ -594,14 +781,17 @@ class SyntheticOmopGenerator:
             for feature in self.numerical_covariates:
                 if feature["time_dependent"]:
                     # Number of measurements based on follow-up time (roughly quarterly)
-                    num_measurements = max(
-                        1, int(patient_max_time / 90) + np.random.randint(0, 3)
-                    )
+                    num_measurements = max(1, int(gap / 90) + np.random.randint(0, 3))
 
-                    # Generate each measurement
                     for _ in range(num_measurements):
-                        # Generate measurement time
-                        measure_time_days = np.random.uniform(0, patient_max_time)
+                        # Generate measurement time (mostly post-enrollment)
+                        if np.random.random() < 0.8:  # 80% post-enrollment
+                            measure_time_days = np.random.uniform(0, gap)
+                        else:  # 20% pre-enrollment
+                            measure_time_days = np.random.uniform(
+                                -self.pre_enrollment_period, 0
+                            )
+
                         measure_date = enrollment_date + timedelta(
                             days=int(measure_time_days)
                         )
@@ -614,12 +804,10 @@ class SyntheticOmopGenerator:
                             value = value + feature["skew"] * np.abs(
                                 np.random.normal(0, 1)
                             )
-                        else:
+                        else:  # uniform
                             value = np.random.uniform(feature["min"], feature["max"])
 
-                        # Randomly add some variation to vitals
-                        # We'll use a random factor to simulate some patients having
-                        # higher or lower measurements without explicitly tracking conditions
+                        # Get patient factor for health variation
                         patient_factor = self._patient_derived_features[patient_id].get(
                             "random_health_factor", np.random.normal(0, 1)
                         )
@@ -656,11 +844,12 @@ class SyntheticOmopGenerator:
                                 "time": measure_date,
                                 "code": feature["code"],
                                 "numeric_value": float(value),
-                                "string_value": None,
+                                "string_value": feature.get("unit", None),
                             }
                         )
 
-        return self._omop_events
+        # Return the death times for each patient
+        return patient_death_times
 
     def log_statistics(self):
         """Print summary statistics for the generated data."""
