@@ -133,6 +133,8 @@ class CustomEventLabeler(CohortLabeler):
     def label(self, patient: Patient) -> List[ExtendedLabel]:
         """Label a patient based on the event codes and conditions."""
         labels = []
+
+        # First, find any matching events based on criteria
         for event in patient["events"]:
             event[self.time_field] = ensure_datetime(event[self.time_field])
         for event in patient["events"]:
@@ -178,31 +180,45 @@ class CustomEventLabeler(CohortLabeler):
                             competing_event=self.competing_event,
                         )
                     )
+
+        # Calculate a reasonable censor time based on patient events
+        last_observed_time = self.max_time  # Default to max_time
+        if patient["events"]:
+            valid_times = [
+                event[self.time_field]
+                for event in patient["events"]
+                if event[self.time_field] is not None
+            ]
+            if valid_times:
+                last_observed_time = max(valid_times)
+
+        # If no event labels were found, add a censoring at last observation time
         if not labels:
-            if patient["events"]:
-                valid_times = [
-                    event[self.time_field]
-                    for event in patient["events"]
-                    if event[self.time_field] is not None
-                ]
-                last_event_time = max(valid_times) if valid_times else self.max_time
-                labels.append(
-                    ExtendedLabel(
-                        event_category=self.name,
-                        label_type=self.label_type,
-                        prediction_time=last_event_time,
-                        boolean_value=False,
-                        competing_event=self.competing_event,
-                    )
+            labels.append(
+                ExtendedLabel(
+                    event_category=self.name,
+                    label_type=self.label_type,
+                    prediction_time=last_observed_time,
+                    boolean_value=False,
+                    competing_event=self.competing_event,
                 )
-            else:
-                labels.append(
-                    ExtendedLabel(
-                        event_category=self.name,
-                        label_type=self.label_type,
-                        prediction_time=self.max_time,
-                        boolean_value=False,
-                        competing_event=self.competing_event,
-                    )
+            )
+
+        # ALWAYS add a guaranteed max_time label to ensure something survives anchor time filtering
+        # Only add if we don't already have a label at max_time
+        has_max_time_label = any(
+            label["prediction_time"] == self.max_time for label in labels
+        )
+        if not has_max_time_label:
+            # Add a "guaranteed" censoring label at max_time that will survive any anchor time filtering
+            labels.append(
+                ExtendedLabel(
+                    event_category=self.name,
+                    label_type=self.label_type,
+                    prediction_time=self.max_time,
+                    boolean_value=False,  # Always censored
+                    competing_event=self.competing_event,
                 )
+            )
+
         return labels
