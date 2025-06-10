@@ -276,8 +276,13 @@ class CohortOMOP:
         From a list of label dicts, return a list containing only the first label whose prediction_time is >= anchor_time.
         If none found, return an empty list.
         """
-        if not label_list or anchor_time is None:
-            return []
+        assert (
+            label_list is not None
+        ), f"label_list should not be None, got {label_list}"
+        assert (
+            anchor_time is not None
+        ), f"anchor_time should not be None, got {anchor_time}"
+
         for label in label_list:
             pred_time = label.get("prediction_time")
             logger.debug(f"Label: {label}")
@@ -296,7 +301,6 @@ class CohortOMOP:
                             return [label]
                     except Exception:
                         continue
-        return []
 
     def apply_labelers(self, ds: Dataset) -> Tuple[Dict[str, List[Any]], List[Any]]:
         """
@@ -413,6 +417,16 @@ class CohortOMOP:
                         filtered_label = self._select_first_label_after_anchor(
                             labeler_results, anchor_time
                         )
+                        assert (
+                            filtered_label is not None
+                        ), f"filtered_label should not be None, got {filtered_label}"
+                        assert isinstance(
+                            filtered_label, list
+                        ), f"filtered_label should be a list, got {filtered_label}"
+                        assert (
+                            len(filtered_label) == 1
+                        ), f"filtered_label should be a list of length 1, got {filtered_label}"
+
                         logger.debug(f"Filtered label: {filtered_label}")
                         all_labels_by_type[labeler.name][patient_idx] = filtered_label
                     except Exception as e:
@@ -456,14 +470,12 @@ class CohortOMOP:
             Tuple of (labels_dict, anchor_times) with updated values based on competing risk logic
         """
         if not labels_dict or not anchor_times:
-            logger.warning(
-                "apply_competing_risk_censoring: No labels_dict or anchor_times provided."
-            )
+            logger.warning("No labels_dict or anchor_times provided.")
             return labels_dict, anchor_times
 
         # Log input data structure
         logger.info(
-            f"APPLY_COMPETING_RISK_CENSORING CALLED. labels_dict keys: {list(labels_dict.keys())}, num_patients: {len(next(iter(labels_dict.values()), []))}"
+            f"labels_dict keys: {list(labels_dict.keys())}, num_patients: {len(next(iter(labels_dict.values()), []))}"
         )
 
         # Initialize dictionaries for outcome and competing labels
@@ -509,9 +521,7 @@ class CohortOMOP:
 
         # If no outcome or competing labels, return original data
         if not outcome_labels_dict and not competing_labels_dict:
-            logger.warning(
-                "apply_competing_risk_censoring: No outcome or competing labels found."
-            )
+            logger.warning("No outcome or competing labels found.")
             return labels_dict, anchor_times
 
         # Process each patient
