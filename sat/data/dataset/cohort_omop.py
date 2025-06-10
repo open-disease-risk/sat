@@ -127,6 +127,11 @@ class CohortOMOP:
 
         Returns:
             Dataset with filtered events
+
+        Note:
+            This implementation reconstructs the Dataset using from_dict after filtering the 'events' column.
+            This is not the most efficient approach for large datasets. In the future, consider refactoring
+            to use the HuggingFace Dataset.map API for a more efficient, native column-wise operation. (TODO)
         """
         if "events" not in ds.column_names:
             logger.warning(
@@ -162,21 +167,16 @@ class CohortOMOP:
             # Filter events that occur at or before the anchor time
             filtered_patient_events = []
             for event in events:
-                if self.time_field in event:
-                    event_time = ensure_datetime(event[self.time_field])
-                    if event_time is not None and event_time <= anchor_time:
-                        filtered_patient_events.append(event)
-                else:
-                    # Keep events without a time field
+                event_time = ensure_datetime(event.get(self.time_field))
+                if event_time is None:
+                    # Keep events with no time or unparseable/None time
+                    filtered_patient_events.append(event)
+                elif event_time <= anchor_time:
                     filtered_patient_events.append(event)
 
-            # Sort events by time if present
+            # Sort events by time; untimed or unparseable events are sorted first
             filtered_patient_events.sort(
-                key=lambda x: (
-                    ensure_datetime(x.get(self.time_field))
-                    if self.time_field in x
-                    else datetime.min
-                )
+                key=lambda x: ensure_datetime(x.get(self.time_field)) or datetime.min
             )
 
             filtered_events.append(filtered_patient_events)

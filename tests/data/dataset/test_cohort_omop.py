@@ -349,6 +349,53 @@ def test_truncate_events_at_anchor_with_integer_times():
     assert ds_truncated_some["events"][1] == expected_events_p1
 
 
+def test_truncate_events_at_anchor_keeps_untimed_events():
+    # Create a dummy dataset with one patient and three events:
+    # - One event before anchor
+    # - One event after anchor
+    # - One event with no time field (e.g., demographics)
+    patient_events = [
+        {
+            "time": 5,
+            "code": "OMOP_ENROLLMENT",
+            "numeric_value": None,
+            "string_value": None,
+        },  # before anchor
+        {
+            "time": 15,
+            "code": "OMOP_DEATH",
+            "numeric_value": None,
+            "string_value": None,
+        },  # after anchor
+        {
+            "code": "DEMOGRAPHICS",
+            "string_value": "F",
+            "numeric_value": None,
+        },  # no time field
+    ]
+    ds = Dataset.from_dict(
+        {
+            "patient_id": [1],
+            "events": [[event.copy() for event in patient_events]],
+        }
+    )
+    anchor_times = [10]  # anchor between first and second event
+    cohort = CohortOMOP(source=None, labelers=[])
+    ds_truncated = cohort.truncate_events_at_anchor(anchor_times, ds)
+    truncated_events = ds_truncated["events"][0]
+
+    # Should keep the first (time=5) and untimed event, filter out time=15
+    assert any(
+        e.get("code") == "OMOP_ENROLLMENT" for e in truncated_events
+    ), "Event before anchor should be kept"
+    assert any(
+        e.get("code") == "DEMOGRAPHICS" for e in truncated_events
+    ), "Untimed event should be kept"
+    assert not any(
+        e.get("time") == 15 for e in truncated_events
+    ), "Event after anchor should be filtered out"
+
+
 def test_truncate_events_at_anchor_no_effect_if_anchor_late():
     ds = make_dummy_dataset(force_integer_times=True)
     # Anchor times are very late, so all events should remain.
