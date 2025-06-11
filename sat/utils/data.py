@@ -104,7 +104,7 @@ class LabelTransform:
             if isinstance(durations[0], np.floating):
                 self._dtype = durations.dtype
             else:
-                self._dtype = np.dtype("float64")
+                self._dtype = np.dtype("float32")
         # durations = durations.astype(self._dtype)
         # self.cuts = make_cuts(self._cuts, self._scheme, durations, events, self._min, self._dtype)
         self.duc = DiscretizeUnknownC(self.cuts, right_censor=True, censor_side="right")
