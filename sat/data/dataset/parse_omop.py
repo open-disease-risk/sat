@@ -15,7 +15,6 @@ __status__ = "Development"
 
 import datetime
 import json
-import logging
 import os
 from dataclasses import dataclass
 from functools import partial
@@ -28,9 +27,9 @@ from datasets import Dataset, Features, Sequence, Value, load_dataset
 from datasets.arrow_dataset import ArrowWriter
 from logdecorator import log_on_end, log_on_error, log_on_start
 
-from sat.utils import logging
+from sat.utils.logging import get_default_logger
 
-logger = logging.get_default_logger()
+logger = get_default_logger()
 
 
 # Custom JSON encoder to handle datetime objects and other non-serializable types
@@ -125,16 +124,26 @@ class omop:
         )
 
         # Load the source dataset for streaming
-        logger.info(f"Streaming and processing cohort data from {self.source}")
+        logger.info(f"Processing cohort data from {self.source}")
         try:
-            source_ds = load_dataset(
-                "parquet", data_files=self.source, split="train", streaming=True
-            )
+            # Check if source is a directory (HuggingFace Arrow format) or a parquet file
+            if Path(self.source).is_dir():
+                logger.info(f"Loading dataset from HuggingFace Arrow directory: {self.source}")
+                # Load from directory using HuggingFace's Dataset.load_from_disk
+                source_dataset = Dataset.load_from_disk(self.source)
+                # Convert to streaming dataset for consistent processing
+                source_ds = source_dataset.to_iterable_dataset()
+            else:
+                # Fallback to parquet loading for backward compatibility
+                logger.info(f"Loading dataset from Parquet file: {self.source}")
+                source_ds = load_dataset(
+                    "parquet", data_files=self.source, split="train", streaming=True
+                )
         except Exception as e:
             logger.error(f"Failed to load dataset: {e}")
             raise
 
-        # Define the features for the TRANSFORMED data
+        # First define the core features we always need
         transformed_data_schema = {
             self.primary_key: Value("int64"),
             "x": Value("string"),
@@ -142,7 +151,79 @@ class omop:
             "numerics": Sequence(Value("float32")),
             "time": Sequence(Value("int32")),
             "string_values": Sequence(Value("string")),
+            # Add newly structured fields for survival analysis
+            "events": Sequence(Value("int8")),  # Binary indicators for each outcome
+            "durations": Sequence(Value("float32")),  # Time to event or censoring for each outcome
+            "outcomes": Sequence(Value("string")),  # Names of the outcomes being tracked
+            "anchor_time": Value("string", id=None),  # Reference time point
         }
+        
+        # Add all potential fields by examining the source data and doing a dummy transformation
+        try:
+            # Get a sample from the source dataset for schema inspection
+            sample_example = None
+            if Path(self.source).is_dir():
+                sample_ds = Dataset.load_from_disk(self.source)
+                if len(sample_ds) > 0:
+                    sample_example = sample_ds[0]
+            elif self.source.endswith('.parquet'):
+                sample_ds = load_dataset("parquet", data_files=self.source, split="train[0:1]")
+                if len(sample_ds) > 0:
+                    sample_example = sample_ds[0]
+                    
+            if sample_example:
+                # Do a dry-run transformation to see all fields that will be added
+                dummy_transformed = transform_to_sat_format(
+                    sample_example,
+                    primary_key=self.primary_key,
+                    time_field=self.time_field,
+                    code_stats=code_stats,
+                    scale_numerics=self.scale_numerics,
+                    scale_method=self.scale_method,
+                    min_scale_numerics=self.min_scale_numerics,
+                )
+                
+                # Add all fields from the transformation result to our schema
+                for key, value in dummy_transformed.items():
+                    if key not in transformed_data_schema:
+                        if key == self.primary_key:
+                            # Already added
+                            continue
+                        elif key == "x":
+                            # Already added 
+                            continue
+                        elif key == "modality" or key == "numerics" or key == "time" or key == "string_values":
+                            # Already added as sequences
+                            continue
+                        elif isinstance(value, (int, np.integer)):
+                            transformed_data_schema[key] = Value("int32")
+                            logger.info(f"Adding integer field '{key}' to schema")
+                        elif isinstance(value, (float, np.float_)):
+                            transformed_data_schema[key] = Value("float32")
+                            logger.info(f"Adding float field '{key}' to schema")  
+                        elif isinstance(value, (str, bytes)):
+                            transformed_data_schema[key] = Value("string")
+                            logger.info(f"Adding string field '{key}' to schema")
+                        elif isinstance(value, bool):
+                            transformed_data_schema[key] = Value("bool")
+                            logger.info(f"Adding boolean field '{key}' to schema")
+                        else:
+                            # Default to string for any other type
+                            transformed_data_schema[key] = Value("string")
+                            logger.info(f"Adding field '{key}' with default string type to schema")
+                
+            logger.debug(f"Final schema includes fields: {list(transformed_data_schema.keys())}")
+        except Exception as e:
+            logger.warning(f"Could not build complete schema: {e}. Will continue with basic schema.")
+            # Add the most common survival-related fields
+            transformed_data_schema.update({
+                "duration": Value("float32"),
+                "event": Value("int32"),
+                "event_type": Value("string"),
+                "competing_event": Value("int32"),
+                "anchor_time": Value("string"),
+            })
+        
 
         transformed_features = Features(transformed_data_schema)
         logger.debug(f"ArrowWriter will use features: {transformed_features}")
@@ -264,7 +345,7 @@ class omop:
 
             try:
                 shutil.move(str(temp_dir), str(out_dir))
-            except:
+            except OSError:
                 shutil.copytree(str(temp_dir), str(out_dir), dirs_exist_ok=True)
                 shutil.rmtree(str(temp_dir), ignore_errors=True)
 
@@ -361,10 +442,17 @@ def compute_code_statistics(
     # Initialize statistics containers
     code_values = {}
 
-    # Stream the dataset
-    ds = load_dataset("parquet", data_files={"train": source_path}, streaming=True)[
-        "train"
-    ]
+    # Stream the dataset - handle HuggingFace's Arrow directory structure
+    from pathlib import Path
+    
+    if Path(source_path).is_dir():
+        # Load directly from the HuggingFace dataset directory
+        ds = Dataset.load_from_disk(source_path)
+        # Convert to streaming iterator for consistent API
+        ds = ds.to_iterable_dataset()
+    else:
+        # Fallback for parquet files (though we expect directories now)
+        ds = load_dataset("parquet", data_files={"train": source_path}, streaming=True)["train"]
 
     # Process each example to collect values for each code
     for example in ds:
@@ -553,11 +641,50 @@ def transform_to_sat_format(
         "string_values": string_values,  # Add string_values to the result
     }
 
-    # Copy any outcome/target variables that might be present
-    # (already processed by cohort_omop.py)
-    for field in ["duration", "event", "event_type", "competing_event"]:
-        if field in example:
-            result[field] = example[field]
+    # Add anchor_time for reference - other fields will be restructured
+    if "anchor_time" in example:
+        result["anchor_time"] = example["anchor_time"]
+        
+    # Process label columns to create events, durations, and outcomes lists
+    events = []
+    durations = []
+    outcomes = []
+    
+    # Extract all label columns (those starting with "labels_")
+    for key in example.keys():
+        if key.startswith("labels_"):
+            # Extract the outcome name without the "labels_" prefix
+            outcome_name = key[7:]
+            outcomes.append(outcome_name)
+            
+            label_value = example[key]
+            event_value = 0  # Default to 0 (no event)
+            duration_value = None  # Default duration
+            
+            # Assuming the standard structure from cohort_omop.py:
+            # - Labels are lists of ExtendedLabel objects with boolean_value and prediction_time
+            if isinstance(label_value, list) and label_value:
+                first_label = label_value[0]
+                # Get boolean_value (event occurred or not)
+                if hasattr(first_label, "boolean_value"):
+                    event_value = 1 if first_label.boolean_value else 0
+                elif isinstance(first_label, dict):
+                    event_value = 1 if first_label.get("boolean_value", False) else 0
+                
+                # Get prediction_time (time to event or censoring)
+                if hasattr(first_label, "prediction_time"):
+                    duration_value = first_label.prediction_time
+                elif isinstance(first_label, dict):
+                    duration_value = first_label.get("prediction_time")
+                
+            # Add the values to our lists
+            events.append(event_value)
+            durations.append(duration_value if duration_value is not None else 0)
+    
+    # Add the structured fields to the result
+    result["events"] = events
+    result["durations"] = durations
+    result["outcomes"] = outcomes
 
     logger.debug(
         f"transform_to_sat_format: For patient {patient_id}, returning result with keys: {list(result.keys())}"
