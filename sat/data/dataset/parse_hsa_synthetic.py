@@ -123,8 +123,12 @@ class hsa:
             df_features.at[index, "numerics"] = utils.numerics(
                 df_features.iloc[index], modality
             )
+            
+        # Create the modality column - first create an empty column with object type
+        df_features.loc[:, "modality"] = ""
         df_features.loc[:, "modality"] = df_features.loc[:, "modality"].astype("object")
-
+        
+        # Then set the modality value for each row
         for index, _ in df_features.iterrows():
             df_features.at[index, "modality"] = modality
 
