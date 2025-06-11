@@ -1,5 +1,5 @@
 _target_: sat.data.dataset.parse_omop.omop
-source: ${modelhub}/cohort/${dataset}/cohort.parquet
+source: ${modelhub}/cohort/${dataset}/
 processed_dir: ${modelhub}
 scale_method: standard
 scale_numerics: true

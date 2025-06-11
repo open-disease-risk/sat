@@ -7,7 +7,7 @@ data:
   perform_split: true
   split_col: split
   id_col: patient_id
-  duration_col: time
+  duration_col: durations
   event_col: events
   modality_col: modality
   numerics_col: numerics
