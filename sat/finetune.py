@@ -16,6 +16,7 @@ from logdecorator import log_on_end, log_on_error, log_on_start
 from omegaconf import DictConfig
 from tokenizers.processors import TemplateProcessing
 from transformers import PreTrainedTokenizerFast, Trainer, TrainingArguments
+from transformers.data.data_collator import DefaultDataCollator
 from transformers.integrations import TensorBoardCallback
 
 from sat.callbacks import LossWeightLoggerCallback
@@ -27,6 +28,10 @@ from sat.transformers import trainer as satrain
 from sat.transformers.feature_extractor import SAFeatureExtractor
 from sat.utils import config, logging, rand, tokenizing
 from sat.utils.output import write_output
+
+# Set default tensor type to float32 for MPS compatibility
+# This must be set before any other imports that might create tensors
+torch.set_default_dtype(torch.float32)
 
 logger = logging.get_default_logger()
 
@@ -159,9 +164,16 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
             num_proc=None,  # Parallel processing for label mapping
         )
 
-        # Process numerics if present
-        if "numerics" in mapped_labels_dataset.column_names[cfg.data.splits[0]]:
-            logger.debug("Numerics present, so processing padding/truncation")
+        # Process numerics and modality if present
+        variable_fields = []
+        for field in ["numerics", "modality"]:
+            if field in mapped_labels_dataset.column_names[cfg.data.splits[0]]:
+                variable_fields.append(field)
+
+        if variable_fields:
+            logger.debug(
+                f"Variable-length fields detected: {variable_fields}, processing padding/truncation"
+            )
 
             # Cache for numerics processing
             numerics_cache_dir = (
@@ -180,7 +192,7 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
                     "padding_direction": cfg.tokenizers.padding_args.direction,
                     "token_emb": cfg.token_emb,
                 },
-                num_proc=None,  # Parallel processing for numerics padding/truncation
+                num_proc=None,  # No parallel processing for better error diagnostics
             )
 
         logger.debug(f"labels mapped in dataset: {mapped_labels_dataset}")
@@ -241,9 +253,30 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
         args.output_dir = args.output_dir + fold_part + "/" + cfg.run_id
 
     # Configure trainer kwargs
+    # Prune dataset columns to avoid collator errors (keep only columns needed for model)
+    columns_to_keep = [
+        "input_ids",
+        "attention_mask",
+        "events",
+        "durations",
+        "labels",
+        "numerics",
+        "modality",
+        "token_type_ids",
+    ]
+    for split in mapped_labels_dataset.keys():
+        mapped_labels_dataset[split] = mapped_labels_dataset[split].remove_columns(
+            [
+                col
+                for col in mapped_labels_dataset[split].column_names
+                if col not in columns_to_keep
+            ]
+        )
+
     trainer_kwargs = {
         "model": model,
         "args": args,
+        "data_collator": DefaultDataCollator(),
         "train_dataset": mapped_labels_dataset["train"],
         "eval_dataset": mapped_labels_dataset["valid"],
         "compute_metrics": compute_metrics,
