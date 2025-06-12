@@ -115,39 +115,6 @@ brier_scores_np : array-like or empty list
 class BrierScore(evaluate.Metric):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Initialize the torchsurv BrierScore calculator once
-        self._brier_scorer = TorchsurvBrierScore()
-
-        # Initialize cache
-        self._tensor_cache = {}
-
-    def _get_tensor(self, data, key, is_event=False):
-        """Convert data to appropriate tensors and cache them"""
-        cache_key = f"{key}_{id(data)}_{len(data)}"
-
-        if cache_key in self._tensor_cache:
-            return self._tensor_cache[cache_key]
-
-        # Extract event indicators and times from data
-        if isinstance(data[0], dict):
-            if is_event:
-                arr = np.array([x["e"] for x in data])
-            else:  # time
-                arr = np.array([x["t"] for x in data])
-        else:
-            # Assume data is a list of (event, time) tuples
-            if is_event:
-                arr = np.array([x[0] for x in data])
-            else:  # time
-                arr = np.array([x[1] for x in data])
-
-        # Convert to tensor
-        dtype = torch.bool if is_event else torch.float32
-        tensor = to_tensor(arr, dtype=dtype)
-
-        # Cache result
-        self._tensor_cache[cache_key] = tensor
-        return tensor
 
     def _info(self):
         return evaluate.MetricInfo(
@@ -201,6 +168,8 @@ class BrierScore(evaluate.Metric):
             logger.debug(f"  Predictions (preds): {preds.shape}")
             logger.debug(f"  Eval times: {times.shape}")
 
+        brier_scorer = TorchsurvBrierScore()
+
         # Compute IPCWs from the test set itself
         test_ipcw = get_ipcw(e_test, t_test)  # ipcw at time
         test_ipcw_new_time = get_ipcw(e_test, t_test, times)  # ipcw at new time
@@ -213,7 +182,7 @@ class BrierScore(evaluate.Metric):
 
         try:
             # Compute Brier scores using torchsurv with test-based weights
-            brier_scores = self._brier_scorer(
+            brier_scores = brier_scorer(
                 estimate=preds,
                 event=e_test,
                 time=t_test,
@@ -227,7 +196,7 @@ class BrierScore(evaluate.Metric):
 
         # For integrated Brier score, use the built-in integral method
         # Note: this will use the weights that were provided in the previous call
-        ibs = self._brier_scorer.integral()
+        ibs = brier_scorer.integral()
         integrated_bs = float(ibs.cpu().item())
 
         # Convert to numpy arrays for the evaluate API
@@ -235,10 +204,6 @@ class BrierScore(evaluate.Metric):
             bs_numpy = brier_scores.cpu().numpy()
         else:
             bs_numpy = []
-
-        # Clear cache if needed
-        if len(self._tensor_cache) > 20:
-            self._tensor_cache.clear()
 
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f"Computed brier scores: {bs_numpy}")
