@@ -1,57 +1,207 @@
-# Synthetic OMOP Data Generation
+# Synthetic OMOP Data Generation Pipeline
 
-This document describes how to generate synthetic OMOP (Observational Medical Outcomes Partnership) data for testing and development of survival analysis models.
+This document describes the recommended, configuration-driven pipeline for generating, processing, and preparing synthetic OMOP (Observational Medical Outcomes Partnership) data for SAT survival analysis workflows.
 
-## Overview
+## Pipeline Overview
 
-The `SyntheticOmopGenerator` class creates realistic synthetic patient data following the OMOP Common Data Model (CDM) schema. This data can be used for:
+The synthetic OMOP data preparation pipeline consists of three main stages, each controlled by a dedicated YAML configuration file:
 
-- Testing survival analysis models
-- Developing new algorithms
-- Benchmarking performance
-- Demonstrations and tutorials
+1. **Generate OMOP Data**: Create synthetic patient event data in OMOP format.
+2. **Create Cohort**: Build a labeled cohort suitable for survival analysis using event-based labelers.
+3. **Parse into SAT Format**: Convert the cohort to the SAT format for model training and evaluation.
 
-## Usage
+Each stage is invoked using a single command and a corresponding config file, ensuring reproducibility and modularity. See below for details on each step.
 
-### Using Hydra Configuration
+---
 
-The generator is fully compatible with Hydra configuration. To generate data using Hydra:
+## 1. Generate Synthetic OMOP Data
 
+**Command:**
 ```bash
-# Use the default configuration
-python -m sat.prepare_data experiments=synthetic_omop/survival dataset=synthetic_omop
-
-# Specify custom parameters
-python -m sat.prepare_data experiments=synthetic_omop/survival dataset=synthetic_omop data.parse.synthetic_omop.num_patients=5000 data.parse.synthetic_omop.seed=123
+poetry run python -m sat.prepare_data experiments=synthetic_omop/survival data/parse=synthetic_omop_generate
 ```
 
-### Using Direct Python Import
+**Config:** [`conf/data/parse/synthetic_omop_generate.yaml`](../conf/data/parse/synthetic_omop_generate.yaml)
 
-You can also use the generator directly in your Python code:
+**Purpose:**
+- Generates a realistic, large-scale synthetic OMOP CDM dataset with configurable demographics, event types, and observation windows.
+- Output includes event data, code definitions, subject splits, and metadata.
 
-```python
-from sat.data.dataset.generate_synthetic_omop import SyntheticOmopGenerator
+**Key Config Parameters:**
+- `num_patients`: Number of patients to generate (default: 10,000)
+- `censoring_time`: Maximum follow-up time (days)
+- `pre_enrollment_period`: Pre-enrollment history window (days)
+- `mortality_rate`: Fraction of patients who die during observation
+- `min_post_enrollment_obs`, `max_obs_window`: Control enrollment/event time logic
 
-# Create generator with default settings
-generator = SyntheticOmopGenerator(
-    num_patients=10000,
-    output_path="synthetic_omop",
-    seed=42,
-    censoring_time=1095  # 3 years
-)
+**Relevant Implementation:**
+- [`generate_synthetic_omop.py`](../sat/data/dataset/generate_synthetic_omop.py): Implements the generator logic, event simulation, and OMOP-compatible output.
 
-# Generate data
-output_dir = generator.generate_all()
-print(f"Data generated at: {output_dir}")
+**Output Structure:**
+```
+synthetic_omop/
+  ├── data/
+  │   └── patients_with_events.parquet   # Main event data
+  ├── codes.parquet                      # Code definitions
+  ├── subject_splits.parquet             # Train/test splits
+  └── _metadata.json                     # Dataset metadata
 ```
 
-### Command Line Interface
+---
 
-For quick generation without Hydra, use the command-line interface:
+## 2. Create Cohort
 
+**Command:**
 ```bash
-python -m sat.data.dataset.generate_synthetic_omop --num_patients 5000 --output synthetic_omop --seed 123
+poetry run python -m sat.prepare_data experiments=synthetic_omop/survival data/parse=synthetic_omop_cohort
 ```
+
+**Config:** [`conf/data/parse/synthetic_omop_cohort.yaml`](../conf/data/parse/synthetic_omop_cohort.yaml)
+
+**Purpose:**
+- Applies FEMR-compatible labelers to the generated OMOP data to define anchor events, outcomes, and competing risks.
+- Produces a labeled cohort suitable for survival analysis.
+
+**Key Config Parameters:**
+- `source`: Path to the generated OMOP event data (e.g., `synthetic_omop/patients_with_events.parquet`)
+- `labelers`: List of event-based labelers (anchor, mortality, stroke, kidney failure, MI, etc.)
+- `time_field`, `primary_key`, `date_diff_unit`: Control event timing and patient indexing
+
+**Relevant Implementation:**
+- [`cohort_omop.py`](../sat/data/dataset/cohort_omop.py): Handles cohort extraction, label assignment, and filtering based on anchor/outcome logic.
+
+**Output Structure:**
+```
+cohort/<dataset>/
+  └── cohort_dataset.arrow  # Labeled cohort in HuggingFace format
+```
+
+---
+
+## 3. Parse into SAT Format
+
+**Command:**
+```bash
+poetry run python -m sat.prepare_data experiments=synthetic_omop/survival
+```
+
+**Config:** [`conf/data/parse/synthetic_omop_parse.yaml`](../conf/data/parse/synthetic_omop_parse.yaml)
+
+**Purpose:**
+- Converts the labeled cohort to the SAT survival analysis format, including code sequence, modalities, numerics, and outcome/event structure.
+- Supports feature scaling and batch processing for large datasets.
+
+**Key Config Parameters:**
+- `source`: Path to cohort directory
+- `scale_method`: e.g., `standard` (z-score) or `min_max`
+- `scale_numerics`: Whether to scale numeric features
+- `batch_size`: For efficient streaming processing
+
+**Relevant Implementation:**
+- [`parse_omop.py`](../sat/data/dataset/parse_omop.py): Transforms cohort data to SAT format with all required fields for downstream modeling.
+
+**Output Structure:**
+```
+modelhub/<dataset>/
+  └── sat_dataset.arrow  # Final SAT-formatted dataset
+```
+
+---
+
+## Configuration-Driven Workflow Summary
+
+- **All stages are run via `sat.prepare_data` with the appropriate `data/parse` config.**
+- **No direct CLI or Python scripting is needed for standard workflows.**
+- Each YAML config is fully documented and can be customized for advanced use cases (e.g., changing event types, labelers, or scaling methods).
+- For further details, see the docstrings in the corresponding Python modules:
+  - `generate_synthetic_omop.py` (synthetic data generation)
+  - `cohort_omop.py` (cohort/label extraction)
+  - `parse_omop.py` (SAT format conversion)
+
+## Configuring Labels with the Labeler Module
+
+The SAT synthetic OMOP pipeline uses flexible, FEMR-compatible labelers (see [`labelers.py`](../sat/data/dataset/femr_extensions/labelers.py)) to define anchor, outcome, and competing risk events for cohort creation. Labelers are configured in your YAML (typically `synthetic_omop_cohort.yaml`) under the `labelers` section.
+
+### Key Labeler Types
+
+- **Anchor label**: Defines the cohort entry event (e.g., enrollment)
+- **Outcome label**: Defines the primary event of interest (e.g., death, stroke)
+- **Competing risk label**: Defines events that censor the outcome (e.g., death when studying non-fatal stroke)
+
+### Example YAML Configuration
+
+```yaml
+labelers:
+  # Anchor (cohort entry)
+  - _target_: sat.data.dataset.femr_extensions.labelers.CustomEventLabeler
+    name: enrollment
+    event_codes: ["OMOP_ENROLLMENT"]
+    label_type: anchor
+    competing_event: false
+    mode: first
+    max_time: "2023-12-31T23:59:59"
+
+  # Outcome (e.g., mortality)
+  - _target_: sat.data.dataset.femr_extensions.labelers.CustomEventLabeler
+    name: mortality
+    event_codes: ["OMOP_DEATH"]
+    label_type: outcome
+    competing_event: true
+    mode: first
+    max_time: "2023-12-31T23:59:59"
+
+  # Additional outcomes or competing risks
+  - _target_: sat.data.dataset.femr_extensions.labelers.CustomEventLabeler
+    name: stroke
+    event_codes: ["OMOP_STROKE", "ICD10:I63"]
+    label_type: outcome
+    competing_event: false
+    mode: all
+    max_time: "2023-12-31T23:59:59"
+```
+
+### Important Parameters
+
+- `name`: Unique label name (used as a column in the output dataset)
+- `event_codes`: List of OMOP or custom codes to match for this label
+- `label_type`: One of `anchor`, `outcome`, or `inclusion`/`exclusion` (see `LabelType`)
+- `competing_event`: If `true`, this event censors other outcomes (competing risk)
+- `mode`: `first` (only the first event per patient) or `all` (all matching events)
+- `max_time`: Maximum follow-up time (ISO8601 string or days since epoch)
+- `condition_codes`: (optional) Codes that must co-occur or follow the primary event
+- `time_window`: (optional) Time window for `condition_codes` (interpreted using `time_unit`)
+- `sequence_required`: (optional) If true, condition must occur after the primary event
+- `time_unit`: (optional) Unit for `time_window` (e.g., `days`, `hours`)
+
+### Advanced Example
+
+```yaml
+  # Composite label with condition and time window
+  - _target_: sat.data.dataset.femr_extensions.labelers.CustomEventLabeler
+    name: mi_with_metformin
+    event_codes: ["ICD10:I21"]  # MI
+    condition_codes: ["RxNorm:A10BA02"]  # Metformin
+    time_window: 30
+    time_unit: days
+    sequence_required: true
+    label_type: outcome
+    competing_event: false
+    mode: first
+    max_time: "2023-12-31T23:59:59"
+```
+
+### Notes
+- Instantiate one labeler per event type (including each outcome and each competing event).
+- The anchor labeler is required for survival analysis pipelines.
+- For details on available parameters and advanced logic, see the docstrings in [`labelers.py`](../sat/data/dataset/femr_extensions/labelers.py).
+
+---
+
+## Notes
+- All outputs are versioned and reproducible via config.
+- For advanced cohort definitions, modify the `labelers` section of `synthetic_omop_cohort.yaml`.
+- For custom scaling or feature engineering, edit `synthetic_omop_parse.yaml`.
+- For troubleshooting or debugging, enable debug logging in the configs or Python modules.
 
 ## Configuration Parameters
 
