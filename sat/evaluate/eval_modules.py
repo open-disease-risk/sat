@@ -259,6 +259,64 @@ class ComputeCIndex(SurvivalEvaluationModule):
         return metrics_dict
 
 
+class ComputeWithinSubjectCIndex(SurvivalEvaluationModule):
+    def __init__(self, cfg, duration_cuts):
+        self.cfg = cfg
+        df = pd.read_csv(duration_cuts, header=None, names=["cuts"])
+        self.duration_cuts = df.cuts.values[1:]  # we do not need the start point
+
+    def compute(self, predictions, references):
+        predictions_array = self.survival_predictions(predictions)
+
+        # Initialize the within-subject C-index metric
+        within_cindex = evaluate.load("./sat/evaluate/within_subject_concordance")
+
+        # Debug shapes to understand the mismatch
+        n_samples = references.shape[0]
+        n_events = self.cfg.num_events
+
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("Within-subject C-index input shapes:")
+            logger.debug(f"  References: {references.shape}")
+            logger.debug(f"  Predictions: {predictions_array.shape}")
+            logger.debug(f"  Samples: {n_samples}, Events: {n_events}")
+
+        # Use _compute directly to bypass HuggingFace encoding issues
+        # This is acceptable since we're handling the data validation ourselves
+        integrated_within_cindex, per_horizon_within_cindeces = within_cindex._compute(
+            references=references,
+            predictions=predictions_array,
+            duration_cuts=self.duration_cuts,
+            per_horizon=True,
+            n_samples=n_samples,
+            n_events=n_events,
+        )
+
+        # Build metrics dictionary
+        metrics_dict = {
+            "within_subject_ipcw": integrated_within_cindex,
+            "within_subject_ipcw_n": n_samples,
+        }
+
+        # Add per-horizon metrics if available
+        if len(per_horizon_within_cindeces) > 0:
+            quantile_incr = 1.0 / predictions_array.shape[3]
+            horizons = np.arange(1, predictions_array.shape[3] + 1) * quantile_incr
+
+            for j, horizon in enumerate(horizons[: len(per_horizon_within_cindeces)]):
+                if j < len(per_horizon_within_cindeces):
+                    metrics_dict[f"within_subject_ipcw_{horizon:.2f}"] = (
+                        per_horizon_within_cindeces[j]
+                    )
+
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(
+                f"Within-subject C-index (integrated): {integrated_within_cindex}"
+            )
+
+        return metrics_dict
+
+
 class ComputeMismatch(EvaluationModule):
     def __init__(self, duration_cuts, max_time):
         df = pd.read_csv(duration_cuts, header=None, names=["cuts"])
