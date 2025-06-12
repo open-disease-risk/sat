@@ -361,25 +361,19 @@ def apply_informative_prior(
             # For cancer events, Weibull shape often falls between 1-3
             # indicating increasing hazard with time
             shape_prior_mean = 1.5
-            shape_prior_std = 0.5
 
             # Initialize shapes with slight bias toward increasing hazard
             if "shape" in params:
                 shape = params["shape"]
                 # Nudge shape values toward domain knowledge while preserving learned patterns
                 shape_prior = torch.ones_like(shape) * shape_prior_mean
-                # Blend current values with prior (70% current, 30% prior)
-                params["shape"] = 0.7 * shape + 0.3 * shape_prior
-                # Ensure shape > 1 for increasing hazard (cancer progression typically)
-                params["shape"] = torch.maximum(
-                    params["shape"], torch.ones_like(params["shape"]) * 1.05
-                )
+                # Blend current values with prior (85% current, 15% prior)
+                params["shape"] = 0.85 * shape + 0.15 * shape_prior
 
         elif event_type == "heart_disease":
             # For heart disease, Weibull shape is typically close to 1
             # indicating more constant hazard
             shape_prior_mean = 1.1
-            shape_prior_std = 0.3
 
             if "shape" in params:
                 shape = params["shape"]
@@ -391,16 +385,31 @@ def apply_informative_prior(
             # For infectious disease, high initial risk followed by decreasing hazard
             # Shape < 1 indicates decreasing hazard
             shape_prior_mean = 0.8
-            shape_prior_std = 0.2
+            # shape_prior_std = 0.2  # Not used in this implementation
 
             if "shape" in params:
                 shape = params["shape"]
                 shape_prior = torch.ones_like(shape) * shape_prior_mean
-                # Blend current values with prior
-                params["shape"] = 0.7 * shape + 0.3 * shape_prior
+                # Blend current values with prior (85% current, 15% prior)
+                params["shape"] = 0.85 * shape + 0.15 * shape_prior
                 # Ensure shape < 1 for decreasing hazard (after acute infection)
                 params["shape"] = torch.minimum(
                     params["shape"], torch.ones_like(params["shape"]) * 0.95
+                )
+
+        elif event_type == "treatment_complications":
+            # For treatment complications, high initial risk followed by decreasing hazard
+            # Shape < 1 indicates decreasing hazard
+            shape_prior_mean = 0.7
+
+            if "shape" in params:
+                shape = params["shape"]
+                shape_prior = torch.ones_like(shape) * shape_prior_mean
+                # Blend current values with prior (90% current, 10% prior)
+                params["shape"] = 0.9 * shape + 0.1 * shape_prior
+                # Ensure shape < 1 for decreasing hazard
+                params["shape"] = torch.minimum(
+                    params["shape"], torch.ones_like(params["shape"]) * 0.9
                 )
 
         # Apply demographic-specific adjustments if available
@@ -425,14 +434,14 @@ def apply_informative_prior(
             if "loc" in params:
                 loc = params["loc"]
                 loc_prior = torch.ones_like(loc) * loc_prior_mean
-                # Blend current values with prior
-                params["loc"] = 0.8 * loc + 0.2 * loc_prior
+                # Blend current values with prior (85% current, 15% prior)
+                params["loc"] = 0.85 * loc + 0.15 * loc_prior
 
             if "scale" in params:
                 scale = params["scale"]
                 scale_prior = torch.ones_like(scale) * scale_prior_mean
-                # Blend current values with prior
-                params["scale"] = 0.8 * scale + 0.2 * scale_prior
+                # Blend current values with prior (85% current, 15% prior)
+                params["scale"] = 0.85 * scale + 0.15 * scale_prior
 
         elif event_type == "chronic_disease":
             # Chronic disease often has longer tail
@@ -442,14 +451,14 @@ def apply_informative_prior(
             if "loc" in params:
                 loc = params["loc"]
                 loc_prior = torch.ones_like(loc) * loc_prior_mean
-                # Blend current values with prior
-                params["loc"] = 0.8 * loc + 0.2 * loc_prior
+                # Blend current values with prior (85% current, 15% prior)
+                params["loc"] = 0.85 * loc + 0.15 * loc_prior
 
             if "scale" in params:
                 scale = params["scale"]
                 scale_prior = torch.ones_like(scale) * scale_prior_mean
-                # Blend current values with prior
-                params["scale"] = 0.8 * scale + 0.2 * scale_prior
+                # Blend current values with prior (85% current, 15% prior)
+                params["scale"] = 0.85 * scale + 0.15 * scale_prior
 
         # Apply demographic-specific adjustments
         if demographic_info is not None:
@@ -575,9 +584,12 @@ def apply_event_specific_constraints(
             shape = params["shape"]
 
             # Apply event-specific shape constraints
-            if event_type == "cancer_recurrence":
-                # Cancer recurrence typically has increasing hazard (shape > 1)
-                params["shape"] = torch.maximum(shape, torch.ones_like(shape) * 1.1)
+            if event_type == "cancer" or event_type == "cancer_recurrence":
+                # Cancer typically has increasing hazard (shape > 1)
+                params["shape"] = torch.maximum(shape, torch.ones_like(shape) * 1.05)
+            elif event_type == "heart_disease":
+                # Heart disease often has nearly constant hazard (shape ≈ 1)
+                params["shape"] = torch.clamp(shape, min=0.95, max=1.5)
             elif event_type == "treatment_complications":
                 # Treatment complications often have decreasing hazard (shape < 1)
                 params["shape"] = torch.minimum(shape, torch.ones_like(shape) * 0.9)

@@ -14,6 +14,7 @@ from sat.models.nets import SimpleMLP
 from sat.utils import logging
 
 from .base import BaseConfig, ClassificationTask, MTLTask, RegressionTask, SurvivalTask
+from .classification import EventClassificationTaskHead
 from .embeddings import (
     SentenceEmbedder,
     SentenceEmbedding,
@@ -21,6 +22,7 @@ from .embeddings import (
     TokenEmbedding,
 )
 from .output import SAOutput
+from .regression import EventDurationTaskHead
 
 logger = logging.get_default_logger()
 
@@ -143,7 +145,7 @@ class MTLForSurvival(MTLTask):
         if self.config.freeze_transformer:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug("Freeze the transformer")
-            for name, param in self.transformer.base_model.named_parameters():
+            for _, param in self.transformer.base_model.named_parameters():
                 param.requires_grad = False
 
         # Initialize embedding processors

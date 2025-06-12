@@ -45,7 +45,7 @@ class LabTransPCHazard:
         self._predefined_cuts = False
         self.cuts = None
         if hasattr(cuts, "__iter__"):
-            if type(cuts) is list:
+            if isinstance(cuts, list):
                 cuts = np.array(cuts)
             self.cuts = cuts
             self.idu = IdxDiscUnknownC(self.cuts)
@@ -87,7 +87,8 @@ class LabTransPCHazard:
         t_frac = 1.0 - (dur_disc - durations) / cut_diff[idx_durations - 1]
         if idx_durations.min() == 0:
             warnings.warn(
-                """Got event/censoring at start time. Should be removed! It is set s.t. it has no contribution to loss."""
+                """Got event/censoring at start time. Should be removed! It is set s.t. it has no contribution to loss.""",
+                stacklevel=2,
             )
             t_frac[idx_durations == 0] = 0
             events[idx_durations == 0] = 0

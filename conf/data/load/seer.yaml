@@ -10,6 +10,8 @@ data:
   event_col: events
   id_col: index
   num_events: 2
+  validation_ratio: 0.1
+  test_ratio: 0.3
   transformed_duration_cols:
     - t
     - f
@@ -21,5 +23,5 @@ data:
     _target_: datasets.load_dataset
     path: json
     data_files:
-      - ${modelhub}/${dataset}/${fold}${dataset}.json
+      - ${modelhub}/${dataset}/${dataset}.json
     streaming: false

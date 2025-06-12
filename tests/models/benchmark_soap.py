@@ -138,12 +138,16 @@ def run_loss_benchmark(loss_fn, predictions, targets, num_iterations=3, name="Un
 
 
 def benchmark_all_losses(
-    batch_sizes=[8, 16, 32, 64, 128],
-    num_events_list=[1, 2],
+    batch_sizes=None,
+    num_events_list=None,
     num_cuts=10,
     num_iterations=3,
 ):
     """Benchmark all ranking losses for different batch sizes and event counts."""
+    if batch_sizes is None:
+        batch_sizes = [8, 16, 32, 64, 128]
+    if num_events_list is None:
+        num_events_list = [1, 2]
     # Results dictionary
     results = defaultdict(list)
     loss_names = [
@@ -577,7 +581,7 @@ def generate_summary_markdown(csv_path):
     markdown += (
         f"- **General Use**: {best_method} provides the best overall performance "
     )
-    markdown += f"across different batch sizes and event counts.\n\n"
+    markdown += "across different batch sizes and event counts.\n\n"
 
     # Save markdown to file
     log_dir = os.path.join(os.getcwd(), "logs")
@@ -592,8 +596,8 @@ def generate_summary_markdown(csv_path):
 
 def plot_benchmark_results(results, save_path=None):
     """Plot benchmark results."""
-    # Extract unique batch sizes and event counts
-    batch_sizes = sorted(set(results["batch_size"]))
+    # Extract unique batch sizes and event counts (not used directly but kept for future use)
+    # batch_sizes = sorted(set(results["batch_size"]))  # Unused variable
     num_events_set = sorted(set(results["num_events"]))
 
     # Define methods and their display names
@@ -664,7 +668,8 @@ def plot_benchmark_results(results, save_path=None):
             method_times = [results[f"{method}_total"][j] for j in indices]
             # Calculate speedups
             speedups = [
-                b / m if m > 0 else 0 for b, m in zip(baseline_times, method_times)
+                b / m if m > 0 else 0
+                for b, m in zip(baseline_times, method_times, strict=False)
             ]
 
             ax2.plot(
@@ -705,10 +710,11 @@ def main():
     )
 
     # Save results to CSV
-    csv_path = save_results_to_csv(results, "ranking_loss_benchmark.csv")
+    # Variable csv_path not used later
+    _ = save_results_to_csv(results, "ranking_loss_benchmark.csv")
 
     # Generate summary markdown
-    summary_md = generate_summary_markdown(csv_path)
+    # summary_md = generate_summary_markdown(csv_path)  # Unused variable
 
     # Plot results if matplotlib is available
     try:

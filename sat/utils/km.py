@@ -69,7 +69,7 @@ class KaplanMeier:
         self.survival_probabilities = np.empty(population_count.size)
         survival_probability = 1
         counter = 0
-        for population, event_num in zip(population_count, events):
+        for population, event_num in zip(population_count, events, strict=False):
             survival_probability *= 1 - event_num / population
             self.survival_probabilities[counter] = survival_probability
             counter += 1

@@ -46,7 +46,8 @@ def cuts_quantiles(durations, events, num, min_=0.0, dtype="float64"):
     cuts = np.unique(cuts)
     if len(cuts) != num:
         warnings.warn(
-            f"cuts are not unique, continue with {len(cuts)} cuts instead of {num}"
+            f"cuts are not unique, continue with {len(cuts)} cuts instead of {num}",
+            stacklevel=2,
         )
     cuts[0] = durations.min() if min_ is None else min_
     assert cuts[-1] == durations.max(), "something wrong..."
@@ -145,7 +146,7 @@ class DiscretizeUnknownC(_OnlyTransform):
                 "`duration` contains larger values than cuts. Set `right_censor`=True to censor these"
             )
         td = np.zeros_like(duration)
-        c = event == False
+        c = ~event  # Use logical not instead of equality comparison to False
         if not np.all(c):
             td[event] = discretize(
                 duration[event], self.cuts, side="right", error_on_larger=True
@@ -161,7 +162,7 @@ def duration_idx_map(duration):
     duration = np.unique(duration)
     duration = np.sort(duration)
     idx = np.arange(duration.shape[0])
-    return {d: i for i, d in zip(idx, duration)}
+    return {d: i for i, d in zip(idx, duration, strict=False)}
 
 
 class Duration2Idx(_OnlyTransform):

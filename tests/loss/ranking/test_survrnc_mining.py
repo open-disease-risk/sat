@@ -45,7 +45,7 @@ def test_survrnc_loss_with_mining_initialization():
         assert loss.temperature == 0.1
         assert loss.reduction == "mean"
         assert loss.num_events == 2
-        assert loss.use_hard_mining == True
+        assert loss.use_hard_mining
         assert loss.mining_ratio == 0.5
         assert loss.duration_cuts.tolist() == [1.0, 2.0, 3.0, 4.0, 5.0]
         assert loss.weights.tolist() == [1.0, 0.5, 0.5]

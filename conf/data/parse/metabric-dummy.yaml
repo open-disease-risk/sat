@@ -1,11 +1,7 @@
 _target_: sat.data.dataset.parse_metabric.metabric
 source: ${data_source}
 processed_dir: ${modelhub}
-train_ratio: 0.8
-validation_ratio: 0.1
-test_ratio: 0.1
 n_bins: 10
 encode: ordinal
 strategy: quantile
 name: ${dataset}
-flip_event: True

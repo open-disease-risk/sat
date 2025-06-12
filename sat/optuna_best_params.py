@@ -160,7 +160,7 @@ def main():
         return 1
 
     # Save parameters
-    trial_info = save_best_params(best_trial, args.output_dir, args.format)
+    save_best_params(best_trial, args.output_dir, args.format)
 
     # Print if requested
     if args.print:

@@ -137,7 +137,7 @@ class CauseSpecificNet(nn.Module):
 
         # Create the event-specific networks
         self.event_nets = nn.ModuleList()
-        for i in range(num_events):
+        for _ in range(num_events):
             net = tt.practical.MLPVanilla(
                 in_features=in_features,
                 num_nodes=[intermediate_size] * num_hidden_layers,
@@ -211,7 +211,7 @@ class SimpleCompRiskNet(nn.Module):
         current_in_features = in_features
 
         # Add hidden layers for shared network
-        for i in range(num_hidden_layers):
+        for _ in range(num_hidden_layers):
             # Add linear layer
             shared_layers.append(
                 nn.Linear(current_in_features, intermediate_size, bias=bias)
@@ -515,7 +515,7 @@ class CauseSpecificNetCompRisk(nn.Module):
         current_feat_size = in_features
 
         # Build the shared layers
-        for i in range(shared_num_hidden_layers):
+        for _ in range(shared_num_hidden_layers):
             shared_layers.append(
                 nn.Linear(current_feat_size, shared_intermediate_size, bias=bias)
             )
@@ -640,7 +640,7 @@ class CauseSpecificNetCompRisk(nn.Module):
         combined = torch.cat([input, shared_features], dim=1)
 
         # Process each event with its own network
-        batch_size = input.shape[0]
+        # batch_size = input.shape[0]  # Used for debugging/logging if needed
         outputs = []
 
         # Get separate outputs for each event

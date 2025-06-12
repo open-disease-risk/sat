@@ -4,7 +4,6 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 import os
-import random
 import time
 
 from omegaconf import DictConfig

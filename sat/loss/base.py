@@ -109,13 +109,13 @@ class Loss(nn.Module):
         # Get the device from the class parameters if not specified
         if device is None:
             # Try to find a registered buffer or parameter to get its device
-            for buffer_name, buffer in self._buffers.items():
+            for _, buffer in self._buffers.items():
                 if buffer is not None and isinstance(buffer, torch.Tensor):
                     device = buffer.device
                     break
 
             if device is None:
-                for param_name, param in self._parameters.items():
+                for _, param in self._parameters.items():
                     if param is not None:
                         device = param.device
                         break
@@ -176,8 +176,8 @@ class RankingLoss(Loss):
         e = events.shape[1]  # Number of events
 
         # Create event masks once
-        I = events.to(bool)
-        I_censored = ~I  # censored indicator (n x e)
+        i_event = events.to(bool)  # Event indicator
+        I_censored = ~i_event  # censored indicator (n x e)
 
         # Initialize duration cut points tensor efficiently
         T = self.duration_cuts.to(device).expand(n, e, -1)  # (n x e x tn)
@@ -263,8 +263,8 @@ class RankingLoss(Loss):
         comp_pos = torch.nn.functional.relu(comp)  # (n x e x e)
 
         # Create event masks efficiently
-        I_expanded = I.unsqueeze(2).repeat(1, 1, e).float()  # (n x e x e)
-        I_T = I.unsqueeze(1).repeat(1, e, 1).float()  # (n x e x e)
+        I_expanded = i_event.unsqueeze(2).repeat(1, 1, e).float()  # (n x e x e)
+        I_T = i_event.unsqueeze(1).repeat(1, e, 1).float()  # (n x e x e)
         I_censored_T = I_censored.unsqueeze(1).repeat(1, e, 1).float()  # (n x e x e)
 
         # Create ranking pair masks efficiently

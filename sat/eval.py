@@ -14,7 +14,6 @@ from omegaconf import DictConfig
 from transformers import PreTrainedTokenizerFast
 from transformers.pipelines import pipeline
 
-import sat.transformers.pipelines  # keep this import for pipeline registration to happen
 from sat.data import load
 from sat.evaluate.evaluator import evaluator
 from sat.models.tasks import heads

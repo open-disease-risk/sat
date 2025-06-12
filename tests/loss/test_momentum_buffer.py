@@ -51,10 +51,10 @@ class TestMomentumBuffer:
         assert buffer.embedding_dim == 128
         assert buffer.max_buffer_size == 1024
         assert buffer.num_events == 2
-        assert buffer.dynamic_growth == True
+        assert buffer.dynamic_growth
         assert buffer.initial_size == 128
         assert buffer.current_buffer_size == 128
-        assert buffer.track_variance == True
+        assert buffer.track_variance
         assert len(buffer.embedding_queue) == 0
         assert len(buffer.reference_queue) == 0
 
@@ -243,10 +243,10 @@ class TestMomentumBuffer:
             # If we got here, the test passes (no exception)
             assert True
         except Exception as e:
-            # If we get an exception, fail the test
-            assert (
-                False
-            ), f"adjust_buffer_based_on_variance raised an exception: {str(e)}"
+            # If we get an exception, fail the test with proper exception chaining
+            raise AssertionError(
+                f"adjust_buffer_based_on_variance raised an exception: {str(e)}"
+            ) from e
 
     def test_estimate_optimal_buffer_size(self):
         """Test buffer size estimation based on dataset characteristics."""
@@ -286,7 +286,7 @@ class TestMoCoSurvivalLoss:
         )
 
         assert loss.base_loss == base_loss
-        assert loss.use_buffer == True
+        assert loss.use_buffer
         assert loss.current_batch_weight == 1.0
         assert loss.buffer_weight == 0.5
         assert loss.buffer.max_buffer_size == 1024
@@ -484,8 +484,8 @@ class TestAdaptiveMoCoLoss:
         assert loss.max_buffer_size == int(1024 * 0.9)
 
         # Buffer should be configured for adaptive adjustment
-        assert loss.buffer.track_variance == True
-        assert loss.buffer.adaptive_buffer_adjustment == True
+        assert loss.buffer.track_variance
+        assert loss.buffer.adaptive_buffer_adjustment
         assert loss.buffer.variance_window == 15
 
 

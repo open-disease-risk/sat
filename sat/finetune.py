@@ -16,17 +16,22 @@ from logdecorator import log_on_end, log_on_error, log_on_start
 from omegaconf import DictConfig
 from tokenizers.processors import TemplateProcessing
 from transformers import PreTrainedTokenizerFast, Trainer, TrainingArguments
+from transformers.data.data_collator import DefaultDataCollator
 from transformers.integrations import TensorBoardCallback
 
 from sat.callbacks import LossWeightLoggerCallback
-from sat.data import collator, load
+from sat.data import splitter
 from sat.models import heads
 from sat.models.heads.embeddings import TokenEmbedding
 from sat.models.utils import get_device
 from sat.transformers import trainer as satrain
 from sat.transformers.feature_extractor import SAFeatureExtractor
 from sat.utils import config, logging, rand, tokenizing
-from sat.utils.output import log_metrics, write_output
+from sat.utils.output import write_output
+
+# Set default tensor type to float32 for MPS compatibility
+# This must be set before any other imports that might create tensors
+torch.set_default_dtype(torch.float32)
 
 logger = logging.get_default_logger()
 
@@ -70,8 +75,19 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
     if cfg.data.preprocess_data:
         mapped_labels_dataset = load_from_disk(cfg.data.preprocess_outdir)
     else:
-        dataset = hydra.utils.call(cfg.data.load)
-        dataset = load.split_dataset(cfg.data, dataset)
+        logger.info(
+            f"Splitting dataset with k-fold configuration: k={cfg.cv.k}; fold={cfg.replication}"
+        )
+        fold_index = cfg.cv.k or None
+        ds_splitter = splitter.StreamingKFoldSplitter(
+            id_field=cfg.data.id_col,
+            k=cfg.cv.k,
+            val_ratio=cfg.data.validation_ratio,
+            test_ratio=cfg.data.test_ratio,
+            test_split_strategy="hash",
+            split_names=cfg.data.splits,
+        )
+        dataset = ds_splitter.load_split(cfg=cfg.data.load, fold_index=fold_index)
 
         def tokenize_function(
             examples,
@@ -148,9 +164,16 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
             num_proc=None,  # Parallel processing for label mapping
         )
 
-        # Process numerics if present
-        if "numerics" in mapped_labels_dataset.column_names[cfg.data.splits[0]]:
-            logger.debug("Numerics present, so processing padding/truncation")
+        # Process numerics and modality if present
+        variable_fields = []
+        for field in ["numerics", "modality"]:
+            if field in mapped_labels_dataset.column_names[cfg.data.splits[0]]:
+                variable_fields.append(field)
+
+        if variable_fields:
+            logger.debug(
+                f"Variable-length fields detected: {variable_fields}, processing padding/truncation"
+            )
 
             # Cache for numerics processing
             numerics_cache_dir = (
@@ -169,7 +192,7 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
                     "padding_direction": cfg.tokenizers.padding_args.direction,
                     "token_emb": cfg.token_emb,
                 },
-                num_proc=None,  # Parallel processing for numerics padding/truncation
+                num_proc=None,  # No parallel processing for better error diagnostics
             )
 
         logger.debug(f"labels mapped in dataset: {mapped_labels_dataset}")
@@ -219,19 +242,42 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
         logger.debug("Use MPS in training argumments")
         args.use_mps_device = True
 
+    fold_part = "_" + str(cfg.replication) if cfg.replication else ""
     if cfg.do_sweep:
-        args.output_dir = args.output_dir + "/" + cfg.model_dir
+        args.output_dir = args.output_dir + fold_part + "/" + cfg.model_dir
         logger.debug(f"Redirect the sweep output: {args.output_dir}")
     else:
         logger.debug(
             f"Append run ID {cfg.run_id} to output of training arguments {args.output_dir}"
         )
-        args.output_dir = args.output_dir + "/" + cfg.run_id
+        args.output_dir = args.output_dir + fold_part + "/" + cfg.run_id
 
     # Configure trainer kwargs
+    # Prune dataset columns to avoid collator errors (keep only columns needed for model)
+    columns_to_keep = [
+        cfg.data.id_col,
+        cfg.data.duration_col,
+        cfg.data.event_col,
+        "numerics",
+        "modality",
+        "input_ids",
+        "attention_mask",
+        "labels",
+        "token_type_ids",
+    ]
+    for split in mapped_labels_dataset.keys():
+        mapped_labels_dataset[split] = mapped_labels_dataset[split].remove_columns(
+            [
+                col
+                for col in mapped_labels_dataset[split].column_names
+                if col not in columns_to_keep
+            ]
+        )
+
     trainer_kwargs = {
         "model": model,
         "args": args,
+        "data_collator": DefaultDataCollator(),
         "train_dataset": mapped_labels_dataset["train"],
         "eval_dataset": mapped_labels_dataset["valid"],
         "compute_metrics": compute_metrics,
@@ -283,7 +329,7 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
         json.dump({"seed": cfg.seed}, f, ensure_ascii=False, indent=4)
 
     # Save metrics to JSON files
-    if cfg.run_id != "" and not "multiple_replications" in cfg:
+    if cfg.run_id != "" and "multiple_replications" not in cfg:
         val_metrics = {
             k.replace("test_", "validation_"): v
             for k, v in valid_output.metrics.items()

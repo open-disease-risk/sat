@@ -422,11 +422,11 @@ def print_buffer_recommendations(
 
         if buffer_config["limiting_factor"]:
             if buffer_config["limiting_factor"] == "buffer_ratio":
-                report += f"\n> **Note:** Buffer size is limited by the maximum buffer-to-batch ratio.\n"
+                report += "\n> **Note:** Buffer size is limited by the maximum buffer-to-batch ratio.\n"
             elif buffer_config["limiting_factor"] == "effective_batch":
-                report += f"\n> **Note:** Buffer size is limited by the maximum effective batch size.\n"
+                report += "\n> **Note:** Buffer size is limited by the maximum effective batch size.\n"
             elif buffer_config["limiting_factor"] == "dataset_size":
-                report += f"\n> **Note:** Buffer size is limited by the dataset size.\n"
+                report += "\n> **Note:** Buffer size is limited by the dataset size.\n"
 
         report += "\n### Implementation Recommendation\n"
         if moco_config["moco_adaptive_buffer"]:
@@ -472,11 +472,11 @@ def print_buffer_recommendations(
 
         if buffer_config["limiting_factor"]:
             if buffer_config["limiting_factor"] == "buffer_ratio":
-                report += f"\nNote: Buffer size is limited by the maximum buffer-to-batch ratio.\n"
+                report += "\nNote: Buffer size is limited by the maximum buffer-to-batch ratio.\n"
             elif buffer_config["limiting_factor"] == "effective_batch":
-                report += f"\nNote: Buffer size is limited by the maximum effective batch size.\n"
+                report += "\nNote: Buffer size is limited by the maximum effective batch size.\n"
             elif buffer_config["limiting_factor"] == "dataset_size":
-                report += f"\nNote: Buffer size is limited by the dataset size.\n"
+                report += "\nNote: Buffer size is limited by the dataset size.\n"
 
         report += "\nImplementation Recommendation:\n"
         if moco_config["moco_adaptive_buffer"]:

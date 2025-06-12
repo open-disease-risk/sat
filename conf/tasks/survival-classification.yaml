@@ -2,7 +2,7 @@ defaults:
   - metrics: default
   - losses: default
 
-eval_metric: "eval_ipcw_avg"
+eval_metric: "eval_ipcw_weighted_avg"
 eval_metric_greater_is_better: False
 
 config:

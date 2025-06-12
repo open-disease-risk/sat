@@ -24,7 +24,6 @@ from sat.utils import logging
 from sat.utils.moco_buffer_estimator import (
     analyze_dataset_events,
     estimate_optimal_buffer_size,
-    generate_moco_config,
     print_buffer_recommendations,
 )
 

@@ -452,7 +452,7 @@ def generate_recommendations(
         f.write("Distribution Analysis Summary\n")
         f.write("===========================\n\n")
 
-        for i, row in summary_df.iterrows():
+        for _, row in summary_df.iterrows():
             f.write(f"Event Type: {row['event_type']}\n")
             f.write(f"Recommended Distribution: {row['recommended_distribution']}\n")
             f.write(f"AIC Best: {row['aic_best']} (Score: {row['aic_score']:.2f})\n")

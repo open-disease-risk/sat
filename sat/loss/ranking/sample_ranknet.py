@@ -73,7 +73,7 @@ class SampleRankNetLoss(RankNetLoss):
         durations = self.durations(references).permute(1, 0)
 
         num_events = events.shape[0]
-        batch_size = events.shape[1]
+        # batch_size = events.shape[1]  # Used for debugging/logging if needed
         device = references.device
 
         # Create weights tensor if needed

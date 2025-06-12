@@ -47,7 +47,7 @@ def test_sample_soap_loss_initialization():
         assert loss.num_events == 2
         assert loss.num_pairs == 100
         assert loss.sampling_strategy == "uniform"
-        assert loss.adaptive_margin == False
+        assert not loss.adaptive_margin
         assert loss.duration_cuts.tolist() == [1.0, 2.0, 3.0, 4.0, 5.0]
         assert loss.weights.tolist() == [1.0, 0.5, 0.5]
 
@@ -82,7 +82,7 @@ def test_event_soap_loss_initialization():
         assert loss.num_events == 2
         assert loss.num_pairs is None
         assert loss.sampling_strategy == "importance"
-        assert loss.adaptive_margin == True
+        assert loss.adaptive_margin
         assert loss.duration_cuts.tolist() == [1.0, 2.0, 3.0, 4.0, 5.0]
         assert loss.weights.tolist() == [1.0, 0.5, 0.5]
 

@@ -78,7 +78,7 @@ class SurvRNCLoss(RankingLoss):
         Returns:
             Similarity matrix [batch_size, batch_size]
         """
-        batch_size = durations.shape[0]
+        # batch_size = durations.shape[0]  # Used for debugging/logging if needed
         device = durations.device
 
         # Calculate pairwise time differences efficiently
@@ -300,7 +300,7 @@ class SurvRNCLoss(RankingLoss):
 
             # Efficient N-pair contrastive loss computation
             # Use vectorized operations to compute log(exp(pos_sim) / (exp(pos_sim) + sum(exp(neg_sim))))
-            neg_term = torch.logsumexp(neg_sim, dim=0)
+            # neg_term = torch.logsumexp(neg_sim, dim=0)  # Used in alternative computation approach
 
             for pos_idx in range(len(pos_sim)):
                 # Combine positive term with negative term using log-sum-exp trick
@@ -394,7 +394,7 @@ class SurvRNCLoss(RankingLoss):
                     anchor_neg = torch.topk(anchor_neg, k=num_neg, largest=True).values
 
             # Compute N-pair contrastive loss for this anchor
-            neg_term = torch.logsumexp(anchor_neg, dim=0)
+            # neg_term = torch.logsumexp(anchor_neg, dim=0)  # Used in alternative computation approach
 
             for pos_sim in anchor_pos:
                 combined_term = torch.logsumexp(
@@ -430,7 +430,7 @@ class SurvRNCLoss(RankingLoss):
         events = self.events(references)  # [batch_size, num_events]
         durations = self.durations(references)  # [batch_size, num_events]
 
-        batch_size = events.shape[0]
+        # batch_size = events.shape[0]  # Used for debugging/logging if needed
         device = references.device
 
         # Skip if no events

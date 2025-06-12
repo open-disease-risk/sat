@@ -479,7 +479,8 @@ def benchmark_variance_tracking(
         adjustment_history = moco_loss.buffer.buffer_adjustment_history.copy()
 
         if i % 10 == 0:
-            buffer_stats = moco_loss.get_buffer_stats()
+            # buffer_stats is captured but not used
+            _ = moco_loss.get_buffer_stats()
             logger.info(
                 f"Iteration {i}: loss={loss_val.item():.4f}, "
                 f"buffer_size={moco_loss.buffer.current_buffer_size}, "

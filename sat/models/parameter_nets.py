@@ -227,7 +227,7 @@ class ParamCauseSpecificNetCompRisk(nn.Module):
         all_scales = []
         all_logits_g = []
 
-        for event_idx, event_net in enumerate(self.event_nets):
+        for _, event_net in enumerate(self.event_nets):
             # Extract event-specific features
             event_features = event_net["features"](shared_features)
 
@@ -420,7 +420,7 @@ class MENSAParameterNet(nn.Module):
         all_logits_g = []
 
         # For each event, compute parameters
-        for event_idx, event_net in enumerate(self.event_nets):
+        for _, event_net in enumerate(self.event_nets):
             # Extract event-specific features
             event_features = event_net["features"](shared_features)
 

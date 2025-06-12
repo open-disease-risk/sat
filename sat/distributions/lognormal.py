@@ -69,6 +69,9 @@ class LogNormalDistribution(SurvivalDistribution):
             event_type: Optional event type for specific priors
             use_expert_priors: Whether to use expert knowledge for initialization
         """
+        # Set eps first since it's needed in constraint methods
+        self.eps = eps
+
         # Apply expert knowledge if requested
         if use_expert_priors and event_type is not None:
             loc, scale = self._apply_expert_priors(loc, scale, event_type)
@@ -84,8 +87,6 @@ class LogNormalDistribution(SurvivalDistribution):
             self.scale = torch.clamp(
                 scale, min=eps, max=100.0
             )  # Scale should be positive
-
-        self.eps = eps
 
     def _apply_expert_priors(
         self, loc: torch.Tensor, scale: torch.Tensor, event_type: str
@@ -633,7 +634,7 @@ class LogNormalMixtureDistribution(MixtureDistribution):
             Mixture log likelihood [batch_size]
         """
         distributions = self.get_component_distributions()
-        batch_size = time.shape[0]
+        # batch_size = time.shape[0]  # For potential debugging/logging
 
         # Ensure time is positive and within reasonable bounds
         time_safe = torch.clamp(time, min=self.eps, max=1e10)

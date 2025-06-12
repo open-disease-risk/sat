@@ -7,10 +7,7 @@ import hydra
 import torch
 import torch.nn.functional as F
 
-from sat.distributions import (
-    LogNormalMixtureDistribution,
-    WeibullMixtureDistribution,
-)
+from sat.distributions import LogNormalMixtureDistribution, WeibullMixtureDistribution
 from sat.models.parameter_nets import (
     ParamCauseSpecificNet,
     ParamCauseSpecificNetCompRisk,
@@ -141,10 +138,13 @@ class DSMTaskHead(SurvivalTask):
                 )
 
         # Instantiate loss function if available
-        loss = config.loss["survival"]
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(f"Instantiate the loss {loss}")
-        self.loss = hydra.utils.instantiate(loss)
+        if config.loss and "survival" in config.loss:
+            loss = config.loss["survival"]
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"Instantiate the loss {loss}")
+            self.loss = hydra.utils.instantiate(loss)
+        else:
+            self.loss = None
 
     def _compute_survival_function(
         self, time_points, shape, scale, logits_g, event_idx=0
@@ -297,7 +297,7 @@ class DSMTaskHead(SurvivalTask):
             if duration_cuts.min() <= 0:
                 if logger.isEnabledFor(logging.DEBUG):
                     logger.debug(
-                        f"Found non-positive values in duration cuts, adding epsilon"
+                        "Found non-positive values in duration cuts, adding epsilon"
                     )
                 duration_cuts = torch.clamp(duration_cuts, min=eps)
 

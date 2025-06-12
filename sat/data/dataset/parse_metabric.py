@@ -1,9 +1,8 @@
 """Process the Metabric data.
 
 1. Read the H5 file from: https://github.com/jaredleekatzman/DeepSurv/tree/master/experiments/data.
-2. Combine the train/test sets and split into train/val/test
-3. Save as pandas dataframes
-
+2. Combine the train/test sets
+3. Process and save the data in the required format
 """
 
 __authors__ = ["Dominik Dahlem"]
@@ -17,11 +16,9 @@ import h5py
 import numpy as np
 import pandas as pd
 from logdecorator import log_on_end, log_on_error, log_on_start
-from sklearn.model_selection import KFold
 from sklearn.preprocessing import KBinsDiscretizer, LabelEncoder
 
 from sat.utils import logging
-from sat.utils.data import train_val_test
 
 logger = logging.get_default_logger()
 
@@ -30,15 +27,11 @@ logger = logging.get_default_logger()
 class metabric:
     source: str
     processed_dir: str
-    train_ratio: float
-    validation_ratio: float
-    test_ratio: float
     n_bins: int
     encode: str
     strategy: str
     name: str
     flip_event: bool = False
-    kfold: int = 0
 
     @log_on_start(DEBUG, "Create metabric data representation...")
     @log_on_error(
@@ -48,7 +41,7 @@ class metabric:
         reraise=True,
     )
     @log_on_end(DEBUG, "done!")
-    def prepare(self) -> None:
+    def __call__(self) -> None:
         # 1. combine the test and training sets from H5 sources
         logger.debug("Combine train/test sets from H5 source")
         with h5py.File(self.source) as file:
@@ -129,9 +122,16 @@ class metabric:
             df_feat.columns = new_feature_columns
             df_targets.columns = new_target_columns
 
-            for c in df_feat.columns:
-                logger.debug(f"Map feature {c}")
-                df_feat[c] = df_feat[c].apply(lambda x: c + "_" + str(x))
+            # Create a function that takes both column name and value to avoid closure issues
+            def prefix_with_colname(colname, value):
+                return f"{colname}_{value}"
+
+            for col in df_feat.columns:
+                logger.debug(f"Map feature {col}")
+                # Using a partial function to avoid closure issues with loop variables
+                df_feat[col] = df_feat[col].apply(
+                    lambda x, col=col: prefix_with_colname(col, x)
+                )
 
             # 3. create a dummy dataset where the event is flipped to 2 randomly
             if self.flip_event:
@@ -140,100 +140,18 @@ class metabric:
                 df_update["e"] = 2
                 df_targets.update(df_update)
 
-            # 4. create train/val/test split
-            logger.debug("Create train/val/test split")
-            X_train, X_val, X_test, y_train, y_val, y_test = train_val_test(
-                X=df_feat,
-                y=df_targets,
-                train_ratio=self.train_ratio,
-                test_ratio=self.test_ratio,
-                validation_ratio=self.validation_ratio,
-            )
-
-            # 5. save data frames
-            logger.debug("Save the dataframes")
-            logger.debug("Combine features and targets and save into CSV files")
-
-            train_data = pd.DataFrame(
+            # 4. Create final dataframe with all data
+            logger.debug("Create final dataframe")
+            data = pd.DataFrame(
                 {
-                    "x": X_train.agg(" ".join, axis=1),
-                    "event": y_train["e"],
-                    "duration": y_train["t"],
-                    "split": "train",
+                    "x": df_feat.agg(" ".join, axis=1),
+                    "event": df_targets["e"],
+                    "duration": df_targets["t"],
                 },
-                index=X_train.index,
-            )
+                index=df_feat.index,
+            ).reset_index(level=0)
 
-            val_data = pd.DataFrame(
-                {
-                    "x": X_val.agg(" ".join, axis=1),
-                    "event": y_val["e"],
-                    "duration": y_val["t"],
-                    "split": "valid",
-                },
-                index=X_val.index,
-            )
-
-            test_data = pd.DataFrame(
-                {
-                    "x": X_test.agg(" ".join, axis=1),
-                    "event": y_test["e"],
-                    "duration": y_test["t"],
-                    "split": "test",
-                },
-                index=X_test.index,
-            )
-
-            if self.kfold > 1:
-                logger.debug("Create kfold splits")
-                df_train_data = pd.concat([X_train, X_val])
-                df_y_train_data = pd.concat([y_train, y_val])
-
-                kf = KFold(n_splits=self.kfold, shuffle=True)
-                for i, (train_index, test_index) in enumerate(kf.split(df_train_data)):
-                    X_train_kf, X_test_kf = (
-                        df_train_data.iloc[train_index],
-                        df_train_data.iloc[test_index],
-                    )
-                    y_train_kf, y_test_kf = (
-                        df_y_train_data.iloc[train_index],
-                        df_y_train_data.iloc[test_index],
-                    )
-
-                    train_data_kf = pd.DataFrame(
-                        data={
-                            "x": X_train_kf[main_feature_cols].agg(" ".join, axis=1),
-                            "event": y_train_kf["e"],
-                            "duration": y_train_kf["t"],
-                            "split": "train",
-                        },
-                        index=X_train_kf.index,
-                    )
-
-                    test_data_kf = pd.DataFrame(
-                        data={
-                            "x": X_test_kf[main_feature_cols].agg(" ".join, axis=1),
-                            "event": y_test_kf["e"],
-                            "duration": y_test_kf["t"],
-                            "split": "valid",
-                        },
-                        index=X_test_kf.index,
-                    )
-
-                    outDir = Path(f"{self.processed_dir}/{self.name}")
-                    outDir.mkdir(parents=True, exist_ok=True)
-                    data_kf = pd.concat(
-                        [train_data_kf, test_data_kf, test_data]
-                    ).reset_index(level=0)
-                    data_kf.to_csv(
-                        Path(f"{outDir}/{i}_{self.name}.csv"),
-                        index=False,
-                    )
-
-            outDir = Path(f"{self.processed_dir}/{self.name}")
-            outDir.mkdir(parents=True, exist_ok=True)
-            data = pd.concat([train_data, val_data, test_data]).reset_index()
-            data.to_csv(
-                Path(f"{outDir}/{self.name}.csv"),
-                index=False,
-            )
+            # 5. Save to file
+            out_dir = Path(f"{self.processed_dir}/{self.name}")
+            out_dir.mkdir(parents=True, exist_ok=True)
+            data.to_csv(Path(f"{out_dir}/{self.name}.csv"), index=False)

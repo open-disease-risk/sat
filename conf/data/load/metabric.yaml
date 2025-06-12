@@ -21,5 +21,5 @@ data:
     _target_: datasets.load_dataset
     path: csv
     data_files:
-      - ${modelhub}/${dataset}/${fold}${dataset}.csv
+      - ${modelhub}/${dataset}/${dataset}.csv
     streaming: false

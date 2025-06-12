@@ -31,7 +31,7 @@ def get_default_logger(prefix="sat") -> logging.Logger:
 
     # Add isEnabledFor method if not already present
     if not hasattr(logger, "isEnabledFor"):
-        setattr(logger, "isEnabledFor", lambda level: logger.level <= level)
+        logger.isEnabledFor = lambda level: logger.level <= level
 
     return logger
 

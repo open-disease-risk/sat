@@ -7,10 +7,7 @@ import pandas as pd
 import torch
 import torch.nn.functional as F
 
-from sat.distributions import (
-    LogNormalMixtureDistribution,
-    WeibullMixtureDistribution,
-)
+from sat.distributions import LogNormalMixtureDistribution, WeibullMixtureDistribution
 from sat.models.heads import SAOutput
 from sat.utils import logging
 
@@ -248,7 +245,7 @@ class MENSALoss(Loss):
         events = self.events(references)  # [batch_size, num_events]
         durations = self.durations(references)  # [batch_size, num_events]
 
-        batch_size = events.shape[0]
+        # batch_size = events.shape[0]  # Used for debugging/logging if needed
         device = references.device
 
         # Create weights tensor if needed

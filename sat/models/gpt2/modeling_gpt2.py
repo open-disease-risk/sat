@@ -9,7 +9,6 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 import warnings
-from dataclasses import dataclass
 from typing import Optional, Tuple, Union
 
 import einops
@@ -18,6 +17,7 @@ import torch.utils.checkpoint
 import transformers.models.gpt2.modeling_gpt2 as hf_gpt2
 from torch import nn
 from transformers.modeling_outputs import BaseModelOutputWithPastAndCrossAttentions
+from transformers.utils.model_parallel_utils import assert_device_map, get_device_map
 
 from sat.utils import logging
 
@@ -66,6 +66,7 @@ class NumericGPT2Model(hf_gpt2.GPT2PreTrainedModel):
             " `device_map` but it needs to be a dictionary module_name to device, so for instance {'h.0': 0, 'h.1': 1,"
             " ...}",
             FutureWarning,
+            stacklevel=2,
         )
         self.device_map = (
             get_device_map(len(self.h), range(torch.cuda.device_count()))
@@ -94,6 +95,7 @@ class NumericGPT2Model(hf_gpt2.GPT2PreTrainedModel):
         warnings.warn(
             "Like `parallelize`, `deparallelize` is deprecated and will be removed in v5 of Transformers.",
             FutureWarning,
+            stacklevel=2,
         )
         self.model_parallel = False
         self.device_map = None
@@ -266,7 +268,9 @@ class NumericGPT2Model(hf_gpt2.GPT2PreTrainedModel):
             () if output_attentions and self.config.add_cross_attention else None
         )
         all_hidden_states = () if output_hidden_states else None
-        for i, (block, layer_past) in enumerate(zip(self.h, past_key_values)):
+        for i, (block, layer_past) in enumerate(
+            zip(self.h, past_key_values, strict=False)
+        ):
             # Model parallel
             if self.model_parallel:
                 torch.cuda.set_device(hidden_states.device)

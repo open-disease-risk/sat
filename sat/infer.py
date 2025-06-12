@@ -13,7 +13,6 @@ from omegaconf import DictConfig
 from transformers import PreTrainedTokenizerFast
 from transformers.pipelines import pipeline
 
-import sat.transformers.pipelines  # keep this import for pipeline registration to happen
 from sat.models.tasks import heads
 from sat.models.utils import get_device, load_model
 from sat.utils import config, logging, rand
