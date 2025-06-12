@@ -255,13 +255,14 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
     # Configure trainer kwargs
     # Prune dataset columns to avoid collator errors (keep only columns needed for model)
     columns_to_keep = [
-        "input_ids",
-        "attention_mask",
-        "events",
-        "durations",
-        "labels",
+        cfg.data.id_col,
+        cfg.data.duration_col,
+        cfg.data.event_col,
         "numerics",
         "modality",
+        "input_ids",
+        "attention_mask",
+        "labels",
         "token_type_ids",
     ]
     for split in mapped_labels_dataset.keys():
