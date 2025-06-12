@@ -14,9 +14,12 @@ defaults:
   - override /trainer: ${data/load}/default
 
 
-survival_intermediate_size: 8
+survival_intermediate_size: 16
 survival_batch_norm: false
 survival_hidden_dropout_prob: false
 survival_bias: true
-survival_num_hidden_layers: 1
+survival_num_hidden_layers: 0
 survival_loss_weight: 1.0
+
+survival_shared_intermediate_size: 32
+survival_shared_num_hidden_layers: 0
