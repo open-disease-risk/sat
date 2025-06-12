@@ -1,8 +1,15 @@
-import torch 
+"""Mismatch loss for intra-event ranking"""
+
+__authors__ = ["Ding Zhu", "Dominik Dahlem", "Mahed Abroshan"]
+__status__ = "Development"
+
+
 import pandas as pd
+import torch
+
+from sat.models.heads import SAOutput
 
 from ..base import Loss
-from sat.models.heads import SAOutput
 
 
 class IntraEventRankingLoss(Loss):
@@ -28,11 +35,11 @@ class IntraEventRankingLoss(Loss):
 
         # Load time cut points
         df = pd.read_csv(duration_cuts, header=None, names=["cuts"])
-        self.register_buffer("duration_cuts", torch.tensor(df.cuts.values, dtype=torch.float32))
+        self.register_buffer(
+            "duration_cuts", torch.tensor(df.cuts.values, dtype=torch.float32)
+        )
         self.num_time_bins = len(df.cuts)
-        
-        
-        
+
     def ranking_loss(
         self, events, durations, survival, hazard, weights
     ) -> torch.Tensor:
@@ -51,12 +58,12 @@ class IntraEventRankingLoss(Loss):
         """
         device = events.device
         e, n = events.shape  # num_events, batch_size
-        tn = hazard.shape[2]  # num_time_bins
+        hazard.shape[2]  # num_time_bins
 
         # create event mask once
         I = events.to(bool)
         I_censored = ~I  # e x n
-        
+
         # Initialize duration cut points tensor efficiently
         T = self.duration_cuts.to(device).expand(n, e, -1)  # (n x e x tn)
 
@@ -78,7 +85,7 @@ class IntraEventRankingLoss(Loss):
 
         # Fix out of bounds indices
         max_idx = len(self.duration_cuts) - 1
-        fixOOB = t1Index >= len(self.duration_cuts) # (e x e x n)
+        fixOOB = t1Index >= len(self.duration_cuts)  # (e x e x n)
         t1Index[fixOOB] = max_idx
 
         # Gather time values efficiently
@@ -120,10 +127,16 @@ class IntraEventRankingLoss(Loss):
 
         # Extract diagonals efficiently(The diagonal is sat at t0)
         diag_S = (
-            torch.diagonal(SatT, dim1=0, dim2=1).permute(1, 0).unsqueeze(0).repeat(e, 1, 1)
+            torch.diagonal(SatT, dim1=0, dim2=1)
+            .permute(1, 0)
+            .unsqueeze(0)
+            .repeat(e, 1, 1)
         )  # (e x e x n)
         diag_S2 = (
-            torch.diagonal(SatTMinus, dim1=0, dim2=1).permute(1, 0).unsqueeze(0).repeat(e, 1, 1)
+            torch.diagonal(SatTMinus, dim1=0, dim2=1)
+            .permute(1, 0)
+            .unsqueeze(0)
+            .repeat(e, 1, 1)
         )  # (e x e x n)
 
         # Calculate survival differences
@@ -131,7 +144,6 @@ class IntraEventRankingLoss(Loss):
         diag_S2_T = torch.transpose(diag_S2, 0, 1)  # (e x e x n)
         diag_S_T = torch.transpose(diag_S, 0, 1)  # (e x e x n)
 
-        
         dS1 = diag_S - SatT_T  # (e x e x n)
         dS2 = SatTMinus - diag_S2_T  # (e x e x n)
         dS3 = SatT - diag_S_T  # (e x e x n)
@@ -140,18 +152,17 @@ class IntraEventRankingLoss(Loss):
         durations_i = durations.unsqueeze(1).repeat(1, e, 1)  # (e x e x n)
         durations_j = durations.unsqueeze(0).repeat(e, 1, 1)  # (e x e x n)
         comp = torch.sign(durations_i - durations_j)  # (e x e x n)
-        
+
         # Mismatch mask (Here, Only consider i > j -> event i should be before event j)
-        lower_mask = torch.tril(torch.ones_like(durations_i[:, :, 0]), diagonal=1).unsqueeze(-1)
+        lower_mask = torch.tril(
+            torch.ones_like(durations_i[:, :, 0]), diagonal=1
+        ).unsqueeze(-1)
         mask = (comp > 0) & (lower_mask.bool())
-        comp = comp.masked_fill(mask, 0) # (e x e x n)
-        
+        comp = comp.masked_fill(mask, 0)  # (e x e x n)
 
         # Apply ReLU to keep only positive values
         comp_pos = torch.nn.functional.relu(comp)  # (e x e x n)
-        
-        
-        
+
         # Create event masks efficiently
         I_expanded = I.unsqueeze(0).repeat(e, 1, 1).float()  # (e x e x n)
         I_T = I.unsqueeze(1).repeat(1, e, 1).float()  # (e x e x n)
@@ -183,8 +194,11 @@ class IntraEventRankingLoss(Loss):
         num_valid = torch.sum((A1 + A2 + A3) > 0)
 
         # Return zero tensor with gradient if no valid comparisons
-        return torch.sum(loss_term) / num_valid if num_valid > 0 else torch.tensor(0.0, device=device, requires_grad=True)
-
+        return (
+            torch.sum(loss_term) / num_valid
+            if num_valid > 0
+            else torch.tensor(0.0, device=device, requires_grad=True)
+        )
 
     def forward(self, predictions: SAOutput, references: torch.Tensor) -> torch.Tensor:
         """
@@ -209,7 +223,9 @@ class IntraEventRankingLoss(Loss):
             weights_expanded = self.weights[1:].to(references.device)
             # Expand to match the expected dimensions with the permuted orientation
             weights_expanded = (
-                weights_expanded.unsqueeze(1).unsqueeze(2).repeat(1, e, n) # (e x e x n)
+                weights_expanded.unsqueeze(1)
+                .unsqueeze(2)
+                .repeat(1, e, n)  # (e x e x n)
             )
 
         # Use the vectorized ranking loss from the parent class
@@ -221,7 +237,3 @@ class IntraEventRankingLoss(Loss):
             predictions.hazard.permute(1, 0, 2),
             weights_expanded,
         )
-
-        
-
-
