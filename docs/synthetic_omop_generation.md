@@ -166,7 +166,7 @@ This structure is compatible with other SAT modules for survival analysis.
 
 ## Integration with FEMR/MEDS
 
-The generated data is fully compatible with FEMR and MEDS packages for medical event data analysis. See the documentation for `parse_omop.py` for details on how to use the generated data with those packages.
+The generated data is fully compatible with FEMR and MEDS packages for medical event data analysis. For implementation details on how to use the generated data with those packages, refer to the `parse_omop.py` module and its in-code documentation (docstrings).
 
 ## Cohort Building with Labelers
 
