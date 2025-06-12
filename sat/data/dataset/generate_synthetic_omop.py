@@ -492,14 +492,6 @@ class SyntheticOmopGenerator:
         self._omop_events = []
         patient_death_times = {}
 
-        # Helper function to generate event time based on risk score
-        def generate_time(risk, scale=1000, shape=1.2):
-            # Higher risk = lower time to event
-            # Use Weibull distribution for realistic survival times
-            lambda_param = np.exp(-risk / scale)
-            time = np.random.weibull(shape) / lambda_param
-            return time
-
         # Process each patient with completely restructured enrollment-death timing logic
         for patient_id in self._patient_enrollment_dates.keys():
             # STEP 1: Create a baseline enrollment date with variability across patients
