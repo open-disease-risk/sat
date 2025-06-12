@@ -156,13 +156,16 @@ def create_pareto_front_plot(study, output_dir, interactive=True):
                 for i in range(len(study.directions)):
                     for j in range(i + 1, len(study.directions)):
                         try:
-                            # Define target functions for projection
-                            target_i = lambda t: (
-                                t.values[i] if t.values and len(t.values) > i else None
-                            )
-                            target_j = lambda t: (
-                                t.values[j] if t.values and len(t.values) > j else None
-                            )
+                            # Define target functions for projection with proper closure binding
+                            def make_target_fn(idx):
+                                return lambda t: (
+                                    t.values[idx]
+                                    if t.values and len(t.values) > idx
+                                    else None
+                                )
+
+                            target_i = make_target_fn(i)
+                            target_j = make_target_fn(j)
 
                             # Create 2D projection of Pareto front
                             fig = optuna.visualization.plot_pareto_front(
@@ -306,7 +309,7 @@ def create_pareto_front_plot(study, output_dir, interactive=True):
                     for j in range(i + 1, len(study.directions)):
                         plt.figure(figsize=(10, 8))
 
-                        for k, trial in enumerate(trials):
+                        for k, _ in enumerate(trials):
                             plt.scatter(values[k, i], values[k, j])
 
                         # Set axis labels based on study direction
@@ -414,9 +417,13 @@ def create_optimization_history_plot(study, output_dir, interactive=True):
             if is_multi_objective(study):
                 # For multi-objective, create history plot for each objective
                 for i in range(len(study.directions)):
+
+                    def make_target_fn(idx):
+                        return lambda t: t.values[idx] if t.values else None
+
                     fig = optuna.visualization.plot_optimization_history(
                         study,
-                        target=lambda t: t.values[i] if t.values else None,
+                        target=make_target_fn(i),
                         target_name=f"Objective {i+1}",
                     )
                     output_file = os.path.join(
@@ -568,10 +575,13 @@ def create_parameter_importance_plot(study, output_dir, interactive=True):
                 # For multi-objective, create importance plot for each objective
                 for i in range(len(study.directions)):
                     try:
-                        # Create a proper target function for this objective
-                        target_func = lambda t, idx=i: (
-                            t.values[idx] if t.values and len(t.values) > idx else None
-                        )
+                        # Create a proper target function for this objective using a named function instead of lambda
+                        def target_func(t, idx=i):
+                            return (
+                                t.values[idx]
+                                if t.values and len(t.values) > idx
+                                else None
+                            )
 
                         # Check if we have enough trials with values
                         valid_values = [
@@ -693,9 +703,7 @@ def main():
         # For IPython display, import only if needed
         try:
             # Create Pareto front visualization
-            pareto_plot = create_pareto_front_plot(
-                study, args.output_dir, args.interactive
-            )
+            create_pareto_front_plot(study, args.output_dir, args.interactive)
 
             # Generate table of Pareto-optimal solutions
             pareto_df = generate_pareto_solutions_table(study, args.output_dir)
@@ -710,14 +718,10 @@ def main():
         logger.info("Detected single-objective study")
 
     # Create optimization history plot
-    history_plot = create_optimization_history_plot(
-        study, args.output_dir, args.interactive
-    )
+    create_optimization_history_plot(study, args.output_dir, args.interactive)
 
     # Create parameter importance plot
-    importance_plot = create_parameter_importance_plot(
-        study, args.output_dir, args.interactive
-    )
+    create_parameter_importance_plot(study, args.output_dir, args.interactive)
 
     logger.info(f"All visualizations saved to {args.output_dir}")
 

@@ -10,7 +10,8 @@ import torch
 from torch.utils.data import TensorDataset
 
 # Import from the sat package
-from sat.transformers.trainer import Trainer, TrainingArgumentsWithMPSSupport
+from sat.transformers.trainer import SATTrainer as Trainer
+from sat.transformers.trainer import TrainingArgumentsWithMPSSupport
 
 
 class TestTrainer(unittest.TestCase):
@@ -66,7 +67,6 @@ class TestTrainer(unittest.TestCase):
             train_dataset=self.train_dataset,
             eval_dataset=self.eval_dataset,
             data_collator=self.mock_collator,
-            metrics={},
             callbacks=[],
         )
 

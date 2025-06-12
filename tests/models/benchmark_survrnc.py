@@ -136,9 +136,13 @@ def run_loss_benchmark(loss_fn, predictions, targets, num_iterations=3, name="Un
 
 
 def benchmark_all_losses(
-    batch_sizes=[16, 32], num_events_list=[1, 2], num_cuts=10, num_iterations=3
+    batch_sizes=None, num_events_list=None, num_cuts=10, num_iterations=3
 ):
     """Benchmark all ranking losses for different batch sizes and event counts."""
+    if batch_sizes is None:
+        batch_sizes = [16, 32]
+    if num_events_list is None:
+        num_events_list = [1, 2]
     # Results dictionary
     results = {
         "batch_size": [],
@@ -341,9 +345,9 @@ def save_results_to_csv(results, filename):
     # Prepare data for CSV
     data = []
 
-    # Extract unique batch sizes and event counts
-    batch_sizes = set(results["batch_size"])
-    num_events_list = set(results["num_events"])
+    # Extract unique batch sizes and event counts - not used but kept for future use
+    # batch_sizes = set(results["batch_size"])  # Unused variable
+    # num_events_list = set(results["num_events"])  # Unused variable
 
     for i in range(len(results["batch_size"])):
         batch_size = results["batch_size"][i]
@@ -607,10 +611,11 @@ def main():
     )
 
     # Save results to CSV
-    csv_path = save_results_to_csv(results, "survrnc_benchmark.csv")
+    # Variable csv_path not used later
+    _ = save_results_to_csv(results, "survrnc_benchmark.csv")
 
     # Generate summary markdown
-    summary_md = generate_summary_markdown(csv_path)
+    # summary_md = generate_summary_markdown(csv_path)  # Unused variable
 
     # Plot results if matplotlib is available
     try:

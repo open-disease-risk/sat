@@ -163,3 +163,4 @@ cython_debug/
 
 # VS Code debug
 .vscode/
+**/.claude/settings.local.json

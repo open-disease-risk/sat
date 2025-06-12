@@ -328,7 +328,10 @@ class MomentumBuffer:
         try:
             events = references[:, self.num_events : 2 * self.num_events]
             uncensored_count = (events > 0).sum().item()
-        except:
+        except Exception as e:
+            # Log the specific exception for debugging
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"Error counting uncensored events: {str(e)}")
             uncensored_count = 0
 
         # Add to buffer

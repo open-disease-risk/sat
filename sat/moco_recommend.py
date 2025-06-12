@@ -19,12 +19,11 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from omegaconf import DictConfig, OmegaConf
 
-from sat.data import load
+from sat.data import splitter
 from sat.utils import logging
 from sat.utils.moco_buffer_estimator import (
     analyze_dataset_events,
     estimate_optimal_buffer_size,
-    generate_moco_config,
     print_buffer_recommendations,
 )
 
@@ -54,8 +53,16 @@ def load_dataset_from_config(cfg: DictConfig) -> Tuple[pd.DataFrame, Dict[str, A
     }
 
     logger.info(f"Load data using {cfg.data.load}")
-    dataset = hydra.utils.call(cfg.data.load)
-    dataset = load.split_dataset(cfg.data, dataset)
+    fold_index = cfg.cv.k or None
+    ds_splitter = splitter.StreamingKFoldSplitter(
+        id_field=cfg.data.id_col,
+        k=cfg.cv.k,
+        val_ratio=cfg.data.validation_ratio,
+        test_ratio=cfg.data.test_ratio,
+        test_split_strategy="hash",
+        split_names=cfg.data.splits,
+    )
+    dataset = ds_splitter.load_split(cfg=cfg.data.load, fold_index=fold_index)
 
     # Convert to pandas DataFrame for analysis
     if "train" in dataset:

@@ -18,10 +18,11 @@ from pathlib import Path
 import hydra
 import numpy as np
 import pandas as pd
+from datasets import DatasetDict, IterableDataset, concatenate_datasets
 from logdecorator import log_on_end, log_on_error, log_on_start
 from omegaconf import DictConfig, OmegaConf
 
-from sat.data import load
+from sat.data import splitter
 from sat.pycox.preprocessing.label_transforms import LabTransPCHazard
 from sat.transformers.feature_extractor import SAFeatureExtractor
 from sat.utils import config, logging, rand
@@ -29,17 +30,46 @@ from sat.utils import config, logging, rand
 logger = logging.get_default_logger()
 
 
+def _concat_ds(dataset: DatasetDict, cfg):
+    test_split = dataset[cfg.data.splits[-1]]
+    train_split = dataset[cfg.data.splits[0]]
+    val_split = dataset[cfg.data.splits[1]]
+    if cfg.data.load.streaming:
+        # This creates a new IterableDataset that chains the three datasets
+        def chain_iterables():
+            for example in train_split:
+                yield example
+            for example in val_split:
+                yield example
+            for example in test_split:
+                yield example
+
+        full_dataset = IterableDataset.from_generator(chain_iterables)
+    else:
+        full_dataset = concatenate_datasets([train_split, val_split, test_split])
+
+    return full_dataset
+
+
 @rand.seed
 def _train_labeltransform(cfg: DictConfig) -> None:
-    dataset = hydra.utils.call(cfg.data.load)
-    dataset = load.split_dataset(cfg.data, dataset)
+    ds_splitter = splitter.StreamingKFoldSplitter(
+        id_field=cfg.data.id_col,
+        k=None,
+        val_ratio=cfg.data.validation_ratio,
+        test_ratio=cfg.data.test_ratio,
+        test_split_strategy="hash",
+        split_names=cfg.data.splits,
+    )
+    dataset = ds_splitter.load_split(cfg=cfg.data.load)
+    full_dataset = _concat_ds(dataset, cfg)
 
     if cfg.data.load.streaming:
-        shuffled_dataset = dataset["train"].shuffle(
+        shuffled_dataset = full_dataset.shuffle(
             buffer_size=cfg.data.label_transform.buffer_size
         )
     else:
-        shuffled_dataset = dataset["train"].shuffle()
+        shuffled_dataset = full_dataset.shuffle()
 
     train_data = next(
         shuffled_dataset.iter(batch_size=cfg.data.label_transform.buffer_size)

@@ -4,6 +4,8 @@ __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
 
+import warnings
+
 import numba
 import numpy as np
 import pandas as pd
@@ -38,7 +40,8 @@ def kaplan_meier(durations, events, start_duration=0):
     if start_duration > durations.min():
         warnings.warn(
             f"start_duration {start_duration} is larger than minimum duration {durations.min()}. "
-            "If intentional, consider changing start_duration when calling kaplan_meier."
+            "If intentional, consider changing start_duration when calling kaplan_meier.",
+            stacklevel=2,
         )
     order = np.argsort(durations)
     durations = durations[order]

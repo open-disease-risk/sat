@@ -12,8 +12,6 @@ from sat.distributions.utils import (
     apply_informative_prior,
     create_clinically_informed_distribution,
     create_conditional_dsm_distribution,
-    create_distribution,
-    create_dsm_distribution,
 )
 from sat.distributions.weibull import WeibullDistribution, WeibullMixtureDistribution
 
@@ -85,9 +83,9 @@ def test_informative_prior_weibull():
     # Check that shape has been influenced by prior (cancer should have shape > 1)
     assert torch.all(prior_params["shape"] > 0.5)  # Still positive
 
-    # Get mean shape before and after
+    # Get mean shape before (used in assertion checking)
     mean_shape_before = shape.mean().item()
-    mean_shape_after = prior_params["shape"].mean().item()
+    # mean_shape_after = prior_params["shape"].mean().item()  # Unused in this test
 
     # For cancer, shape should be pushed toward higher values (increasing hazard)
     # But not drastically changed (only blended)
@@ -118,18 +116,22 @@ def test_informative_prior_lognormal():
     prior_params = apply_informative_prior(params, "lognormal", "cancer")
 
     # Check that parameters have been influenced by prior but not drastically changed
-    assert torch.allclose(prior_params["loc"], loc, rtol=0.5)
-    assert torch.allclose(prior_params["scale"], scale, rtol=0.5)
+    # For cancer, loc is blended with a prior of 2.0 at 15% weight
+    # This means the result will be 0.85 * original + 0.15 * 2.0
+    # The maximum deviation is when original is far from 2.0
+    assert torch.allclose(prior_params["loc"], 0.85 * loc + 0.15 * 2.0, atol=1e-5)
+    assert torch.allclose(prior_params["scale"], 0.85 * scale + 0.15 * 1.2, atol=1e-5)
 
     # Apply different event type
     prior_params = apply_informative_prior(params, "lognormal", "chronic_disease")
 
     # Chronic disease typically has higher location parameter (longer survival)
-    mean_loc_chronic = prior_params["loc"].mean().item()
-    mean_loc_before = loc.mean().item()
+    # mean_loc_chronic = prior_params["loc"].mean().item()  # Unused in this test
+    # mean_loc_before = loc.mean().item()  # Unused in this test
 
     # The mean should be affected but still close to original
-    assert torch.allclose(prior_params["loc"], loc, rtol=0.5)
+    # For chronic disease, loc is blended with a prior of 3.0 at 15% weight
+    assert torch.allclose(prior_params["loc"], 0.85 * loc + 0.15 * 3.0, atol=1e-5)
 
 
 def test_event_specific_constraints():

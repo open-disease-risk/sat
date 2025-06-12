@@ -90,9 +90,8 @@ class SurvivalEvaluationModule(EvaluationModule):
 
 
 class ComputeBrier(SurvivalEvaluationModule):
-    def __init__(self, cfg, survival_train_path, duration_cuts, per_horizon=False):
+    def __init__(self, cfg, duration_cuts, per_horizon=False):
         self.cfg = cfg
-        self.survival_train = pd.read_csv(survival_train_path)
 
         df = pd.read_csv(duration_cuts, header=None, names=["cuts"])
         self.duration_cuts = df.cuts.values[1:-1]  # we do not need the start points
@@ -116,14 +115,10 @@ class ComputeBrier(SurvivalEvaluationModule):
 
         brier_score = evaluate.load("./sat/evaluate/brier_score")
 
-        events_train = self.survival_train.iloc[:, (1 * self.cfg.num_events + event)]
-        durations_train = self.survival_train.iloc[:, (3 * self.cfg.num_events + event)]
         events_test = references[:, (1 * self.cfg.num_events + event)].astype(bool)
         durations_test = references[:, (3 * self.cfg.num_events + event)]
 
         preds = predictions[:, 2, event]
-
-        train_set = np.stack([events_train, durations_train], axis=1)
 
         metric_dict = {}
         quantile_incr = 1.0 / preds.shape[1]
@@ -136,7 +131,6 @@ class ComputeBrier(SurvivalEvaluationModule):
         ibrs, brs = brier_score.compute(
             references=et_test,
             predictions=preds[:, :-1],
-            train_set=train_set,
             duration_cuts=self.duration_cuts,
             per_horizon=self.per_horizon,
         )
@@ -156,7 +150,6 @@ class ComputeBrier(SurvivalEvaluationModule):
             logger.debug(f"survival predictions shape {predictions.shape}")
 
         brier_mean = 0.0
-        brier_balanced_mean = 0.0
         brier_n = 0
 
         metrics_dict = {}
@@ -167,7 +160,6 @@ class ComputeBrier(SurvivalEvaluationModule):
                 metrics_dict[f"brier_{i}th_event"]
                 * metrics_dict[f"brier_{i}th_event_n"]
             )
-            brier_balanced_mean += metrics_dict[f"brier_{i}th_event"]
             brier_n += metrics_dict[f"brier_{i}th_event_n"]
 
         # Prevent division by zero
@@ -177,22 +169,18 @@ class ComputeBrier(SurvivalEvaluationModule):
             brier_mean = 0.5  # Default value when no events
 
         metrics_dict["brier_weighted_avg"] = brier_mean
-        metrics_dict["brier_avg"] = brier_balanced_mean / max(1, self.cfg.num_events)
 
         return metrics_dict
 
 
 class ComputeCIndex(SurvivalEvaluationModule):
-    def __init__(self, cfg, survival_train_path, duration_cuts):
+    def __init__(self, cfg, duration_cuts):
         self.cfg = cfg
-        self.survival_train = pd.read_csv(survival_train_path)
         df = pd.read_csv(duration_cuts, header=None, names=["cuts"])
         self.duration_cuts = df.cuts.values[1:]  # we do not need the start point
 
     def compute_event(self, predictions, references, event):
-        if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(f"predictions shape: {predictions.shape}")
-            logger.debug(f"references shape: {references.shape}")
+        n = len(references)
 
         # Check if predictions is valid for computing metrics
         if predictions.size == 0 or predictions.ndim < 4:
@@ -202,43 +190,41 @@ class ComputeCIndex(SurvivalEvaluationModule):
             # Return default values for metrics
             return {
                 f"ipcw_{event}th_event": 0.5,  # Default c-index (0.5 is random)
-                f"ipcw_avg_{event}th_event": 0.5,
                 f"ipcw_{event}th_event_n": 0,
             }
 
         c_index = evaluate.load("./sat/evaluate/concordance_index_ipcw")
 
-        events_train = self.survival_train.iloc[:, (1 * self.cfg.num_events + event)]
-        durations_train = self.survival_train.iloc[:, (3 * self.cfg.num_events + event)]
         events_test = references[:, (1 * self.cfg.num_events + event)].astype(bool)
         durations_test = references[:, (3 * self.cfg.num_events + event)]
 
-        # Safely get predictions
+        # Get survival predictions
         preds = predictions[:, 1, event]  # Get risk predictions
-
-        train_set = np.stack([events_train, durations_train], axis=1)
 
         metric_dict = {}
         quantile_incr = 1.0 / preds.shape[1]
         horizons = np.arange(1, preds.shape[1] + 1) * quantile_incr
 
-        n = events_test.sum()
         et_test = np.stack([events_test, durations_test], axis=1)
 
-        # Compute c-index with error handling
-        cindeces = c_index.compute(
+        # Compute c-index with error handling - now returns (integrated_cindex, per_horizon_cindeces)
+        integrated_cindex, per_horizon_cindeces = c_index.compute(
             references=et_test,
             predictions=preds,
-            train_set=train_set,
             duration_cuts=self.duration_cuts,
+            per_horizon=True,  # Get per-horizon values
         )
 
-        # Record results
-        for j in range(len(cindeces)):
-            metric_dict[f"ipcw_{event}th_event_{horizons[j]}"] = cindeces[j]
+        # Record integrated/weighted C-index
+        metric_dict[f"ipcw_{event}th_event"] = integrated_cindex
 
-        metric_dict[f"ipcw_avg_{event}th_event"] = np.mean(cindeces)
-        metric_dict[f"ipcw_{event}th_event"] = cindeces[-1]
+        # Record per-horizon C-indices if available
+        if len(per_horizon_cindeces) > 0:
+            for j, horizon in enumerate(horizons[: len(per_horizon_cindeces)]):
+                if j < len(per_horizon_cindeces):
+                    metric_dict[f"ipcw_{event}th_event_{horizon:.2f}"] = (
+                        per_horizon_cindeces[j]
+                    )
 
         # Always record sample size
         metric_dict[f"ipcw_{event}th_event_n"] = n
@@ -248,35 +234,27 @@ class ComputeCIndex(SurvivalEvaluationModule):
     def compute(self, predictions, references):
         predictions = self.survival_predictions(predictions)
         cindex_mean = 0.0
-        cindex_weighted_avg_mean = 0.0
-        cindex_avg_mean = 0.0
         cindex_n = 0
         metrics_dict = {}
 
         for i in range(self.cfg.num_events):
-            metric_results = self.compute_event(predictions, references, i)
-            metrics_dict.update(metric_results)
+            metrics_dict.update(self.compute_event(predictions, references, i))
             cindex_mean += (
                 metrics_dict[f"ipcw_{i}th_event"] * metrics_dict[f"ipcw_{i}th_event_n"]
             )
-            cindex_weighted_avg_mean += (
-                metrics_dict[f"ipcw_avg_{i}th_event"]
-                * metrics_dict[f"ipcw_{i}th_event_n"]
-            )
-            cindex_avg_mean += metrics_dict[f"ipcw_avg_{i}th_event"]
             cindex_n += metrics_dict[f"ipcw_{i}th_event_n"]
 
         # Prevent division by zero
-        if cindex_n > 0:
+        if cindex_n:
             cindex_mean /= cindex_n
-            weighted_avg = cindex_weighted_avg_mean / cindex_n
         else:
             cindex_mean = 0.5  # Default value (random predictor)
-            weighted_avg = 0.5
 
-        metrics_dict["ipcw"] = cindex_mean
-        metrics_dict["ipcw_weighted_avg"] = weighted_avg
-        metrics_dict["ipcw_avg"] = cindex_avg_mean / max(1, self.cfg.num_events)
+        # The weighted average across events
+        metrics_dict["ipcw_weighted_avg"] = cindex_mean
+
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"Final C-index (weighted avg across events): {cindex_mean}")
 
         return metrics_dict
 

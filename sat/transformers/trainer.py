@@ -3,12 +3,13 @@
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
-import torch
 from typing import Optional, Tuple
+
+import torch
 from accelerate import Accelerator
 from torch.optim import AdamW
-from torch.utils.data import DataLoader, Dataset
-from torch.utils.data.dataloader import DataLoader
+from torch.utils.data import Dataset
+from torch.utils.data.dataloader import DataLoader  # Import DataLoader once
 from transformers import Trainer, TrainingArguments
 from transformers.optimization import get_scheduler
 from transformers.trainer_pt_utils import get_parameter_names
@@ -364,7 +365,6 @@ class SATTrainer(Trainer):
         """
         # For multi-event models, ensure we capture all needed outputs
         if self.is_multi_event:
-            has_labels = all(inputs.get(k) is not None for k in self.label_names)
             inputs = self._prepare_inputs(inputs)
 
             if prediction_loss_only:
@@ -422,7 +422,6 @@ class SATTrainer(Trainer):
             return (outputs.loss, logits, labels)
 
         # For non-multi-event survival models, we still need to handle SAOutput specially
-        has_labels = all(inputs.get(k) is not None for k in self.label_names)
         inputs = self._prepare_inputs(inputs)
 
         if prediction_loss_only:

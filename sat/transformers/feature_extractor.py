@@ -6,7 +6,7 @@ __status__ = "Development"
 import pickle
 from logging import DEBUG, ERROR
 from pathlib import Path
-from typing import List, Union
+from typing import List, Optional, Union
 
 import numpy as np
 from logdecorator import log_on_end, log_on_error, log_on_start
@@ -37,14 +37,18 @@ class SAFeatureExtractor(FeatureExtractionMixin):
         do_data_transform: bool = True,
         duration_col: str = "duration",
         event_col: str = "event",
-        transformed_duration_cols: List[str] = ["t", "e"],
+        transformed_duration_cols: Optional[List[str]] = None,
         **kwargs,
     ):
         self.label_transform_path = label_transform_path
         self.do_data_transform = do_data_transform
         self.duration_col = duration_col
         self.event_col = event_col
-        self.transformed_duration_cols = transformed_duration_cols
+        self.transformed_duration_cols = (
+            transformed_duration_cols
+            if transformed_duration_cols is not None
+            else ["t", "e"]
+        )
         self.labtrans = None
         self.is_data_transform_loaded = False
 
@@ -88,8 +92,9 @@ class SAFeatureExtractor(FeatureExtractionMixin):
     ) -> BatchFeature:
         self._load_label_transformer()
 
-        duration = np.array(data[self.duration_col])
-        event = np.array(data[self.event_col])
+        # Explicitly use float32 for MPS compatibility
+        duration = np.array(data[self.duration_col], dtype=np.float32)
+        event = np.array(data[self.event_col], dtype=np.float32)
 
         duration = duration[:, np.newaxis] if duration.ndim == 1 else duration
         event = event[:, np.newaxis] if event.ndim == 1 else event
@@ -100,15 +105,16 @@ class SAFeatureExtractor(FeatureExtractionMixin):
                 duration.ravel(),
                 event.ravel(),
             )
-            t = y_trans[0].reshape(-1, num_events)
-            f = y_trans[2].reshape(-1, num_events)
+            # Explicitly convert y_trans values to float32 for MPS compatibility
+            t = y_trans[0].astype(np.float32).reshape(-1, num_events)
+            f = y_trans[2].astype(np.float32).reshape(-1, num_events)
         else:
-            t = np.array(data[self.transformed_duration_cols[0]]).reshape(
-                -1, num_events
-            )
-            f = np.array(data[self.transformed_duration_cols[1]]).reshape(
-                -1, num_events
-            )
+            t = np.array(
+                data[self.transformed_duration_cols[0]], dtype=np.float32
+            ).reshape(-1, num_events)
+            f = np.array(
+                data[self.transformed_duration_cols[1]], dtype=np.float32
+            ).reshape(-1, num_events)
 
         e = event.reshape(-1, num_events)
         d = duration.reshape(-1, num_events)
@@ -116,6 +122,7 @@ class SAFeatureExtractor(FeatureExtractionMixin):
         logger.debug(
             f"Dimensions for t: {t.shape}, e: {e.shape}, f: {f.shape}, d: {d.shape}"
         )
-        data["labels"] = np.concatenate((t, e, f, d), axis=1)
+        # Ensure labels array is explicitly float32 for MPS compatibility
+        data["labels"] = np.concatenate((t, e, f, d), axis=1).astype(np.float32)
 
         return data

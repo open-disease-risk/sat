@@ -1,0 +1,6 @@
+_target_: sat.utils.tokenizing.create_tokenizer
+out_dir: ${modelhub}/tokenizer/${dataset}
+vocab_size: 30000
+tokens:
+  - pad
+  - unk

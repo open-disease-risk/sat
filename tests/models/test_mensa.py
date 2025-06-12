@@ -11,7 +11,6 @@ from sat.loss.survival.mensa import MENSALoss
 from sat.models.heads.mensa import MENSAConfig, MENSATaskHead
 from sat.models.heads.output import SAOutput
 from sat.models.parameter_nets import MENSAParameterNet
-from sat.transformers.trainer import SATTrainer, TrainingArgumentsWithMPSSupport
 
 
 # Create temporary files needed for tests
@@ -497,16 +496,16 @@ def test_mensa_with_sat_output():
         output.hazard.shape[1] == config.num_events
     ), f"Event dimension mismatch: {output.hazard.shape[1]}"
 
-    # The hazard tensor should be properly padded to match the survival tensor's time dimension
+    # MENSA doesn't pad hazard, so hazard and survival should have same dimensions
     assert output.hazard.shape[2] == output.survival.shape[2], (
-        f"Hazard and survival time dimensions should match after padding: "
+        f"Hazard and survival time dimensions should match: "
         f"{output.hazard.shape[2]} vs {output.survival.shape[2]}"
     )
 
-    # The first column of hazard should be zeros (padding)
-    assert torch.all(
-        output.hazard[:, :, 0] == 0
-    ), "First column of hazard should be zero padding"
+    # MENSA doesn't pad hazard, so the first column is not zeros
+    # Just verify hazard values are reasonable (positive and finite)
+    assert torch.all(output.hazard >= 0), "Hazard values should be non-negative"
+    assert torch.all(torch.isfinite(output.hazard)), "Hazard values should be finite"
 
     # Check parameter shapes
     assert output.shape.shape == (

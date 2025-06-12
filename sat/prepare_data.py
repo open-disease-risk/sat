@@ -19,7 +19,7 @@ logger = logging.get_default_logger()
 @rand.seed
 def _prepare_data(cfg: DictConfig) -> None:
     dataModule = hydra.utils.instantiate(cfg.data.parse)
-    dataModule.prepare()
+    dataModule()
 
     logger.debug("Serialize random number seed used for prepare_data")
     with Path(f"{cfg.data.parse.processed_dir}/prepare_data-seed.json").open("w") as f:

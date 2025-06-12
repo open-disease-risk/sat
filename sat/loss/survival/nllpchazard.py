@@ -73,13 +73,10 @@ class SATNLLPCHazardLoss(Loss):
         device = references.device
 
         # Pre-extract common data to avoid redundant operations
-        events_all = self.events(references)  # [batch_size, num_events]
-        duration_percentiles_all = self.duration_percentiles(
-            references
-        )  # [batch_size, num_events]
-        fraction_durations_all = self.fraction_with_quantile(
-            references
-        )  # [batch_size, num_events]
+        # Note: These were intended for a different implementation approach and are unused
+        # events_all = self.events(references)  # [batch_size, num_events]
+        # duration_percentiles_all = self.duration_percentiles(references)  # [batch_size, num_events]
+        # fraction_durations_all = self.fraction_with_quantile(references)  # [batch_size, num_events]
 
         # Process all events in parallel if possible (using batch processing)
         # Note: We still need a loop because nllp_hazard_loss expects one event at a time

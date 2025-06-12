@@ -10,7 +10,7 @@ import hydra
 import torch
 from torch import nn
 
-from sat.models.nets import CauseSpecificNet, CauseSpecificNetCompRisk, SimpleMLP
+from sat.models.nets import CauseSpecificNet, CauseSpecificNetCompRisk
 from sat.utils import logging
 
 from .base import BaseConfig, RegressionTask

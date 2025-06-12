@@ -104,7 +104,8 @@ class EventRankNetLoss(RankNetLoss):
 
             # For each sample, we compare all pairs of events that occurred
             num_sample_events = len(event_indices)
-            max_event_pairs = num_sample_events * (num_sample_events - 1) // 2
+            # Calculate maximum possible pairs for debugging/logging (if needed)
+            # max_event_pairs = num_sample_events * (num_sample_events - 1) // 2
 
             # Generate all event pairs for this sample
             event_i_indices = []

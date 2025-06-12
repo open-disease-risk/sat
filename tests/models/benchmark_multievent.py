@@ -90,12 +90,14 @@ def create_importance_weights_file(num_events: int = 2) -> str:
 
 
 def benchmark_losses(
-    batch_sizes: List[int] = [8, 16, 32, 64, 128],
+    batch_sizes: List[int] = None,
     num_events: int = 2,
     num_cuts: int = 10,
     num_iterations: int = 10,
 ):
     """Benchmark MultiEventRankingLoss vs SampleRankingLoss for different batch sizes."""
+    if batch_sizes is None:
+        batch_sizes = [8, 16, 32, 64, 128]
     # Create files needed for loss initialization
     duration_cuts_file = create_duration_cuts_file(num_cuts)
     importance_weights_file = create_importance_weights_file(num_events)
@@ -328,11 +330,13 @@ def benchmark_losses(
 
 def benchmark_num_events(
     batch_size: int = 32,
-    num_events_list: List[int] = [1, 2, 4, 8, 16],
+    num_events_list: List[int] = None,
     num_cuts: int = 10,
     num_iterations: int = 10,
 ):
     """Benchmark MultiEventRankingLoss vs SampleRankingLoss for different numbers of events."""
+    if num_events_list is None:
+        num_events_list = [1, 2, 4, 8, 16]
     results = {
         "num_events": [],
         "multievent_forward": [],

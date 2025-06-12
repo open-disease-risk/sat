@@ -11,7 +11,7 @@ import hydra
 from logdecorator import log_on_end, log_on_error, log_on_start
 from omegaconf import DictConfig
 
-from sat.data import load
+from sat.data import splitter
 from sat.utils import config, logging, rand
 
 logger = logging.get_default_logger()
@@ -19,8 +19,15 @@ logger = logging.get_default_logger()
 
 @rand.seed
 def _train_tokenizer(cfg: DictConfig) -> None:
-    dataset = hydra.utils.call(cfg.data.load)
-    dataset = load.split_dataset(cfg.data, dataset)
+    ds_splitter = splitter.StreamingKFoldSplitter(
+        id_field=cfg.data.id_col,
+        k=None,
+        val_ratio=cfg.data.validation_ratio,
+        test_ratio=cfg.data.test_ratio,
+        test_split_strategy="hash",
+        split_names=cfg.data.splits,
+    )
+    dataset = ds_splitter.load_split(cfg=cfg.data.load)
     logger.info(f"Instantiate tokenizer {cfg.tokenizers.tokenizer}")
     tokenizer = hydra.utils.instantiate(cfg.tokenizers.tokenizer)
 

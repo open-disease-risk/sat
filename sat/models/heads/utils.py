@@ -12,7 +12,7 @@ def pad_col(input, val=0, where="end"):
     This optimized version avoids unnecessary tensor allocations.
     """
     if len(input.shape) != 3:
-        raise ValueError(f"Only works for `phi` tensor that is 3-D.")
+        raise ValueError("Only works for `phi` tensor that is 3-D.")
 
     # Get shape for new tensor
     batch_size, num_events, seq_len = input.shape

@@ -13,7 +13,7 @@ def pad_col(input, val=1e-8, where="end"):
     Uses a small positive default value to ensure numerical stability for hazard calculations.
     """
     if len(input.shape) != 2:
-        raise ValueError(f"Only works for `phi` tensor that is 2-D.")
+        raise ValueError("Only works for `phi` tensor that is 2-D.")
     pad = torch.zeros_like(input[:, :1])
     if val != 0:
         pad = pad + val

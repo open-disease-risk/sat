@@ -315,7 +315,9 @@ class DeepHitCalibrationLoss(Loss):
             )
 
             # Compute all indicators and predictions at once for this event type
-            for i, (t_idx, t) in enumerate(zip(eval_time_indices, time_values)):
+            for i, (t_idx, t) in enumerate(
+                zip(eval_time_indices, time_values, strict=False)
+            ):
                 # Create binary indicator: 1 if subject had event before time t
                 all_event_indicators[i] = event_mask * (event_durations <= t).float()
 

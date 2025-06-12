@@ -8,63 +8,31 @@ from logging import DEBUG, ERROR
 from pathlib import Path
 
 import hydra
-import pandas as pd
 from logdecorator import log_on_end, log_on_error, log_on_start
 from omegaconf import DictConfig
 
 from sat.finetune import _finetune
-from sat.prepare_data import _prepare_data
-from sat.train_labeltransform import _train_labeltransform
-from sat.train_tokenizer import _train_tokenizer
-from sat.utils import config, logging, rand, statistics
+from sat.utils import config, logging, statistics
 
 logger = logging.get_default_logger()
 
 
-@rand.reset_seed
-def _pipeline(cfg: DictConfig) -> pd.DataFrame:
-    if cfg.cv_kfold_reuse:
-        logger.info("Reuse existing k-fold cross validation data")
-    else:
-        logger.info("Train label transformer")
-        _train_labeltransform(cfg)
-        logger.info("Train tokenizer")
-        _train_tokenizer(cfg)
-        logger.info("Run fine-tuning")
-
-    val_metrics, test_metrics = _finetune(cfg)
-
-    logger.debug("Serialize random number seed used for pipeline")
-    with Path(f"{cfg.trainer.training_arguments.output_dir}/pipeline-seed.json").open(
-        "w"
-    ) as f:
-        json.dump({"seed": cfg.seed}, f, ensure_ascii=False, indent=4)
-
-    return val_metrics, test_metrics
-
-
 def _cv(cfg: DictConfig) -> None:
-    logger.info(f"Run {cfg.cv.kfold}-fold cross validation")
+    cfg.cv.k = cfg.cv_kfold
+    logger.info(f"Run {cfg.cv.k}-fold cross validation")
 
-    if cfg.cv_kfold_reuse:
-        logger.info("Reuse existing k-fold cross validation data")
-    else:
-        logger.info("Run data preparation")
-        _prepare_data(cfg)
-
-    dataset = cfg.dataset
     brier = statistics.OnlineStats()
     ipcw = statistics.OnlineStats()
 
-    for i in range(cfg.cv.kfold):
-        cfg.fold = str(i) + "_"
+    for fold in range(cfg.cv.k):
+        cfg.replication = fold
         logger.info("Run training pipeline")
-        metrics, test_metrics = _pipeline(cfg)
+        metrics, test_metrics = _finetune(cfg)
 
-        brier.push(metrics["test_brier_avg"])
-        ipcw.push(metrics["test_ipcw_avg"])
+        brier.push(metrics["test_brier_weighted_avg"])
+        ipcw.push(metrics["test_ipcw_weighted_avg"])
 
-        logger.info(f"Finished replication run number {i}")
+        logger.info(f"Finished run of fold number {fold}")
 
     cv_results = {
         "n": brier.getNumValues(),
@@ -80,7 +48,6 @@ def _cv(cfg: DictConfig) -> None:
         },
     }
 
-    cfg.dataset = dataset
     outDir = Path(f"{cfg.trainer.training_arguments.output_dir}/")
     outDir.mkdir(parents=True, exist_ok=True)
 

@@ -2,7 +2,7 @@
 
 data:
   label_transform:
-    buffer_size: 20000
+    buffer_size: 50000
     cuts: ${label_transform_cuts}
     scheme: ${label_transform_scheme}
     save_dir: ${modelhub}/${dataset}

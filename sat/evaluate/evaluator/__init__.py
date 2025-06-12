@@ -3,19 +3,16 @@
 __authors__ = ["Dominik Dahlem"]
 __status__ = "Development"
 
-
-try:
-    import transformers
-
-    TRANSFORMERS_AVAILABLE = True
-except ImportError:
-    TRANSFORMERS_AVAILABLE = False
-
+import importlib.util
 from typing import Dict, List
 
 from evaluate.evaluator.base import Evaluator
 
 from sat.evaluate.evaluator.survival_analysis import SurvivalAnalysisEvaluator
+
+# Check if transformers is available
+TRANSFORMERS_AVAILABLE = importlib.util.find_spec("transformers") is not None
+
 
 SUPPORTED_EVALUATOR_TASKS = {
     "survival-analysis": {

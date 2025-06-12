@@ -6,10 +6,29 @@ Folder Structure
     .
     ├── conf                    # Hydra configuration files
     ├── data                    # Data files
+    ├── docs                    # Documentation
     ├── envs                    # Conda environment files for Azure execution
     ├── sat                     # Python source files
-    ├── project.toml            # project definitions/dependencies
+    ├── scripts                 # Utility scripts
+    ├── pyproject.toml          # Project definitions/dependencies
+    ├── .pre-commit-config.yaml # Pre-commit hooks configuration
     └── README.md
+
+### Development Setup
+
+We use pre-commit hooks to enforce code quality standards. To set up the development environment:
+
+```bash
+# Using the setup script
+./scripts/setup_dev_env.sh
+
+# Or manually
+pip install poetry pre-commit
+poetry install
+pre-commit install
+```
+
+For more information on development practices, see [Development Guide](docs/development_guide.md).
 
 ### Configuration structure
 
@@ -558,6 +577,94 @@ This generates:
 - Contour plots showing parameter interactions
 - Summary statistics and best parameters
 - CSV file with all trial data
+
+MEDS Format Support
+============================
+
+SAT now supports the Medical Event Data Standard (MEDS) format, providing integration with standardized healthcare data for survival analysis.
+
+### Key Features
+
+- **MEDS Format Support**: Read Parquet files in the MEDS standard format
+- **FEMR Integration**: Generate events and timelines using FEMR labelers
+- **Multi-Event Support**: Handle competing risks with multiple event types
+- **Flexible Configuration**: Customizable label definitions for various event types
+
+### Using MEDS Data
+
+1. **Install Dependencies**:
+   Make sure you have the required dependencies:
+   ```bash
+   poetry add pyarrow fastparquet femr
+   ```
+
+2. **Configure Label Definitions**:
+   Create a custom configuration file or modify the existing one at `conf/data/parse/meds.yaml`:
+   
+   ```yaml
+   label_definitions:
+     - name: mortality
+       positive_class: true
+       table_name: mortality
+       time_field: days
+       output_label_fields: ["days", "label_name"]
+     - name: readmission
+       positive_class: true
+       table_name: readmissions
+       time_field: days
+       output_label_fields: ["days", "label_name"]
+   ```
+
+3. **Prepare the Data**:
+   ```bash
+   python -m sat.prepare_data experiments=meds/survival data_source=/path/to/your/meds/file.parquet dataset=your_meds_dataset
+   ```
+
+4. **Train the Tokenizer**:
+   ```bash
+   python -m sat.train_tokenizer experiments=meds/survival dataset=your_meds_dataset
+   ```
+
+5. **Train Label Transform**:
+   ```bash
+   python -m sat.train_labeltransform experiments=meds/survival dataset=your_meds_dataset
+   ```
+
+6. **Fine-tune a Model**:
+   ```bash
+   python -m sat.finetune experiments=meds/survival dataset=your_meds_dataset
+   ```
+
+### Example MEDS Data Processing
+
+```python
+from femr.datasets import DatasetBuilder
+from femr.labelers import LabelFetcher
+
+# Load MEDS data
+builder = DatasetBuilder("path/to/meds_file.parquet")
+dataset = builder.build()
+
+# Define events to extract
+label_definitions = [
+    {
+        "name": "mortality",
+        "positive_class": True,
+        "table_name": "mortality",
+        "time_field": "days",
+        "output_label_fields": ["days", "label_name"]
+    }
+]
+
+# Create labels
+label_fetcher = LabelFetcher(dataset)
+mortality_labels = label_fetcher.get_labels(label_definitions[0])
+
+# Use the labels in SAT survival analysis
+# ...
+```
+
+For more information about MEDS format, visit [FEMR documentation](https://github.com/som-shahlab/femr).
 
 To-Dos
 ============================

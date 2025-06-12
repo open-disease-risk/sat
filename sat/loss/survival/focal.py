@@ -71,7 +71,7 @@ class SurvivalFocalLoss(Loss):
         )
 
         # Process gamma parameter - check if we have multiple gamma values
-        multi_focal = False
+        # multi_focal = False  # Set in _set_multi_focal method instead
 
         # If it's a sequence (including ListConfig)
         if is_sequence:

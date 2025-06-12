@@ -1,0 +1,29 @@
+# @package _global_
+task: moco_recommend
+
+defaults:
+  - _self_
+  - defaults
+
+# MoCo recommendation options
+analyze_batch_sizes:
+  - 8
+  - 16
+  - 32
+  - 64
+  - 128
+  - 256
+  - 512
+
+# Minimum events per batch target - affects buffer size recommendation
+min_events_per_batch: 10
+
+# Whether to generate dynamic weight or adaptive configurations
+generate_options:
+  - standard
+  - dynamic
+  - adaptive
+
+# Output configuration
+save_plots: true
+plot_format: png

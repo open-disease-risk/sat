@@ -30,9 +30,12 @@ def split_dataset(dataDict: DictConfig, dataset: datasets.Dataset, ds_key="train
             dataset = dataset[ds_key]
 
         ds_dict = {}
-        for s in dataDict.splits:
-            logger.debug(f"Filtering out the split for {s}")
-            ds_dict[s] = dataset.filter(lambda x: x[dataDict.split_col] == s)
+        for split_name in dataDict.splits:
+            logger.debug(f"Filtering out the split for {split_name}")
+            # Use a partial function to avoid closure issues with loop variables
+            ds_dict[split_name] = dataset.filter(
+                lambda x, split=split_name: x[dataDict.split_col] == split
+            )
 
         dataset = datasets.DatasetDict(ds_dict)
 
