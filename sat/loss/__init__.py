@@ -14,8 +14,8 @@ from .regression.quantile import QuantileLoss
 from .survival.deephit import DeepHitCalibrationLoss, DeepHitLikelihoodLoss
 from .survival.dsm import DSMLoss
 from .survival.focal import SurvivalFocalLoss
-from .survival.nllpchazard import SATNLLPCHazardLoss
 from .survival.mismatch_rank import IntraEventRankingLoss
+from .survival.nllpchazard import SATNLLPCHazardLoss
 
 __all__ = [
     "Loss",

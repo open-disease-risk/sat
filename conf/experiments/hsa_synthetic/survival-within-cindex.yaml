@@ -1,0 +1,24 @@
+# @package _global_
+dataset: hsa_synthetic
+modelname: survival
+
+defaults:
+  - hsa_synthetic/defaults
+  - override /data/load: hsa_synthetic
+  - override /data/parse: ${data/load}
+  - override /data/transform: default
+  - override /tokenizers: hsa_synthetic
+  - override /transformers: numeric_bert
+  - override /tasks: survival
+  - override /tasks/metrics: brier_cindex_within_cindex
+  - override /trainer: hsa_synthetic/default
+
+survival_intermediate_size: 16
+survival_batch_norm: false
+survival_hidden_dropout_prob: false
+survival_bias: true
+survival_num_hidden_layers: 0
+survival_loss_weight: 1.0
+
+survival_shared_intermediate_size: 32
+survival_shared_num_hidden_layers: 0

@@ -1,6 +1,6 @@
 # @package _global_
 dataset: hsa_synthetic
-modelname: deephit
+modelname: eventrank_within_cindex
 
 defaults:
   - hsa_synthetic/defaults
@@ -10,13 +10,16 @@ defaults:
   - override /transformers: numeric_bert
   - override /tasks: survival
   - override /tasks/losses: eventrank
-  - override /tasks/losses/balancing: grad
+  - override /tasks/metrics: brier_cindex_within_cindex
   - override /trainer: ${data/load}/default
 
 
-survival_intermediate_size: 8
+survival_intermediate_size: 16
 survival_batch_norm: false
 survival_hidden_dropout_prob: false
 survival_bias: true
-survival_num_hidden_layers: 1
+survival_num_hidden_layers: 0
 survival_loss_weight: 1.0
+
+survival_shared_intermediate_size: 32
+survival_shared_num_hidden_layers: 0

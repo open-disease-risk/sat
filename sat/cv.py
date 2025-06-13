@@ -21,32 +21,27 @@ def _cv(cfg: DictConfig) -> None:
     cfg.cv.k = cfg.cv_kfold
     logger.info(f"Run {cfg.cv.k}-fold cross validation")
 
-    brier = statistics.OnlineStats()
-    ipcw = statistics.OnlineStats()
+    cv_metrics = {}
+    for metric in cfg.cv_metrics:
+        cv_metrics[metric] = statistics.OnlineStats()
 
     for fold in range(cfg.cv.k):
         cfg.replication = fold
         logger.info("Run training pipeline")
         metrics, test_metrics = _finetune(cfg)
 
-        brier.push(metrics["test_brier_weighted_avg"])
-        ipcw.push(metrics["test_ipcw_weighted_avg"])
+        for metric, stat in cv_metrics.items():
+            stat.push(metrics[metric])
 
         logger.info(f"Finished run of fold number {fold}")
 
-    cv_results = {
-        "n": brier.getNumValues(),
-        "brier": {
-            "mean": brier.mean(),
-            "variance": brier.variance(),
-            "sd": brier.standardDeviation(),
-        },
-        "ipcw": {
-            "mean": ipcw.mean(),
-            "variance": ipcw.variance(),
-            "sd": ipcw.standardDeviation(),
-        },
-    }
+    cv_results = {"n": cfg.cv.k}
+    for metric, stat in cv_metrics.items():
+        cv_results[metric] = {
+            "mean": stat.mean(),
+            "variance": stat.variance(),
+            "sd": stat.standardDeviation(),
+        }
 
     outDir = Path(f"{cfg.trainer.training_arguments.output_dir}/")
     outDir.mkdir(parents=True, exist_ok=True)

@@ -1,0 +1,3 @@
+- _target_: sat.evaluate.eval_modules.ComputeWithinSubjectCIndex
+  cfg: ${data}
+  duration_cuts: ${data.label_transform.save_dir}/duration_cuts.csv
