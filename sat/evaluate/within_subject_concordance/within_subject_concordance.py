@@ -141,12 +141,18 @@ class WithinSubjectCIIPCW(evaluate.Metric):
         min_events_per_patient=2,
         n_samples=None,
         n_events=None,
+        use_ipcw=False,
     ):
         """
-        Compute within-subject concordance index with IPCW.
+        Compute within-subject concordance index with optional IPCW.
 
         The key insight is to reshape the data from [patients, events] to [events, patients]
         and then calculate C-index for each patient across their events.
+
+        Note: IPCW is disabled by default for within-subject comparisons due to the small
+        number of events per patient (typically 2-3), which makes IPCW estimates unreliable.
+        IPCW can be enabled with use_ipcw=True but will only be applied when a patient has
+        10+ events to ensure statistical reliability.
         """
         # Handle the direct array case (from eval_modules.py)
         if (
@@ -255,10 +261,15 @@ class WithinSubjectCIIPCW(evaluate.Metric):
                         )
                         patient_preds_tensor = to_tensor(patient_preds[valid_mask])
 
-                        # Calculate IPCW for this patient's events
-                        patient_ipcw = get_ipcw(
-                            patient_events_tensor, patient_times_tensor
-                        )
+                        # Calculate IPCW for this patient's events if requested
+                        if (
+                            use_ipcw and n_valid_events >= 10
+                        ):  # Only use IPCW with sufficient events
+                            patient_ipcw = get_ipcw(
+                                patient_events_tensor, patient_times_tensor
+                            )
+                        else:
+                            patient_ipcw = None
 
                         # Calculate C-index for this patient
                         patient_cindex = c_index_calculator(

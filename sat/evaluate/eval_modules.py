@@ -290,6 +290,7 @@ class ComputeWithinSubjectCIndex(SurvivalEvaluationModule):
             per_horizon=True,
             n_samples=n_samples,
             n_events=n_events,
+            use_ipcw=False,  # Disabled by default for within-subject comparisons
         )
 
         # Build metrics dictionary
