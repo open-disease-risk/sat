@@ -78,7 +78,7 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
         logger.info(
             f"Splitting dataset with k-fold configuration: k={cfg.cv.k}; fold={cfg.replication}"
         )
-        fold_index = cfg.cv.k or None
+        fold_index = cfg.replication if cfg.cv.k else None
         ds_splitter = splitter.StreamingKFoldSplitter(
             id_field=cfg.data.id_col,
             k=cfg.cv.k,
