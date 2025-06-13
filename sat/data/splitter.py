@@ -10,6 +10,10 @@ import hydra
 from datasets import Dataset, DatasetDict, IterableDataset
 from omegaconf import DictConfig
 
+from sat.utils import logging
+
+logger = logging.get_default_logger()
+
 
 class StreamingKFoldSplitter:
     """
@@ -186,7 +190,45 @@ class StreamingKFoldSplitter:
             train_dataset = train_val_dataset.filter(is_train)
             val_dataset = train_val_dataset.filter(is_val)
 
-        result = {"train": train_dataset, "test": test_dataset}
+        # Add debugging to check for empty datasets
+        if logger.isEnabledFor(logging.DEBUG):
+            train_len = (
+                len(train_dataset) if hasattr(train_dataset, "__len__") else "unknown"
+            )
+            val_len = (
+                len(val_dataset)
+                if val_dataset and hasattr(val_dataset, "__len__")
+                else "unknown"
+            )
+            test_len = (
+                len(test_dataset) if hasattr(test_dataset, "__len__") else "unknown"
+            )
+
+            logger.debug(
+                f"Dataset split sizes - Train: {train_len}, Validation: {val_len}, Test: {test_len}"
+            )
+
+        # Check for empty validation dataset (but allow if entire dataset is empty)
+        if (
+            val_dataset is not None
+            and hasattr(val_dataset, "__len__")
+            and len(val_dataset) == 0
+        ):
+            # Check if the original dataset was empty (edge case for tests)
+            train_size = len(train_dataset) if hasattr(train_dataset, "__len__") else 0
+            test_size = len(test_dataset) if hasattr(test_dataset, "__len__") else 0
+
+            # Only raise error if train or test datasets have data but validation is empty
+            # This indicates a problematic k-fold split, not an edge case
+            if train_size > 0 or test_size > 0:
+                raise ValueError(
+                    f"Empty validation dataset created for fold {fold_index} while "
+                    f"train ({train_size}) or test ({test_size}) datasets contain data. "
+                    f"This can happen with small datasets and hash-based splitting. "
+                    f"Consider using fewer folds or a larger dataset."
+                )
+
+        result = {self.split_names[0]: train_dataset, self.split_names[2]: test_dataset}
         if val_dataset is not None:
-            result["valid"] = val_dataset
+            result[self.split_names[1]] = val_dataset
         return DatasetDict(result)
