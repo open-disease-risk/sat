@@ -124,7 +124,7 @@ def objective(cfg: DictConfig) -> float or tuple:
         # Run the finetune function with the current configuration
         logger.info(f"Trial #{trial_number}: Starting training")
         val_metrics, test_metrics = _pipeline(cfg)
-        print(val_metrics)
+        logger.debug(f"Got validation metrics: {val_metrics}")
         logger.info(f"Trial #{trial_number}: Training completed")
 
         # Find the metric values
