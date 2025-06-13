@@ -1,6 +1,6 @@
 # @package _global_
 dataset: hsa_synthetic
-modelname: deephit
+modelname: eventrank
 
 defaults:
   - hsa_synthetic/defaults
