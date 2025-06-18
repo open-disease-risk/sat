@@ -1,0 +1,10 @@
+- _target_: sat.evaluate.eval_modules.ComputeBrier
+  cfg: ${data}
+  duration_cuts: ${data.label_transform.save_dir}/duration_cuts.csv
+  per_horizon: ${brier_per_horizon}
+- _target_: sat.evaluate.eval_modules.ComputeCIndex
+  cfg: ${data}
+  duration_cuts: ${data.label_transform.save_dir}/duration_cuts.csv
+- _target_: sat.evaluate.eval_modules.ComputeWithinSubjectCIndex
+  cfg: ${data}
+  duration_cuts: ${data.label_transform.save_dir}/duration_cuts.csv
