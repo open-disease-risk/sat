@@ -240,9 +240,12 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
 
     if device_str == "mps":
         logger.debug("Use MPS in training argumments")
+        # Disable pin_memory for MPS as it's not supported
+        args.dataloader_pin_memory = False
+        logger.debug("Disabled dataloader_pin_memory for MPS device")
         args.use_mps_device = True
 
-    fold_part = "_" + str(cfg.replication) if cfg.replication else ""
+    fold_part = "_" + str(cfg.replication) if cfg.replication is not None else ""
     if cfg.do_sweep:
         args.output_dir = args.output_dir + fold_part + "/" + cfg.model_dir
         logger.debug(f"Redirect the sweep output: {args.output_dir}")
@@ -306,46 +309,70 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
     trainer.save_model()
 
     logger.debug("Do predictions on validation set")
-    valid_output = trainer.predict(test_dataset=mapped_labels_dataset["valid"])
-    logger.debug("Do predictions on test set")
-    output = trainer.predict(test_dataset=mapped_labels_dataset["test"])
-    ids = mapped_labels_dataset["test"][cfg.data.id_col]
-    events = mapped_labels_dataset["test"][cfg.data.event_col]
-    durations = mapped_labels_dataset["test"][cfg.data.duration_col]
-
-    write_output(
-        output.predictions,
-        output.metrics,
-        cfg,
-        trainer.args.output_dir,
-        ids,
-        events,
-        durations,
-        model,
+    valid_output = trainer.predict(
+        test_dataset=mapped_labels_dataset["valid"], metric_key_prefix="validation"
     )
+
+    # Conditionally compute test predictions
+    if cfg.compute_test_predictions:
+        logger.debug("Do predictions on test set")
+        output = trainer.predict(test_dataset=mapped_labels_dataset["test"])
+        ids = mapped_labels_dataset["test"][cfg.data.id_col]
+        events = mapped_labels_dataset["test"][cfg.data.event_col]
+        durations = mapped_labels_dataset["test"][cfg.data.duration_col]
+
+        write_output(
+            output.predictions,
+            output.metrics,
+            cfg,
+            trainer.args.output_dir,
+            ids,
+            events,
+            durations,
+            model,
+        )
+        test_metrics = output.metrics
+    else:
+        logger.debug("Skipping test set predictions (compute_test_predictions=False)")
+        test_metrics = {}
 
     logger.debug("Serialize random number seed used for finetuning")
     with Path(f"{trainer.args.output_dir}/finetune-seed.json").open("w") as f:
         json.dump({"seed": cfg.seed}, f, ensure_ascii=False, indent=4)
 
-    # Save metrics to JSON files
-    if cfg.run_id != "" and "multiple_replications" not in cfg:
-        val_metrics = {
-            k.replace("test_", "validation_"): v
-            for k, v in valid_output.metrics.items()
-        }
+    # Always harmonize results to match CV/CI structure for consistency
+    def harmonize_metrics(metrics, metric_type):
+        """Convert flat metrics dict to harmonized structure with n=1."""
+        harmonized = {"n": 1}
+        for metric_name, value in metrics.items():
+            # Extract base name without prefix
+            base_name = metric_name.replace(f"{metric_type}_", "")
+            harmonized[base_name] = {
+                "mean": value,
+                "variance": 0.0,  # No variance for single run
+                "sd": 0.0,  # No standard deviation for single run
+            }
+        return harmonized
 
-        # Save validation metrics to JSON
-        with Path(f"{trainer.args.output_dir}/validation_metrics.json").open("w") as f:
-            json.dump(val_metrics, f, ensure_ascii=False, indent=4)
+    val_harmonized = harmonize_metrics(valid_output.metrics, "validation")
 
-        # Save test metrics to JSON
-        with Path(f"{trainer.args.output_dir}/test_metrics.json").open("w") as f:
-            json.dump(output.metrics, f, ensure_ascii=False, indent=4)
+    # Save harmonized metrics
+    harmonized_data = {"validation": val_harmonized}
+    if cfg.compute_test_predictions:
+        test_harmonized = harmonize_metrics(test_metrics, "test")
+        harmonized_data["test"] = test_harmonized
 
-        logger.info(f"Saved metrics to {trainer.args.output_dir}")
+    with Path(f"{trainer.args.output_dir}/metrics.json").open("w") as f:
+        json.dump(
+            harmonized_data,
+            f,
+            ensure_ascii=False,
+            indent=4,
+        )
 
-    return valid_output.metrics, output.metrics
+    # Return raw metrics for cv.py and ci.py compatibility
+    # They expect metrics with full prefixes (e.g., "validation_brier_weighted_avg")
+    return valid_output.metrics, test_metrics
 
 
 @log_on_start(DEBUG, "Start finetuning...", logger=logger)

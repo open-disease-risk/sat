@@ -31,7 +31,17 @@ cv:
 pipeline_use_cv: true
 pipeline_use_ci: false
 
-# CV config
+# CV and CI shared metrics config
+cv_ci_metrics:
+  validation:
+    - validation_brier_weighted_avg
+    - validation_ipcw_weighted_avg
+    # - validation_within_subject_ipcw
+  test:
+    - test_brier_weighted_avg
+    - test_ipcw_weighted_avg
+    # - test_within_subject_ipcw
+
 replication: null
 
 multiple_replications: true
@@ -41,5 +51,7 @@ cv_kfold: 3
 alpha: 0.05
 error: 0.1
 n: 10
-use_val: false
 less_than_n: 10
+
+# Control whether test set predictions are computed
+compute_test_predictions: true

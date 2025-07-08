@@ -6,6 +6,7 @@ __status__ = "Development"
 import json
 from logging import DEBUG, ERROR
 from pathlib import Path
+from typing import Any
 
 import hydra
 from logdecorator import log_on_end, log_on_error, log_on_start
@@ -18,42 +19,63 @@ from sat.utils.output import log_metrics_from_replications
 logger = logging.get_default_logger()
 
 
-def _ci(cfg: DictConfig) -> None:
-    brier = statistics.OnlineStats()
-    ipcw = statistics.OnlineStats()
+def _ci(cfg: DictConfig) -> tuple[dict, dict]:
+    # Skip test predictions during CI to save computation time
+    cfg.compute_test_predictions = False
 
-    while (
-        (brier.getNumValues() < cfg.n)
-        or (not statistics.isConfidentWithPrecision(brier, cfg.alpha, cfg.error))
-        or (not statistics.isConfidentWithPrecision(ipcw, cfg.alpha, cfg.error))
-    ):
-        if brier.getNumValues() >= cfg.less_than_n:
-            logger.info(f"Stop the runs after {brier.getNumValues()} runs")
+    # Always use validation metrics for model selection (ML best practice)
+    metric_names = cfg.cv_ci_metrics.validation
+
+    # Create OnlineStats objects for each configured metric
+    online_stats = {metric: statistics.OnlineStats() for metric in metric_names}
+
+    # Initialize test_metrics
+    test_metrics = {}
+
+    # Helper function to check if all metrics are confident
+    def all_metrics_confident() -> bool:
+        return all(
+            statistics.isConfidentWithPrecision(stats, cfg.alpha, cfg.error)
+            for stats in online_stats.values()
+        )
+
+    # Get the number of values (same for all metrics)
+    def get_num_values() -> int:
+        return next(iter(online_stats.values())).getNumValues()
+
+    while (get_num_values() < cfg.n) or (not all_metrics_confident()):
+        if get_num_values() >= cfg.less_than_n:
+            logger.info(f"Stop the runs after {get_num_values()} runs")
             break
 
-        cfg.replication = brier.getNumValues()
+        cfg.replication = get_num_values()
         val_metrics, test_metrics = _finetune(cfg)
 
-        metrics = val_metrics if cfg.use_val else test_metrics
+        # Always use validation metrics for model selection
+        metrics = val_metrics
 
-        brier.push(metrics["test_brier_weighted_avg"])
-        ipcw.push(metrics["test_ipcw_weighted_avg"])
+        # Push metrics to their respective OnlineStats objects
+        for metric_name, stats in online_stats.items():
+            if metric_name in metrics:
+                stats.push(metrics[metric_name])
+            else:
+                logger.warning(f"Metric {metric_name} not found in results")
 
-        logger.info(f"Finished replication run number {brier.getNumValues()}")
+        logger.info(f"Finished replication run number {get_num_values()}")
 
-    ci_results = {
-        "n": brier.getNumValues(),
-        "brier": {
-            "mean": brier.mean(),
-            "variance": brier.variance(),
-            "sd": brier.standardDeviation(),
-        },
-        "ipcw": {
-            "mean": ipcw.mean(),
-            "variance": ipcw.variance(),
-            "sd": ipcw.standardDeviation(),
-        },
+    # Build results dictionary
+    ci_results: dict[str, Any] = {
+        "n": get_num_values(),
     }
+
+    # Add statistics for each metric
+    for metric_name, stats in online_stats.items():
+        # Keep full metric name including prefix
+        ci_results[metric_name] = {
+            "mean": stats.mean(),
+            "variance": stats.variance(),
+            "sd": stats.standardDeviation(),
+        }
 
     outDir = Path(f"{cfg.trainer.training_arguments.output_dir}/")
     outDir.mkdir(parents=True, exist_ok=True)

@@ -1,9 +1,0 @@
-analysis,component,metric,value
-censoring,Event,n_total,1904
-censoring,Event,n_events,1103
-censoring,Event,n_censored,801
-censoring,Event,censoring_rate,42.069327731092436
-censoring,Event,median_follow_up,114.9000015258789
-censoring,Event,max_follow_up,355.20001220703125
-censoring,Event,informative_censoring,False
-censoring,Event,n_samples,1904

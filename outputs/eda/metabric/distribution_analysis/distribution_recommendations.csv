@@ -1,2 +1,0 @@
-event_type,recommended_distribution,aic_best,aic_score,bic_best,bic_score,note
-event,weibull,weibull,12158.952626006365,weibull,12168.964204044873,Both AIC and BIC favor weibull.

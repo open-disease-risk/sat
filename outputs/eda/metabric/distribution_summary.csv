@@ -1,7 +1,0 @@
-analysis,component,metric,value
-distribution,event,recommended_distribution,weibull
-distribution,event,aic_best,weibull
-distribution,event,aic_score,12158.952626006365
-distribution,event,bic_best,weibull
-distribution,event,bic_score,12168.964204044873
-distribution,event,note,Both AIC and BIC favor weibull.
