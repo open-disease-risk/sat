@@ -1,0 +1,11 @@
+- learning_rate=0.0006193024550977331
+- weight_decay=0.00037591084908785924
+- transformer_hidden_size=8
+- transformer_intermediate_size=96
+- transformer_num_attention_heads=4
+- transformer_num_hidden_layers=4
+- survival_intermediate_size=8
+- token_emb=2
+- sentence_emb=2
+- experiments=metabric/deephit_ranknet
+- sweep=metabric/survival

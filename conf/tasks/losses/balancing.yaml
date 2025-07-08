@@ -5,27 +5,27 @@
 fixed:
   balance_strategy: fixed
   balance_params: {}
-  
+
 # Scale normalization based on moving average of loss magnitudes
 scale:
   balance_strategy: scale
   balance_params:
     alpha: 0.9  # EMA factor (0.9 = 90% previous, 10% current)
     eps: 1.0e-8  # Small constant for numerical stability
-    
+
 # Gradient-based normalization
 grad:
   balance_strategy: grad
   balance_params:
     alpha: 0.9  # EMA factor
     eps: 1.0e-8  # Small constant for numerical stability
-    
+
 # Homoscedastic uncertainty weighting
 uncertainty:
   balance_strategy: uncertainty
   balance_params:
     init_sigma: 1.0  # Initial uncertainty value
-    
+
 # Adaptive weighting based on loss dynamics
 adaptive:
   balance_strategy: adaptive

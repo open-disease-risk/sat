@@ -64,7 +64,7 @@ logits_g = model_output.logits_g  # From model output [batch_size, num_events, n
 # Create distribution for a specific event
 event_idx = 0
 dsm_dist = create_dsm_distribution(
-    shape, scale, logits_g, 
+    shape, scale, logits_g,
     distribution_type='weibull',
     event_idx=event_idx
 )
@@ -100,7 +100,7 @@ conditional_survival = mensa_dist.survival_function(time_points)
 All distributions in this module employ techniques to ensure numerical stability:
 
 1. **Log-domain operations**: Critical calculations use log-domain to prevent overflow/underflow
-2. **Appropriate clamping**: Values are clamped to reasonable ranges at key points 
+2. **Appropriate clamping**: Values are clamped to reasonable ranges at key points
 3. **Handling of extreme values**: Special handling for very small or large values
 4. **Edge case detection**: Special handling for edge cases (e.g., shape < 1 in Weibull)
 
@@ -123,22 +123,22 @@ def _compute_survival_function(self, time_points, shape, scale, logits_g):
     """Compute survival function using specialized distributions."""
     batch_size, num_time_points = time_points.shape
     device = time_points.device
-    
+
     # Initialize survival tensor
     survival = torch.zeros(batch_size, self.num_events, num_time_points, device=device)
-    
+
     # Process each event separately
     for event_idx in range(self.num_events):
         # Create distribution for this event
         dist = create_dsm_distribution(
-            shape, scale, logits_g, 
+            shape, scale, logits_g,
             distribution_type=self.distribution,
             event_idx=event_idx
         )
-        
+
         # Compute survival function
         survival[:, event_idx, :] = dist.survival_function(time_points)
-    
+
     return survival
 ```
 

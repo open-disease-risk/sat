@@ -31,7 +31,7 @@ This document provides a comprehensive overview of all loss functions implemente
 
 ## Introduction
 
-Survival analysis poses unique challenges due to censoring, where the event of interest may not be observed for all samples. Traditional loss functions from classification and regression must be adapted to account for this partial information. 
+Survival analysis poses unique challenges due to censoring, where the event of interest may not be observed for all samples. Traditional loss functions from classification and regression must be adapted to account for this partial information.
 
 The SAT library implements a diverse set of loss functions that address different aspects of survival prediction:
 

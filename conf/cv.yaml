@@ -4,8 +4,3 @@ task: kfold_cv
 defaults:
   - _self_
   - defaults
-
-cv_metrics:
-  - test_brier_weighted_avg
-  - test_ipcw_weighted_avg
-  - test_within_subject_ipcw

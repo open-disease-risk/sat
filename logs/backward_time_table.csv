@@ -1,0 +1,7 @@
+,,backward_time
+batch_size,,32
+tag,num_events,
+MultiEventRankingLoss (Original),1,0.0029942989349365234
+MultiEventRankingLoss (Vectorized),1,0.0002541542053222656
+SampleRankingLoss (Original),1,0.11009502410888672
+SampleRankingLoss (Vectorized),1,0.0005540847778320312

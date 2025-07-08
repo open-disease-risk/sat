@@ -192,7 +192,7 @@ In survival analysis, the relationship between predictors and outcomes can chang
 
 \begin{itemize}
     \item \textbf{Time-varying effects:} The impact of a covariate on survival may change over time. For example, a treatment might be most effective in the short term but diminish in effectiveness over time.
-    
+
     \item \textbf{Time-varying covariates:} The values of predictors may change over the course of observation. For instance, a patient's biomarker levels or medication dosages might change throughout a study.
 \end{itemize}
 
@@ -202,9 +202,9 @@ In many real-world scenarios, subjects may experience different types of events:
 
 \begin{itemize}
     \item \textbf{Competing risks:} Multiple possible event types where the occurrence of one event precludes the observation of others. For example, patients might die from cancer, heart disease, or other causes, but once one cause of death occurs, the others cannot be observed.
-    
+
     \item \textbf{Recurrent events:} The same event can occur multiple times for a subject, such as hospital readmissions or equipment failures.
-    
+
     \item \textbf{Multi-state processes:} Subjects can transition through various states over time, like different stages of disease progression.
 \end{itemize}
 
@@ -247,11 +247,11 @@ Figure \ref{fig:survival-function} shows a typical survival curve, which illustr
         ]
             % Example survival function
             \addplot[blue, thick] {exp(-0.2*x)};
-            
+
             % Annotation for specific S(t) value
             \addplot[gray, dashed, samples=2] coordinates {(3,0) (3,0.55)};
             \draw[<->] (axis cs:3.2,0) -- (axis cs:3.2,0.55) node[midway, right] {$S(3) = 0.55$};
-            
+
             % Median survival
             \addplot[gray, dashed, samples=2] coordinates {(0,0.5) (10,0.5)};
             \addplot[gray, dashed, samples=2] coordinates {(3.47,0) (3.47,0.5)};
@@ -294,15 +294,15 @@ Unlike the survival function, the hazard function can take many shapes, as illus
             % Constant hazard (Exponential distribution)
             \addplot[blue, thick] {0.2};
             \addlegendentry{Constant hazard};
-            
+
             % Increasing hazard (Weibull with shape > 1)
             \addplot[red, thick] {0.1*x^0.5};
             \addlegendentry{Increasing hazard};
-            
+
             % Decreasing hazard (Weibull with shape < 1)
             \addplot[green, thick] {0.5*exp(-0.2*x)};
             \addlegendentry{Decreasing hazard};
-            
+
             % Bathtub hazard (common in reliability)
             \addplot[purple, thick] {0.5*exp(-0.6*x) + 0.1 + 0.01*x};
             \addlegendentry{Bathtub hazard};
@@ -393,7 +393,7 @@ The Kaplan-Meier estimator produces a step function that decreases at each event
                 (8,0.3) (8,0.2) (9,0.2)
                 (9,0.1) (10,0.1)
             };
-            
+
             % Censored points (open circles)
             \addplot[
                 only marks,
@@ -406,7 +406,7 @@ The Kaplan-Meier estimator produces a step function that decreases at each event
                 (6.5,0.4)
                 (9.5,0.1)
             };
-            
+
             % Event markers (filled circles)
             \addplot[
                 only marks,
@@ -424,7 +424,7 @@ The Kaplan-Meier estimator produces a step function that decreases at each event
                 (8,0.2)
                 (9,0.1)
             };
-            
+
             % Median survival
             \addplot[gray, dashed, samples=2] coordinates {(0,0.5) (10,0.5)};
             \addplot[gray, dashed, samples=2] coordinates {(5,0) (5,0.5)};
@@ -495,18 +495,18 @@ The Cox model can be fit using partial likelihood, which allows estimation of $\
             % Baseline hazard
             \addplot[blue, thick] {0.5 + 0.2*sin(deg(x)) + 0.1*sin(deg(2*x))};
             \addlegendentry{$h_0(t)$ (baseline)};
-            
+
             % Proportional hazard for X=1
             \addplot[red, thick] {2*(0.5 + 0.2*sin(deg(x)) + 0.1*sin(deg(2*x)))};
             \addlegendentry{$h(t|X=1) = h_0(t) \cdot 2$};
-            
+
             % Proportional hazard for X=2
             \addplot[green, thick] {3*(0.5 + 0.2*sin(deg(x)) + 0.1*sin(deg(2*x)))};
             \addlegendentry{$h(t|X=2) = h_0(t) \cdot 3$};
-            
+
             % Vertical reference line
             \addplot[gray, dashed, samples=2] coordinates {(3,0) (3,2.5)};
-            
+
             % Proportional hazards illustration
             \draw[<->, dashed] (axis cs:3.2,0.8) -- (axis cs:3.2,1.6) node[midway, right] {$\times 2$};
             \draw[<->, dashed] (axis cs:3.2,1.6) -- (axis cs:3.2,2.4) node[midway, right] {$\times 1.5$};
@@ -522,11 +522,11 @@ Several extensions of the Cox model have been developed to address specific limi
 
 \begin{itemize}
     \item \textbf{Stratified Cox model:} Allows for different baseline hazards across strata while maintaining the same covariate effects.
-    
+
     \item \textbf{Time-dependent Cox model:} Allows for time-varying covariates and time-varying effects through terms like $X(t)$ and $\beta(t)$.
-    
+
     \item \textbf{Frailty models:} Incorporate random effects to account for unobserved heterogeneity and clustering in the data.
-    
+
     \item \textbf{Competing risks extensions:} Adaptations for handling competing events, such as cause-specific Cox models and Fine-Gray models.
 \end{itemize}
 
@@ -838,18 +838,18 @@ This book presents a comprehensive learning path from traditional survival analy
         \node[box, fill=blue!10, below=of foundations] (data) {Data \& Embeddings\\(Chapter 4)};
         \node[box, fill=orange!10, below=of data] (models) {Deep Survival Models\\(Chapters 5-7)};
         \node[box, fill=red!10, below=of models] (advanced) {Advanced Topics\\(Chapters 8-9)};
-        
+
         % Connecting arrows
         \draw[-Latex] (foundations) -- (data);
         \draw[-Latex] (data) -- (models);
         \draw[-Latex] (models) -- (advanced);
-        
+
         % Content highlights on the right
         \node[draw, ellipse, fill=green!10, align=center] at (5,3) {Statistical\\Foundations};
         \node[draw, ellipse, fill=blue!10, align=center] at (5,1) {Feature\\Representation};
         \node[draw, ellipse, fill=orange!10, align=center] at (5,-1) {Deep Models\\DSM \& MENSA};
         \node[draw, ellipse, fill=red!10, align=center] at (5,-3) {Practical\\Applications};
-        
+
         % Connect highlights to path
         \draw[dashed] (foundations) -- (5,3);
         \draw[dashed] (data) -- (5,1);

@@ -1,0 +1,67 @@
+name: optuna
+solutions:
+- params:
+    learning_rate: 0.0029377329095951797
+    weight_decay: 5.3798496635020966e-05
+    transformer_hidden_size: 8
+    transformer_intermediate_size: 64
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 24
+    token_emb: 5
+    sentence_emb: 1
+  values:
+  - 0.6603319947536216
+  - 0.17368593348740918
+- params:
+    learning_rate: 0.0020775404553364254
+    weight_decay: 0.0002353759990171624
+    transformer_hidden_size: 32
+    transformer_intermediate_size: 64
+    transformer_num_attention_heads: 2
+    transformer_num_hidden_layers: 4
+    survival_intermediate_size: 8
+    token_emb: 5
+    sentence_emb: 2
+  values:
+  - 0.6490168488208694
+  - 0.0
+- params:
+    learning_rate: 0.005749018104390308
+    weight_decay: 0.004124654621827943
+    transformer_hidden_size: 8
+    transformer_intermediate_size: 32
+    transformer_num_attention_heads: 2
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 16
+    token_emb: 4
+    sentence_emb: 1
+  values:
+  - 0.693504053278293
+  - 0.1801427500505311
+- params:
+    learning_rate: 0.0029377329095951797
+    weight_decay: 5.3798496635020966e-05
+    transformer_hidden_size: 16
+    transformer_intermediate_size: 64
+    transformer_num_attention_heads: 2
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 24
+    token_emb: 3
+    sentence_emb: 1
+  values:
+  - 0.7059805322325238
+  - 0.22171935648318783
+- params:
+    learning_rate: 1.594535352394893e-05
+    weight_decay: 0.011367731799459473
+    transformer_hidden_size: 32
+    transformer_intermediate_size: 32
+    transformer_num_attention_heads: 2
+    transformer_num_hidden_layers: 4
+    survival_intermediate_size: 16
+    token_emb: 4
+    sentence_emb: 2
+  values:
+  - 0.7022626177527742
+  - 0.18673068967926773

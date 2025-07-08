@@ -1,0 +1,10 @@
+{
+  "dataset_name": "",
+  "description": "Synthetic OMOP-format dataset for survival analysis",
+  "num_patients": 10000,
+  "num_events": 85757,
+  "date_generated": "2025-06-12 05:06:52",
+  "version": "1.0",
+  "censoring_time": 1095,
+  "pre_enrollment_period": 365
+}

@@ -1,0 +1,93 @@
+{
+  "version": "1.0",
+  "truncation": {
+    "direction": "Left",
+    "max_length": 15,
+    "strategy": "LongestFirst",
+    "stride": 0
+  },
+  "padding": {
+    "strategy": {
+      "Fixed": 15
+    },
+    "direction": "Right",
+    "pad_to_multiple_of": 1,
+    "pad_id": 0,
+    "pad_type_id": 0,
+    "pad_token": "[PAD]"
+  },
+  "added_tokens": [
+    {
+      "id": 15,
+      "content": "[UNK]",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 16,
+      "content": "[SEP]",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 17,
+      "content": "[PAD]",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 18,
+      "content": "[CLS]",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    },
+    {
+      "id": 19,
+      "content": "[MASK]",
+      "single_word": false,
+      "lstrip": false,
+      "rstrip": false,
+      "normalized": false,
+      "special": true
+    }
+  ],
+  "normalizer": null,
+  "pre_tokenizer": {
+    "type": "WhitespaceSplit"
+  },
+  "post_processor": null,
+  "decoder": null,
+  "model": {
+    "type": "WordLevel",
+    "vocab": {
+      "x_1": 0,
+      "x_10": 1,
+      "x_11": 2,
+      "x_12": 3,
+      "x_13": 4,
+      "x_14": 5,
+      "x_15": 6,
+      "x_2": 7,
+      "x_3": 8,
+      "x_4": 9,
+      "x_5": 10,
+      "x_6": 11,
+      "x_7": 12,
+      "x_8": 13,
+      "x_9": 14
+    },
+    "unk_token": "[UNK]"
+  }
+}

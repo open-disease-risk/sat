@@ -36,10 +36,10 @@
             ] coordinates {
                 (0,1) (32,1)
             };
-            
+
             % Add death mark
             \node[circle, fill=quaternary, inner sep=2pt] at (axis cs:32,1) {};
-            
+
             % Right-censored observation
             \addplot[
                 primaryDark,
@@ -48,13 +48,13 @@
             ] coordinates {
                 (0,2) (48,2)
             };
-            
+
             % Add censoring mark
-            \draw[censoringColor, very thick] 
+            \draw[censoringColor, very thick]
                 (axis cs:48-1.5,2-1.5) -- (axis cs:48+1.5,2+1.5);
-            \draw[censoringColor, very thick] 
+            \draw[censoringColor, very thick]
                 (axis cs:48-1.5,2+1.5) -- (axis cs:48+1.5,2-1.5);
-                
+
             % Late entry (left truncation)
             \addplot[
                 primaryDark,
@@ -64,7 +64,7 @@
             ] coordinates {
                 (0,3) (12,3)
             };
-            
+
             \addplot[
                 primaryDark,
                 thick,
@@ -72,10 +72,10 @@
             ] coordinates {
                 (12,3) (40,3)
             };
-            
+
             % Add death mark
             \node[circle, fill=quaternary, inner sep=2pt] at (axis cs:40,3) {};
-            
+
             % Left truncation and right censoring
             \addplot[
                 primaryDark,
@@ -85,7 +85,7 @@
             ] coordinates {
                 (0,4) (15,4)
             };
-            
+
             \addplot[
                 primaryDark,
                 thick,
@@ -93,13 +93,13 @@
             ] coordinates {
                 (15,4) (52,4)
             };
-            
+
             % Add censoring mark
-            \draw[censoringColor, very thick] 
+            \draw[censoringColor, very thick]
                 (axis cs:52-1.5,4-1.5) -- (axis cs:52+1.5,4+1.5);
-            \draw[censoringColor, very thick] 
+            \draw[censoringColor, very thick]
                 (axis cs:52-1.5,4+1.5) -- (axis cs:52+1.5,4-1.5);
-                
+
             % Interval censoring
             \addplot[
                 primaryDark,
@@ -108,7 +108,7 @@
             ] coordinates {
                 (0,5) (25,5)
             };
-            
+
             \addplot[
                 primaryDark,
                 thick,
@@ -117,7 +117,7 @@
             ] coordinates {
                 (25,5) (38,5)
             };
-            
+
             \addplot[
                 primaryDark,
                 thick,
@@ -125,14 +125,14 @@
             ] coordinates {
                 (38,5) (45,5)
             };
-            
+
             % Add death mark
             \node[circle, fill=quaternary, inner sep=2pt] at (axis cs:45,5) {};
-            
+
             % Add interval censoring annotation arrow - moved up to avoid overlap with Event type 1
             \draw[->, thin, gray] (32,6.7) -- (32,5.2);
             \node[above, align=center, font=\footnotesize, text=gray] at (32,6.8) {Interval\\censoring};
-            
+
             % Event observed in competing risks
             \addplot[
                 primaryDark,
@@ -141,10 +141,10 @@
             ] coordinates {
                 (0,6) (28,6)
             };
-            
+
             % Event 1 mark
             \node[circle, fill=event1Color, inner sep=2pt] at (axis cs:28,6) {};
-            
+
             % Another competing risk event
             \addplot[
                 primaryDark,
@@ -153,10 +153,10 @@
             ] coordinates {
                 (0,7) (36,7)
             };
-            
+
             % Event 2 mark
             \node[circle, fill=event2Color, inner sep=2pt] at (axis cs:36,7) {};
-            
+
             % Another competing risk with censoring
             \addplot[
                 primaryDark,
@@ -165,80 +165,80 @@
             ] coordinates {
                 (0,8) (50,8)
             };
-            
+
             % Censoring mark
-            \draw[censoringColor, very thick] 
+            \draw[censoringColor, very thick]
                 (axis cs:50-1.5,8-1.5) -- (axis cs:50+1.5,8+1.5);
-            \draw[censoringColor, very thick] 
+            \draw[censoringColor, very thick]
                 (axis cs:50-1.5,8+1.5) -- (axis cs:50+1.5,8-1.5);
-            
+
             % Add labels with arrows to explain censoring concepts clearly
             % Complete observation
             \draw[->, thin, gray] (33,1.3) -- (33,1.1);
             \node[above, align=center, font=\footnotesize, text=gray] at (33,1.3) {Complete\\observation};
-            
+
             % Right censoring
             \draw[->, thin, gray] (49,2.3) -- (49,2.1);
             \node[above, align=center, font=\footnotesize, text=gray] at (49,2.3) {Right\\censoring};
-            
+
             % Left truncation (Patient 3)
             \draw[->, thin, gray] (6,3.4) -- (6,3.1);
             \node[above, align=center, font=\footnotesize, text=gray] at (6,3.4) {Left\\truncation};
-            
+
             % Event mark
             \draw[->, thin, gray] (41,3.3) -- (41,3.1);
             \node[above, align=center, font=\footnotesize, text=gray] at (41,3.3) {Event};
-            
+
             % Left truncation (Patient 4)
             \draw[->, thin, gray] (10,4.4) -- (14,4.1);
             \node[above, align=center, font=\footnotesize, text=gray] at (10,4.4) {Left\\truncation};
-            
+
             % Right censoring (Patient 4)
             \draw[->, thin, gray] (53,4.3) -- (53,4.1);
             \node[above, align=center, font=\footnotesize, text=gray] at (53,4.3) {Right\\censoring};
-            
+
             % Event after interval
             \draw[->, thin, gray] (46,5.3) -- (46,5.1);
             \node[above, align=center, font=\footnotesize, text=gray] at (46,5.3) {Event};
-            
+
             % Event type 1 - shifted to the right where there's more space
             \draw[->, thin, gray] (40,6.3) -- (29,6.1);
             \node[above, align=center, font=\footnotesize, text=gray] at (40,6.3) {Event\\type 1};
-            
+
             % Event type 2 - shifted to the right where there's more space
             \draw[->, thin, gray] (45,7.3) -- (37,7.1);
             \node[above, align=center, font=\footnotesize, text=gray] at (45,7.3) {Event\\type 2};
-            
+
             % Censored
             \draw[->, thin, gray] (51,8.3) -- (51,8.1);
             \node[above, align=center, font=\footnotesize, text=gray] at (51,8.3) {Censored};
-            
+
             % Add a legend at the bottom of the plot instead of top-right
             \legend{}
-            
+
             % Create a separate legend below the plot using nodes
             \coordinate (legendpos) at (rel axis cs:0.5,-0.25);
-            
+
             % Symbol for event of interest
             \node[inner sep=0] at ($(legendpos)+(-4.5,0)$) {\tikz{\draw[mark size=3pt, mark=*, mark options={fill=quaternary}] plot coordinates {(0,0)};}};
             \node[right, font=\footnotesize] at ($(legendpos)+(-4.3,0)$) {Event of interest};
-            
+
             % Symbol for competing event type 1
             \node[inner sep=0] at ($(legendpos)+(-1.5,0)$) {\tikz{\draw[mark size=3pt, mark=*, mark options={fill=event1Color}] plot coordinates {(0,0)};}};
             \node[right, font=\footnotesize] at ($(legendpos)+(-1.3,0)$) {Competing event type 1};
-            
+
             % Symbol for competing event type 2
             \node[inner sep=0] at ($(legendpos)+(1.5,0)$) {\tikz{\draw[mark size=3pt, mark=*, mark options={fill=event2Color}] plot coordinates {(0,0)};}};
             \node[right, font=\footnotesize] at ($(legendpos)+(1.7,0)$) {Competing event type 2};
-            
+
             % Symbol for censoring
             \node[inner sep=0] at ($(legendpos)+(-4.5,-0.5)$) {\tikz{\draw[censoringColor, very thick] (-0.1,-0.1) -- (0.1,0.1); \draw[censoringColor, very thick] (-0.1,0.1) -- (0.1,-0.1);}};
             \node[right, font=\footnotesize] at ($(legendpos)+(-4.3,-0.5)$) {Censoring};
-            
+
             % Symbol for observation time
             \node[inner sep=0] at ($(legendpos)+(-1.5,-0.5)$) {\tikz{\draw[primaryDark, thick] (-0.15,0) -- (0.15,0);}};
             \node[right, font=\footnotesize] at ($(legendpos)+(-1.3,-0.5)$) {Observation time};
-            
+
             % Symbol for unobserved time
             \node[inner sep=0] at ($(legendpos)+(1.5,-0.5)$) {\tikz{\draw[primaryDark, thick, dash pattern=on 2pt off 2pt] (-0.15,0) -- (0.15,0);}};
             \node[right, font=\footnotesize] at ($(legendpos)+(1.7,-0.5)$) {Unobserved time};
@@ -279,7 +279,7 @@
                 (0,1) (10,0.95) (20,0.9) (30,0.82) (40,0.7)
                 (50,0.58) (60,0.45) (70,0.35) (80,0.27) (90,0.2) (100,0.15)
             };
-            
+
             % Cause-specific survival curves
             \addplot[
                 event1Color,
@@ -288,7 +288,7 @@
                 (0,1) (10,0.98) (20,0.95) (30,0.9) (40,0.85)
                 (50,0.78) (60,0.72) (70,0.68) (80,0.65) (90,0.62) (100,0.6)
             };
-            
+
             \addplot[
                 event2Color,
                 thick,
@@ -296,7 +296,7 @@
                 (0,1) (10,0.97) (20,0.94) (30,0.9) (40,0.82)
                 (50,0.73) (60,0.65) (70,0.58) (80,0.53) (90,0.48) (100,0.42)
             };
-            
+
             \addplot[
                 event3Color,
                 thick,
@@ -304,20 +304,20 @@
                 (0,1) (10,0.99) (20,0.97) (30,0.92) (40,0.82)
                 (50,0.74) (60,0.64) (70,0.52) (80,0.43) (90,0.35) (100,0.30)
             };
-            
+
             % Add annotations with arrows for better readability
             \draw[->, thin] (60,0.3) -- (65,0.35);
             \node[left, align=right, font=\footnotesize] at (60,0.3) {Overall\\survival};
-            
+
             \draw[->, thin, event1Color] (60,0.7) -- (65,0.68);
             \node[left, align=right, font=\footnotesize, text=event1Color] at (60,0.7) {Event 1-specific\\survival};
-            
+
             \draw[->, thin, event2Color] (85,0.58) -- (80,0.58);
             \node[right, align=left, font=\footnotesize, text=event2Color] at (85,0.58) {Event 2-specific\\survival};
-            
+
             \draw[->, thin, event3Color] (85,0.48) -- (80,0.48);
             \node[right, align=left, font=\footnotesize, text=event3Color] at (85,0.48) {Event 3-specific\\survival};
-            
+
             % Cumulative incidence curves
             \addplot[
                 event1Color,
@@ -327,7 +327,7 @@
                 (0,0) (10,0.02) (20,0.05) (30,0.10) (40,0.15)
                 (50,0.22) (60,0.28) (70,0.32) (80,0.35) (90,0.38) (100,0.40)
             };
-            
+
             \addplot[
                 event2Color,
                 dashed,
@@ -336,7 +336,7 @@
                 (0,0) (10,0.03) (20,0.06) (30,0.1) (40,0.18)
                 (50,0.27) (60,0.35) (70,0.42) (80,0.47) (90,0.52) (100,0.58)
             };
-            
+
             \addplot[
                 event3Color,
                 dashed,
@@ -345,17 +345,17 @@
                 (0,0) (10,0.01) (20,0.03) (30,0.08) (40,0.18)
                 (50,0.26) (60,0.36) (70,0.48) (80,0.57) (90,0.65) (100,0.70)
             };
-            
+
             % Add annotations for CIF with improved positioning and arrows
             \draw[->, thin, event1Color] (15,0.07) -- (25,0.09);
             \node[left, align=right, font=\footnotesize, text=event1Color] at (15,0.07) {CIF Event 1};
-            
+
             \draw[->, thin, event2Color] (25,0.15) -- (35,0.17);
             \node[left, align=right, font=\footnotesize, text=event2Color] at (25,0.15) {CIF Event 2};
-            
+
             \draw[->, thin, event3Color] (35,0.22) -- (45,0.25);
             \node[left, align=right, font=\footnotesize, text=event3Color] at (35,0.22) {CIF Event 3};
-            
+
             % Stacked CIF curve showing all events
             \addplot[
                 octonaryDark,
@@ -365,7 +365,7 @@
                 (0,0) (10,0.06) (20,0.14) (30,0.28) (40,0.51)
                 (50,0.75) (60,0.99) (70,1.22) (80,1.39) (90,1.55) (100,1.68)
             };
-            
+
             % Legend
             \addlegendentry{Overall survival};
             \addlegendentry{Event 1-specific survival};

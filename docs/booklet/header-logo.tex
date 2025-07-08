@@ -3,28 +3,28 @@
 
 \begin{tikzpicture}[scale=0.35, baseline=(current bounding box.center)]
     % No visible background or border
-    
+
     % Multiple stylized curves representing different survival functions
-    \draw[very thick, primary, domain=0:3, samples=30] 
+    \draw[very thick, primary, domain=0:3, samples=30]
         plot (\x, {0.8*exp(-\x/2.2)});
-        
-    \draw[thick, secondary!70, domain=0:3, samples=30] 
+
+    \draw[thick, secondary!70, domain=0:3, samples=30]
         plot (\x, {0.6*exp(-\x/1.6)});
-        
-    \draw[thick, tertiary!70, domain=0:3, samples=30] 
+
+    \draw[thick, tertiary!70, domain=0:3, samples=30]
         plot (\x, {0.4*exp(-\x/3)});
-    
+
     % Abstract neural network nodes (filled circles without borders)
     \node[circle, fill=quinary!40, inner sep=1.5pt] at (-0.7,0) {};
     \node[circle, fill=quinary!40, inner sep=1.5pt] at (0.1,-0.5) {};
     \node[circle, fill=quinary!40, inner sep=1.5pt] at (0.1,0.5) {};
     \draw[quinary!50, thin] (-0.7,0) -- (0.1,-0.5);
     \draw[quinary!50, thin] (-0.7,0) -- (0.1,0.5);
-    
+
     % Event indicators with different patterns (smaller dots)
     \node[circle, fill=secondary!80, inner sep=0.9pt] at (1.1,0.3) {};
     \node[circle, fill=tertiary!80, inner sep=0.9pt] at (1.6,0.18) {};
-    
+
     % Subtle censoring mark
     \draw[quaternary!80, thin] (2.2-0.08,0.15+0.08) -- (2.2+0.08,0.15-0.08);
     \draw[quaternary!80, thin] (2.2-0.08,0.15-0.08) -- (2.2+0.08,0.15+0.08);

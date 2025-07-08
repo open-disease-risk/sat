@@ -1,0 +1,652 @@
+name: optuna
+solutions:
+- params:
+    learning_rate: 0.008514209520857598
+    weight_decay: 0.05804275507963424
+    transformer_hidden_size: 16
+    transformer_intermediate_size: 96
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 4
+    survival_intermediate_size: 16
+    token_emb: 4
+    sentence_emb: 2
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 1.9899386200001924e-05
+    weight_decay: 0.03557537261454806
+    transformer_hidden_size: 8
+    transformer_intermediate_size: 32
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 4
+    survival_intermediate_size: 8
+    token_emb: 2
+    sentence_emb: 1
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.00023518586195909287
+    weight_decay: 4.017425429378482e-05
+    transformer_hidden_size: 16
+    transformer_intermediate_size: 64
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 2
+    survival_intermediate_size: 16
+    token_emb: 2
+    sentence_emb: 2
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.0003385046288587811
+    weight_decay: 0.0042043443206114485
+    transformer_hidden_size: 16
+    transformer_intermediate_size: 32
+    transformer_num_attention_heads: 2
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 16
+    token_emb: 4
+    sentence_emb: 2
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 3.689895669594469e-05
+    weight_decay: 2.781826276148311e-05
+    transformer_hidden_size: 32
+    transformer_intermediate_size: 32
+    transformer_num_attention_heads: 2
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 8
+    token_emb: 2
+    sentence_emb: 2
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 3.014370185515071e-05
+    weight_decay: 2.5674407140107183e-05
+    transformer_hidden_size: 32
+    transformer_intermediate_size: 64
+    transformer_num_attention_heads: 2
+    transformer_num_hidden_layers: 2
+    survival_intermediate_size: 8
+    token_emb: 3
+    sentence_emb: 3
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.00023850183623452733
+    weight_decay: 4.826447997433202e-05
+    transformer_hidden_size: 16
+    transformer_intermediate_size: 32
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 8
+    token_emb: 5
+    sentence_emb: 1
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.0026065007153709733
+    weight_decay: 0.00034412134242980323
+    transformer_hidden_size: 8
+    transformer_intermediate_size: 96
+    transformer_num_attention_heads: 2
+    transformer_num_hidden_layers: 4
+    survival_intermediate_size: 24
+    token_emb: 5
+    sentence_emb: 3
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 6.986234018906316e-05
+    weight_decay: 0.00010766712077525435
+    transformer_hidden_size: 8
+    transformer_intermediate_size: 64
+    transformer_num_attention_heads: 2
+    transformer_num_hidden_layers: 2
+    survival_intermediate_size: 8
+    token_emb: 2
+    sentence_emb: 1
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.0038028543894913663
+    weight_decay: 0.008394293104360821
+    transformer_hidden_size: 32
+    transformer_intermediate_size: 32
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 24
+    token_emb: 3
+    sentence_emb: 2
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.001914578065292778
+    weight_decay: 0.009862794900345601
+    transformer_hidden_size: 32
+    transformer_intermediate_size: 32
+    transformer_num_attention_heads: 2
+    transformer_num_hidden_layers: 4
+    survival_intermediate_size: 8
+    token_emb: 5
+    sentence_emb: 2
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 8.195873772929775e-05
+    weight_decay: 1.7650677519493005e-05
+    transformer_hidden_size: 16
+    transformer_intermediate_size: 96
+    transformer_num_attention_heads: 2
+    transformer_num_hidden_layers: 2
+    survival_intermediate_size: 16
+    token_emb: 2
+    sentence_emb: 1
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 9.26604221139786e-05
+    weight_decay: 7.19944019114819e-05
+    transformer_hidden_size: 16
+    transformer_intermediate_size: 32
+    transformer_num_attention_heads: 2
+    transformer_num_hidden_layers: 2
+    survival_intermediate_size: 8
+    token_emb: 2
+    sentence_emb: 1
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.001131562690611179
+    weight_decay: 0.000533993289345419
+    transformer_hidden_size: 16
+    transformer_intermediate_size: 96
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 2
+    survival_intermediate_size: 16
+    token_emb: 4
+    sentence_emb: 1
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 3.992966208854903e-05
+    weight_decay: 0.0017404403405671556
+    transformer_hidden_size: 16
+    transformer_intermediate_size: 96
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 16
+    token_emb: 3
+    sentence_emb: 2
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.0037030058274426687
+    weight_decay: 0.0008751945432704632
+    transformer_hidden_size: 32
+    transformer_intermediate_size: 32
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 4
+    survival_intermediate_size: 16
+    token_emb: 2
+    sentence_emb: 1
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 1.9554822954092983e-05
+    weight_decay: 0.0042012563179985776
+    transformer_hidden_size: 32
+    transformer_intermediate_size: 64
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 24
+    token_emb: 5
+    sentence_emb: 1
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.004209690717029312
+    weight_decay: 0.003625177202929526
+    transformer_hidden_size: 32
+    transformer_intermediate_size: 96
+    transformer_num_attention_heads: 2
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 16
+    token_emb: 3
+    sentence_emb: 2
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.0001401648737541176
+    weight_decay: 7.822814450684765e-05
+    transformer_hidden_size: 8
+    transformer_intermediate_size: 32
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 16
+    token_emb: 5
+    sentence_emb: 1
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.0008267922162529488
+    weight_decay: 0.0010367055464620054
+    transformer_hidden_size: 8
+    transformer_intermediate_size: 96
+    transformer_num_attention_heads: 2
+    transformer_num_hidden_layers: 2
+    survival_intermediate_size: 8
+    token_emb: 5
+    sentence_emb: 3
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 6.986234018906316e-05
+    weight_decay: 0.00010766712077525435
+    transformer_hidden_size: 8
+    transformer_intermediate_size: 96
+    transformer_num_attention_heads: 2
+    transformer_num_hidden_layers: 2
+    survival_intermediate_size: 8
+    token_emb: 4
+    sentence_emb: 1
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.004209690717029312
+    weight_decay: 2.781826276148311e-05
+    transformer_hidden_size: 32
+    transformer_intermediate_size: 96
+    transformer_num_attention_heads: 2
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 16
+    token_emb: 2
+    sentence_emb: 1
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.004209690717029312
+    weight_decay: 0.003625177202929526
+    transformer_hidden_size: 32
+    transformer_intermediate_size: 64
+    transformer_num_attention_heads: 2
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 8
+    token_emb: 5
+    sentence_emb: 3
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 2.0549180176595316e-05
+    weight_decay: 0.05804275507963424
+    transformer_hidden_size: 16
+    transformer_intermediate_size: 64
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 4
+    survival_intermediate_size: 24
+    token_emb: 4
+    sentence_emb: 3
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.0008267922162529488
+    weight_decay: 0.0010367055464620054
+    transformer_hidden_size: 16
+    transformer_intermediate_size: 96
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 16
+    token_emb: 5
+    sentence_emb: 1
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.004209690717029312
+    weight_decay: 0.05804275507963424
+    transformer_hidden_size: 16
+    transformer_intermediate_size: 96
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 16
+    token_emb: 3
+    sentence_emb: 2
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.0037030058274426687
+    weight_decay: 0.0008751945432704632
+    transformer_hidden_size: 32
+    transformer_intermediate_size: 96
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 2
+    survival_intermediate_size: 16
+    token_emb: 2
+    sentence_emb: 1
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 3.992966208854903e-05
+    weight_decay: 0.0017404403405671556
+    transformer_hidden_size: 16
+    transformer_intermediate_size: 96
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 16
+    token_emb: 3
+    sentence_emb: 2
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.0001401648737541176
+    weight_decay: 0.000533993289345419
+    transformer_hidden_size: 16
+    transformer_intermediate_size: 96
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 2
+    survival_intermediate_size: 16
+    token_emb: 4
+    sentence_emb: 1
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 9.26604221139786e-05
+    weight_decay: 0.0017404403405671556
+    transformer_hidden_size: 16
+    transformer_intermediate_size: 96
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 8
+    token_emb: 2
+    sentence_emb: 2
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 9.26604221139786e-05
+    weight_decay: 2.781826276148311e-05
+    transformer_hidden_size: 32
+    transformer_intermediate_size: 32
+    transformer_num_attention_heads: 2
+    transformer_num_hidden_layers: 2
+    survival_intermediate_size: 8
+    token_emb: 2
+    sentence_emb: 2
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.0008267922162529488
+    weight_decay: 0.0010367055464620054
+    transformer_hidden_size: 8
+    transformer_intermediate_size: 96
+    transformer_num_attention_heads: 2
+    transformer_num_hidden_layers: 2
+    survival_intermediate_size: 8
+    token_emb: 5
+    sentence_emb: 3
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.001914578065292778
+    weight_decay: 0.0042043443206114485
+    transformer_hidden_size: 32
+    transformer_intermediate_size: 32
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 4
+    survival_intermediate_size: 16
+    token_emb: 4
+    sentence_emb: 2
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.004209690717029312
+    weight_decay: 0.003625177202929526
+    transformer_hidden_size: 32
+    transformer_intermediate_size: 96
+    transformer_num_attention_heads: 2
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 16
+    token_emb: 3
+    sentence_emb: 1
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.0038028543894913663
+    weight_decay: 0.00011369882383760685
+    transformer_hidden_size: 32
+    transformer_intermediate_size: 32
+    transformer_num_attention_heads: 2
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 24
+    token_emb: 2
+    sentence_emb: 2
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.001131562690611179
+    weight_decay: 0.000533993289345419
+    transformer_hidden_size: 16
+    transformer_intermediate_size: 96
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 2
+    survival_intermediate_size: 16
+    token_emb: 4
+    sentence_emb: 2
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 3.992966208854903e-05
+    weight_decay: 0.0017404403405671556
+    transformer_hidden_size: 16
+    transformer_intermediate_size: 32
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 2
+    survival_intermediate_size: 16
+    token_emb: 5
+    sentence_emb: 1
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 3.014370185515071e-05
+    weight_decay: 0.003625177202929526
+    transformer_hidden_size: 32
+    transformer_intermediate_size: 64
+    transformer_num_attention_heads: 2
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 8
+    token_emb: 3
+    sentence_emb: 3
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.001131562690611179
+    weight_decay: 0.000533993289345419
+    transformer_hidden_size: 16
+    transformer_intermediate_size: 32
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 2
+    survival_intermediate_size: 16
+    token_emb: 4
+    sentence_emb: 1
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.00045897066563942526
+    weight_decay: 2.781826276148311e-05
+    transformer_hidden_size: 8
+    transformer_intermediate_size: 32
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 16
+    token_emb: 2
+    sentence_emb: 1
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 3.014370185515071e-05
+    weight_decay: 0.03557537261454806
+    transformer_hidden_size: 8
+    transformer_intermediate_size: 32
+    transformer_num_attention_heads: 2
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 16
+    token_emb: 2
+    sentence_emb: 1
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.00045897066563942526
+    weight_decay: 2.781826276148311e-05
+    transformer_hidden_size: 8
+    transformer_intermediate_size: 96
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 16
+    token_emb: 3
+    sentence_emb: 1
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 9.26604221139786e-05
+    weight_decay: 2.781826276148311e-05
+    transformer_hidden_size: 16
+    transformer_intermediate_size: 96
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 8
+    token_emb: 2
+    sentence_emb: 1
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.001131562690611179
+    weight_decay: 0.000533993289345419
+    transformer_hidden_size: 16
+    transformer_intermediate_size: 32
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 2
+    survival_intermediate_size: 16
+    token_emb: 4
+    sentence_emb: 1
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 9.26604221139786e-05
+    weight_decay: 0.003625177202929526
+    transformer_hidden_size: 32
+    transformer_intermediate_size: 64
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 8
+    token_emb: 2
+    sentence_emb: 3
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.001914578065292778
+    weight_decay: 0.000533993289345419
+    transformer_hidden_size: 16
+    transformer_intermediate_size: 32
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 4
+    survival_intermediate_size: 16
+    token_emb: 4
+    sentence_emb: 1
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.0001401648737541176
+    weight_decay: 2.781826276148311e-05
+    transformer_hidden_size: 32
+    transformer_intermediate_size: 96
+    transformer_num_attention_heads: 2
+    transformer_num_hidden_layers: 2
+    survival_intermediate_size: 16
+    token_emb: 4
+    sentence_emb: 1
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.001131562690611179
+    weight_decay: 0.0017404403405671556
+    transformer_hidden_size: 16
+    transformer_intermediate_size: 96
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 2
+    survival_intermediate_size: 16
+    token_emb: 4
+    sentence_emb: 2
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.001914578065292778
+    weight_decay: 0.0017404403405671556
+    transformer_hidden_size: 32
+    transformer_intermediate_size: 96
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 16
+    token_emb: 3
+    sentence_emb: 2
+  values:
+  - -.inf
+  - .inf
+- params:
+    learning_rate: 0.0037030058274426687
+    weight_decay: 0.0008751945432704632
+    transformer_hidden_size: 32
+    transformer_intermediate_size: 64
+    transformer_num_attention_heads: 2
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 16
+    token_emb: 4
+    sentence_emb: 3
+  values:
+  - -.inf
+  - .inf

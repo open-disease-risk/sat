@@ -1,0 +1,2 @@
+,batch_size,num_events,forward_speedup,backward_speedup,total_speedup
+0,32,1,175.99099909991,198.69707401032701,191.35312954876272

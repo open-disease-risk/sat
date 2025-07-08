@@ -1,0 +1,132 @@
+{
+  "citation": "",
+  "description": "",
+  "features": {
+    "patient_id": {
+      "dtype": "int64",
+      "_type": "Value"
+    },
+    "events": [
+      {
+        "code": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "numeric_value": {
+          "dtype": "float64",
+          "_type": "Value"
+        },
+        "string_value": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "time": {
+          "dtype": "timestamp[us]",
+          "_type": "Value"
+        }
+      }
+    ],
+    "anchor_time": {
+      "dtype": "string",
+      "_type": "Value"
+    },
+    "labels_mortality": [
+      {
+        "boolean_value": {
+          "dtype": "bool",
+          "_type": "Value"
+        },
+        "competing_event": {
+          "dtype": "bool",
+          "_type": "Value"
+        },
+        "event_category": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "label_type": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "prediction_time": {
+          "dtype": "float64",
+          "_type": "Value"
+        }
+      }
+    ],
+    "labels_stroke": [
+      {
+        "boolean_value": {
+          "dtype": "bool",
+          "_type": "Value"
+        },
+        "competing_event": {
+          "dtype": "bool",
+          "_type": "Value"
+        },
+        "event_category": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "label_type": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "prediction_time": {
+          "dtype": "float64",
+          "_type": "Value"
+        }
+      }
+    ],
+    "labels_kidney_failure": [
+      {
+        "boolean_value": {
+          "dtype": "bool",
+          "_type": "Value"
+        },
+        "competing_event": {
+          "dtype": "bool",
+          "_type": "Value"
+        },
+        "event_category": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "label_type": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "prediction_time": {
+          "dtype": "float64",
+          "_type": "Value"
+        }
+      }
+    ],
+    "labels_myocardial_infarction": [
+      {
+        "boolean_value": {
+          "dtype": "bool",
+          "_type": "Value"
+        },
+        "competing_event": {
+          "dtype": "bool",
+          "_type": "Value"
+        },
+        "event_category": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "label_type": {
+          "dtype": "string",
+          "_type": "Value"
+        },
+        "prediction_time": {
+          "dtype": "float64",
+          "_type": "Value"
+        }
+      }
+    ]
+  },
+  "homepage": "",
+  "license": ""
+}

@@ -1,0 +1,11 @@
+- learning_rate=6.45920042618586e-05
+- weight_decay=0.0001484137744909949
+- transformer_hidden_size=16
+- transformer_intermediate_size=64
+- transformer_num_attention_heads=4
+- transformer_num_hidden_layers=4
+- survival_intermediate_size=24
+- token_emb=4
+- sentence_emb=1
+- experiments=metabric/survival-moco
+- sweep=survival

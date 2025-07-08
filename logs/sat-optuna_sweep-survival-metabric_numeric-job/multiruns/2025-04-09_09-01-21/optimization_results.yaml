@@ -1,0 +1,28 @@
+name: optuna
+solutions:
+- params:
+    learning_rate: 0.008790075203304524
+    weight_decay: 1.3990649184465038e-05
+    transformer_hidden_size: 8
+    transformer_intermediate_size: 96
+    transformer_num_attention_heads: 2
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 24
+    token_emb: 4
+    sentence_emb: 1
+  values:
+  - 0.6990934179421636
+  - 0.17817300737623157
+- params:
+    learning_rate: 0.002617714888165719
+    weight_decay: 0.0005880557859173877
+    transformer_hidden_size: 16
+    transformer_intermediate_size: 64
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 2
+    survival_intermediate_size: 8
+    token_emb: 3
+    sentence_emb: 1
+  values:
+  - 0.6969181652442817
+  - 0.0

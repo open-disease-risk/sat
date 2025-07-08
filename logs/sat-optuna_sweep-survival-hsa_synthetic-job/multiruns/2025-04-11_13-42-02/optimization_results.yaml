@@ -1,0 +1,17 @@
+name: optuna
+solutions:
+- params:
+    learning_rate: 0.0054623675902464594
+    weight_decay: 1.7745775337070372e-05
+    transformer_hidden_size: 16
+    transformer_intermediate_size: 96
+    transformer_num_attention_heads: 4
+    transformer_num_hidden_layers: 1
+    survival_intermediate_size: 24
+    token_emb: 2
+    sentence_emb: 3
+    survival_shared_intermediate_size: 16
+    survival_shared_num_hidden_layers: 1
+  values:
+  - 0.8650792971513566
+  - 0.07861523007792144

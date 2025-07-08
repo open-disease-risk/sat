@@ -1,0 +1,6146 @@
+[
+  {
+    "patient_id": 1,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE RxNorm:N02BE01 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.6047535538673401,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1516924800,
+      1537657200
+    ],
+    "string_values": [
+      "1983-03-31",
+      "White",
+      "Female",
+      null,
+      null,
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "durations": [
+      960.0,
+      960.0,
+      960.0,
+      498.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2018-09-23T00:00:00"
+  },
+  {
+    "patient_id": 2,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.7697638869285583,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1440630000
+    ],
+    "string_values": [
+      "1942-05-10",
+      "Black",
+      "Female",
+      null,
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      210.0,
+      210.0,
+      210.0,
+      210.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2015-08-27T00:00:00"
+  },
+  {
+    "patient_id": 3,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ICD10:E11 LOINC:2951-2 RxNorm:N05BA06 LOINC:2571-8 RxNorm:C03CA01 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -1.797087550163269,
+      1.0,
+      -0.8709748387336731,
+      1.0,
+      -0.9733297228813171,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1540335600,
+      1544313600,
+      1554591600,
+      1555542000,
+      1555801200,
+      1557961200
+    ],
+    "string_values": [
+      "1954-10-04",
+      "Asian",
+      "Male",
+      null,
+      "Type 2 diabetes mellitus",
+      "mmol/L",
+      null,
+      "mg/dL",
+      null,
+      null
+    ],
+    "events": [
+      0,
+      1,
+      0,
+      0
+    ],
+    "durations": [
+      217.0,
+      217.0,
+      217.0,
+      217.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2019-05-16T00:00:00"
+  },
+  {
+    "patient_id": 4,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE RxNorm:C09AA02 LOINC:2089-1 LOINC:2571-8 ICD10:M54 ICD10:I21 ICD10:I50 ENC_INPATIENT OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.26626816391944885,
+      1.0,
+      0.8319727778434753,
+      0.7370526194572449,
+      1.0,
+      1.0,
+      1.0,
+      1.2633775472640991,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1477522800,
+      1482451200,
+      1495580400,
+      1497481200,
+      1500332400,
+      1500764400,
+      1503529200,
+      1506121200
+    ],
+    "string_values": [
+      "1999-01-26",
+      "White",
+      "Female",
+      null,
+      null,
+      "mg/dL",
+      "mg/dL",
+      "Dorsalgia (back pain)",
+      "Acute myocardial infarction",
+      "Heart failure",
+      null,
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      0.0,
+      0.0,
+      0.0,
+      2291.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2017-09-23T00:00:00"
+  },
+  {
+    "patient_id": 5,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE RxNorm:A02BC01 LOINC:2089-1 ICD10:F32 ICD10:I10 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      1.8239811658859253,
+      1.0,
+      0.3493998348712921,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1488240000,
+      1493852400,
+      1498431600,
+      1499554800,
+      1514332800
+    ],
+    "string_values": [
+      "1972-10-03",
+      "White",
+      "Female",
+      null,
+      null,
+      "mg/dL",
+      "Major depressive disorder, single episode",
+      "Essential (primary) hypertension",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      440.0,
+      440.0,
+      440.0,
+      440.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2017-12-27T00:00:00"
+  },
+  {
+    "patient_id": 6,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE RxNorm:C08CA01 ENC_INPATIENT RxNorm:C07AB07 ICD10:I50 LOINC:2085-9 ICD10:F32 ICD10:I10 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.3648848533630371,
+      1.0,
+      0.5517587661743164,
+      1.0,
+      1.0,
+      0.5527077317237854,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1472252400,
+      1473289200,
+      1486598400,
+      1487203200,
+      1493247600,
+      1496530800,
+      1498863600,
+      1503356400
+    ],
+    "string_values": [
+      "1970-11-23",
+      "White",
+      "Female",
+      null,
+      null,
+      null,
+      null,
+      "Heart failure",
+      "mg/dL",
+      "Major depressive disorder, single episode",
+      "Essential (primary) hypertension",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1487.0,
+      1487.0,
+      1487.0,
+      1487.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2017-08-22T00:00:00"
+  },
+  {
+    "patient_id": 7,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2085-9 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.7435346841812134,
+      0.24270465970039368,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1521849600,
+      1541203200
+    ],
+    "string_values": [
+      "2000-07-22",
+      "White",
+      "Male",
+      null,
+      "mg/dL",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      1,
+      0
+    ],
+    "durations": [
+      656.0,
+      656.0,
+      656.0,
+      656.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2018-11-03T00:00:00"
+  },
+  {
+    "patient_id": 8,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2571-8 ENC_INPATIENT RxNorm:N02BE01 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.5123481154441833,
+      1.1642870903015137,
+      0.19594939053058624,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1504998000,
+      1508886000,
+      1511913600,
+      1534374000
+    ],
+    "string_values": [
+      "1957-02-25",
+      "White",
+      "Male",
+      null,
+      "mg/dL",
+      null,
+      null,
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      514.0,
+      514.0,
+      514.0,
+      514.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2018-08-16T00:00:00"
+  },
+  {
+    "patient_id": 9,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ICD10:E11 ICD10:I50 LOINC:4548-4 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.8014364838600159,
+      1.0,
+      1.0,
+      -0.8288465738296509,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1438297200,
+      1453075200,
+      1464303600,
+      1469574000
+    ],
+    "string_values": [
+      "1986-02-18",
+      "Black",
+      "Male",
+      null,
+      "Type 2 diabetes mellitus",
+      "Heart failure",
+      "%",
+      null
+    ],
+    "events": [
+      1,
+      0,
+      1,
+      0
+    ],
+    "durations": [
+      190.0,
+      190.0,
+      80.0,
+      190.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2016-07-27T00:00:00"
+  },
+  {
+    "patient_id": 10,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2093-3 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      1.164198637008667,
+      -0.4395493268966675,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1557874800,
+      1558134000
+    ],
+    "string_values": [
+      "1952-02-13",
+      "Other",
+      "Male",
+      null,
+      "mg/dL",
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      193.0,
+      193.0,
+      193.0,
+      193.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2019-05-18T00:00:00"
+  },
+  {
+    "patient_id": 11,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ENC_INPATIENT RxNorm:A02BC01 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -1.2477340698242188,
+      0.9075681567192078,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1498172400,
+      1525129200,
+      1528412400
+    ],
+    "string_values": [
+      "2000-02-17",
+      "Asian",
+      "Male",
+      null,
+      null,
+      null,
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1046.0,
+      1046.0,
+      1046.0,
+      1046.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2018-06-08T00:00:00"
+  },
+  {
+    "patient_id": 12,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ICD10:E11 ICD10:F32 ICD10:E11 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      1.559261441230774,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1529535600,
+      1529794800,
+      1531436400,
+      1541116800
+    ],
+    "string_values": [
+      "1979-06-28",
+      "White",
+      "Female",
+      null,
+      "Type 2 diabetes mellitus",
+      "Major depressive disorder, single episode",
+      "Type 2 diabetes mellitus",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1059.0,
+      1059.0,
+      1059.0,
+      1059.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2018-11-02T00:00:00"
+  },
+  {
+    "patient_id": 13,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ICD10:M54 ICD10:E11 ICD10:I10 ENC_INPATIENT OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.21053841710090637,
+      1.0,
+      1.0,
+      1.0,
+      -0.15985998511314392,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1482969600,
+      1483488000,
+      1484870400,
+      1501542000,
+      1502924400
+    ],
+    "string_values": [
+      "1971-02-10",
+      "Asian",
+      "Female",
+      null,
+      "Dorsalgia (back pain)",
+      "Type 2 diabetes mellitus",
+      "Essential (primary) hypertension",
+      null,
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "durations": [
+      955.0,
+      955.0,
+      955.0,
+      857.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2017-08-17T00:00:00"
+  },
+  {
+    "patient_id": 14,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ICD10:E11 RxNorm:C03CA01 ENC_INPATIENT RxNorm:C07AB07 RxNorm:N06AB06 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      1.7607572078704834,
+      1.0,
+      1.0,
+      -0.8714787364006042,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1402614000,
+      1406761200,
+      1409612400,
+      1424131200,
+      1430521200,
+      1432594800
+    ],
+    "string_values": [
+      "1983-11-14",
+      "Black",
+      "Female",
+      null,
+      "Type 2 diabetes mellitus",
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      223.0,
+      223.0,
+      223.0,
+      223.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2015-05-26T00:00:00"
+  },
+  {
+    "patient_id": 15,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ICD10:N18 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.15228712558746338,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1467241200,
+      1496444400
+    ],
+    "string_values": [
+      "1962-10-14",
+      "White",
+      "Male",
+      null,
+      "Chronic kidney disease",
+      null
+    ],
+    "events": [
+      0,
+      1,
+      0,
+      0
+    ],
+    "durations": [
+      205.0,
+      148.0,
+      2403.0,
+      205.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2017-06-03T00:00:00"
+  },
+  {
+    "patient_id": 16,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ICD10:I10 LOINC:2571-8 LOINC:2339-0 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.5763259530067444,
+      1.0,
+      0.8731846213340759,
+      -1.3119754791259766,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1496530800,
+      1498086000,
+      1499814000,
+      1510876800
+    ],
+    "string_values": [
+      "1944-08-12",
+      "White",
+      "Female",
+      null,
+      "Essential (primary) hypertension",
+      "mg/dL",
+      "mg/dL",
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      221.0,
+      221.0,
+      221.0,
+      221.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2017-11-17T00:00:00"
+  },
+  {
+    "patient_id": 17,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:3094-0 LOINC:2085-9 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.9594376683235168,
+      -0.2142394781112671,
+      -1.7217164039611816,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1523314800,
+      1529881200,
+      1547942400
+    ],
+    "string_values": [
+      "1942-02-08",
+      "Black",
+      "Male",
+      null,
+      "mg/dL",
+      "mg/dL",
+      null
+    ],
+    "events": [
+      0,
+      1,
+      0,
+      0
+    ],
+    "durations": [
+      1150.0,
+      650.0,
+      1150.0,
+      1150.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2019-01-20T00:00:00"
+  },
+  {
+    "patient_id": 18,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2951-2 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.9871785044670105,
+      -0.602444589138031,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1455926400,
+      1480896000
+    ],
+    "string_values": [
+      "1946-08-30",
+      "White",
+      "Female",
+      null,
+      "mmol/L",
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      505.0,
+      505.0,
+      505.0,
+      505.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2016-12-05T00:00:00"
+  },
+  {
+    "patient_id": 19,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ICD10:I21 ICD10:N18 LOINC:2093-3 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -1.0885950326919556,
+      1.0,
+      1.0,
+      -0.28586655855178833,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1471302000,
+      1484006400,
+      1491433200,
+      1497481200
+    ],
+    "string_values": [
+      "1954-07-17",
+      "White",
+      "Female",
+      null,
+      "Acute myocardial infarction",
+      "Chronic kidney disease",
+      "mg/dL",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1599.0,
+      1599.0,
+      2391.0,
+      2391.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2017-06-15T00:00:00"
+  },
+  {
+    "patient_id": 20,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2823-3 ENC_INPATIENT OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.2662472426891327,
+      -0.32659590244293213,
+      -0.5156693458557129,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1524178800,
+      1528930800,
+      1554505200
+    ],
+    "string_values": [
+      "1953-10-30",
+      "White",
+      "Female",
+      null,
+      "mmol/L",
+      null,
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1444.0,
+      1444.0,
+      1444.0,
+      1444.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2019-04-06T00:00:00"
+  },
+  {
+    "patient_id": 21,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ENC_INPATIENT ICD10:C34 RxNorm:A10BA02 ICD10:I50 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.4378265142440796,
+      0.9075681567192078,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1484784000,
+      1493679600,
+      1498258800,
+      1502319600,
+      1510272000
+    ],
+    "string_values": [
+      "1957-07-30",
+      "White",
+      "Female",
+      null,
+      null,
+      "Malignant neoplasm of bronchus and lung",
+      null,
+      "Heart failure",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1560.0,
+      1560.0,
+      1560.0,
+      1560.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2017-11-10T00:00:00"
+  },
+  {
+    "patient_id": 22,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ICD10:I63 ENC_INPATIENT OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.09306307882070541,
+      1.0,
+      -0.5156693458557129,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1425600000,
+      1426118400,
+      1431558000
+    ],
+    "string_values": [
+      "1988-02-06",
+      "White",
+      "Female",
+      null,
+      "Cerebral infarction (stroke)",
+      null,
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      203.0,
+      3154.0,
+      203.0,
+      203.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2015-05-14T00:00:00"
+  },
+  {
+    "patient_id": 23,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ENC_INPATIENT LOINC:2951-2 RxNorm:N05BA06 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      1.088245153427124,
+      0.5517587661743164,
+      1.279505968093872,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1524092400,
+      1550966400,
+      1551312000,
+      1554937200
+    ],
+    "string_values": [
+      "1997-04-30",
+      "Asian",
+      "Male",
+      null,
+      null,
+      "mmol/L",
+      null,
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      225.0,
+      225.0,
+      225.0,
+      225.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2019-04-11T00:00:00"
+  },
+  {
+    "patient_id": 24,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ICD10:F32 ICD10:M54 ICD10:M54 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.3617957532405853,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1412031600,
+      1415577600,
+      1436137200,
+      1441148400
+    ],
+    "string_values": [
+      "1994-02-15",
+      "White",
+      "Male",
+      null,
+      "Major depressive disorder, single episode",
+      "Dorsalgia (back pain)",
+      "Dorsalgia (back pain)",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      475.0,
+      475.0,
+      475.0,
+      475.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2015-09-02T00:00:00"
+  },
+  {
+    "patient_id": 25,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2089-1 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      1.1088345050811768,
+      1.9211105108261108,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1496271600,
+      1499468400
+    ],
+    "string_values": [
+      "1957-07-06",
+      "White",
+      "Male",
+      null,
+      "mg/dL",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      106.0,
+      106.0,
+      106.0,
+      106.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2017-07-08T00:00:00"
+  },
+  {
+    "patient_id": 26,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2823-3 LOINC:3094-0 LOINC:2160-0 LOINC:2085-9 LOINC:2571-8 LOINC:2571-8 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.4140898883342743,
+      0.5118544697761536,
+      -0.408745139837265,
+      -0.2251303344964981,
+      -0.770733654499054,
+      -0.8927298784255981,
+      -0.5323079824447632,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1443481200,
+      1452297600,
+      1459810800,
+      1463180400,
+      1463439600,
+      1466377200,
+      1470697200
+    ],
+    "string_values": [
+      "1963-09-23",
+      "White",
+      "Male",
+      null,
+      "mmol/L",
+      "mg/dL",
+      "mg/dL",
+      "mg/dL",
+      "mg/dL",
+      "mg/dL",
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      254.0,
+      254.0,
+      254.0,
+      254.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2016-08-09T00:00:00"
+  },
+  {
+    "patient_id": 27,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE RxNorm:A02BC01 ICD10:I50 RxNorm:A02BC01 RxNorm:C09AA02 ICD10:M54 ICD10:I50 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.1274370551109314,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1542067200,
+      1545955200,
+      1548892800,
+      1551052800,
+      1554937200,
+      1557529200,
+      1560294000
+    ],
+    "string_values": [
+      "1991-11-11",
+      "White",
+      "Female",
+      null,
+      null,
+      "Heart failure",
+      null,
+      null,
+      "Dorsalgia (back pain)",
+      "Heart failure",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1507.0,
+      1507.0,
+      1507.0,
+      1507.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2019-06-12T00:00:00"
+  },
+  {
+    "patient_id": 28,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2571-8 ICD10:F32 ICD10:E11 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      2.16007661819458,
+      -0.09539945423603058,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1524006000,
+      1526943600,
+      1548892800,
+      1550793600
+    ],
+    "string_values": [
+      "1990-06-18",
+      "White",
+      "Male",
+      null,
+      "mg/dL",
+      "Major depressive disorder, single episode",
+      "Type 2 diabetes mellitus",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1229.0,
+      1229.0,
+      1229.0,
+      1229.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2019-02-22T00:00:00"
+  },
+  {
+    "patient_id": 29,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ICD10:I63 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.11819060891866684,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1444258800,
+      1449878400
+    ],
+    "string_values": [
+      "1947-07-10",
+      "White",
+      "Female",
+      null,
+      "Cerebral infarction (stroke)",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      320.0,
+      2942.0,
+      320.0,
+      320.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2015-12-12T00:00:00"
+  },
+  {
+    "patient_id": 30,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2951-2 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.08073804527521133,
+      -0.321391761302948,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1452902400,
+      1466031600
+    ],
+    "string_values": [
+      "1940-07-08",
+      "White",
+      "Male",
+      null,
+      "mmol/L",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1233.0,
+      1233.0,
+      1233.0,
+      1233.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2016-06-16T00:00:00"
+  },
+  {
+    "patient_id": 31,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2951-2 RxNorm:R03AC02 RxNorm:A10BA02 ICD10:F32 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.13653995096683502,
+      0.29090699553489685,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1508799600,
+      1520640000,
+      1523142000,
+      1532473200,
+      1535756400
+    ],
+    "string_values": [
+      "1992-05-05",
+      "White",
+      "Male",
+      null,
+      "mmol/L",
+      null,
+      null,
+      "Major depressive disorder, single episode",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      762.0,
+      762.0,
+      762.0,
+      762.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2018-09-01T00:00:00"
+  },
+  {
+    "patient_id": 32,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2093-3 ICD10:F32 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.33685430884361267,
+      0.8022998571395874,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1411167600,
+      1431558000,
+      1438383600
+    ],
+    "string_values": [
+      "1948-03-24",
+      "White",
+      "Female",
+      null,
+      "mg/dL",
+      "Major depressive disorder, single episode",
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      183.0,
+      183.0,
+      183.0,
+      183.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2015-08-01T00:00:00"
+  },
+  {
+    "patient_id": 33,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ICD10:M54 LOINC:2571-8 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -1.012523889541626,
+      1.0,
+      0.637451171875,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1454889600,
+      1458259200,
+      1463698800
+    ],
+    "string_values": [
+      "1997-08-11",
+      "White",
+      "Male",
+      null,
+      "Dorsalgia (back pain)",
+      "mg/dL",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      1,
+      0
+    ],
+    "durations": [
+      382.0,
+      382.0,
+      300.0,
+      382.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2016-05-20T00:00:00"
+  },
+  {
+    "patient_id": 34,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2571-8 ICD10:J44 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      2.068791389465332,
+      0.5433083772659302,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1489881600,
+      1501801200,
+      1514332800
+    ],
+    "string_values": [
+      "1945-03-14",
+      "White",
+      "Female",
+      null,
+      "mg/dL",
+      "Chronic obstructive pulmonary disease",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1407.0,
+      1407.0,
+      1407.0,
+      1407.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2017-12-27T00:00:00"
+  },
+  {
+    "patient_id": 35,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ICD10:C34 LOINC:2951-2 ICD10:E11 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.413446307182312,
+      1.0,
+      -0.05362391471862793,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1541289600,
+      1548806400,
+      1548979200,
+      1565996400
+    ],
+    "string_values": [
+      "1943-06-21",
+      "White",
+      "Female",
+      null,
+      "Malignant neoplasm of bronchus and lung",
+      "mmol/L",
+      "Type 2 diabetes mellitus",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1681.0,
+      1681.0,
+      1681.0,
+      1681.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2019-08-17T00:00:00"
+  },
+  {
+    "patient_id": 36,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE RxNorm:A10BA02 ENC_INPATIENT OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -1.5371896028518677,
+      1.0,
+      -0.5156693458557129,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1483056000,
+      1492815600,
+      1512691200
+    ],
+    "string_values": [
+      "1989-01-15",
+      "Other",
+      "Male",
+      null,
+      null,
+      null,
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1021.0,
+      1021.0,
+      1021.0,
+      1021.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2017-12-08T00:00:00"
+  },
+  {
+    "patient_id": 37,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ENC_INPATIENT OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.16082225739955902,
+      -0.15985998511314392,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1518739200,
+      1521849600
+    ],
+    "string_values": [
+      "1971-03-13",
+      "White",
+      "Female",
+      null,
+      null,
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1217.0,
+      1217.0,
+      1217.0,
+      1217.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2018-03-24T00:00:00"
+  },
+  {
+    "patient_id": 38,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE RxNorm:N06AB06 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.3549409508705139,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1461970800,
+      1466204400
+    ],
+    "string_values": [
+      "1949-09-26",
+      "White",
+      "Male",
+      null,
+      null,
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      952.0,
+      952.0,
+      952.0,
+      952.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2016-06-18T00:00:00"
+  },
+  {
+    "patient_id": 39,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE RxNorm:A02BC01 RxNorm:C08CA01 ENC_INPATIENT OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.21356770396232605,
+      1.0,
+      1.0,
+      0.9075681567192078,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1431385200,
+      1440111600,
+      1440975600,
+      1458864000
+    ],
+    "string_values": [
+      "1950-08-26",
+      "White",
+      "Female",
+      null,
+      null,
+      null,
+      null,
+      null
+    ],
+    "events": [
+      1,
+      0,
+      1,
+      1
+    ],
+    "durations": [
+      1082.0,
+      1082.0,
+      366.0,
+      436.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2016-03-25T00:00:00"
+  },
+  {
+    "patient_id": 40,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ICD10:I10 RxNorm:C10AA01 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.053434643894433975,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1424822400,
+      1444086000,
+      1444431600
+    ],
+    "string_values": [
+      "1964-03-13",
+      "White",
+      "Female",
+      null,
+      "Essential (primary) hypertension",
+      null,
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      693.0,
+      693.0,
+      693.0,
+      693.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2015-10-10T00:00:00"
+  },
+  {
+    "patient_id": 41,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.16937653720378876,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1433286000
+    ],
+    "string_values": [
+      "1979-09-15",
+      "Other",
+      "Male",
+      null,
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      689.0,
+      689.0,
+      689.0,
+      689.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2015-06-03T00:00:00"
+  },
+  {
+    "patient_id": 42,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2339-0 ICD10:F32 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.424071341753006,
+      -0.676913321018219,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1535756400,
+      1547856000,
+      1554591600
+    ],
+    "string_values": [
+      "1999-08-16",
+      "White",
+      "Female",
+      null,
+      "mg/dL",
+      "Major depressive disorder, single episode",
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      308.0,
+      308.0,
+      308.0,
+      308.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2019-04-07T00:00:00"
+  },
+  {
+    "patient_id": 43,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2089-1 LOINC:2085-9 LOINC:3094-0 RxNorm:A02BC01 RxNorm:N02BE01 LOINC:3094-0 OMOP_ENROLLMENT ICD10:C34",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.8201878070831299,
+      -0.43857941031455994,
+      1.846379280090332,
+      -0.8203108310699463,
+      1.0,
+      1.0,
+      0.3456346392631531,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1501196400,
+      1505862000,
+      1510185600,
+      1517529600,
+      1519430400,
+      1521763200,
+      1523487600,
+      1523487600
+    ],
+    "string_values": [
+      "1969-02-04",
+      "White",
+      "Male",
+      null,
+      "mg/dL",
+      "mg/dL",
+      "mg/dL",
+      null,
+      null,
+      "mg/dL",
+      null,
+      "Malignant neoplasm of bronchus and lung"
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      195.0,
+      195.0,
+      195.0,
+      195.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2018-04-12T00:00:00"
+  },
+  {
+    "patient_id": 44,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2160-0 ICD10:I10 ICD10:I50 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.19813184440135956,
+      0.1856091469526291,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1436223600,
+      1445990400,
+      1447545600,
+      1465426800
+    ],
+    "string_values": [
+      "1964-01-27",
+      "White",
+      "Female",
+      null,
+      "mg/dL",
+      "Essential (primary) hypertension",
+      "Heart failure",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      918.0,
+      918.0,
+      918.0,
+      918.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2016-06-09T00:00:00"
+  },
+  {
+    "patient_id": 45,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2160-0 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      2.6028969287872314,
+      0.3851316571235657,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1418774400,
+      1447718400
+    ],
+    "string_values": [
+      "1968-11-24",
+      "White",
+      "Female",
+      null,
+      "mg/dL",
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      181.0,
+      181.0,
+      181.0,
+      181.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2015-11-17T00:00:00"
+  },
+  {
+    "patient_id": 46,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2093-3 ICD10:C34 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      1.0436105728149414,
+      0.8808110356330872,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1422576000,
+      1438038000,
+      1446336000
+    ],
+    "string_values": [
+      "1968-01-27",
+      "Black",
+      "Female",
+      null,
+      "mg/dL",
+      "Malignant neoplasm of bronchus and lung",
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      523.0,
+      523.0,
+      523.0,
+      523.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2015-11-01T00:00:00"
+  },
+  {
+    "patient_id": 47,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ICD10:E11 RxNorm:C09AA02 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.009852813556790352,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1503270000,
+      1503702000,
+      1525215600
+    ],
+    "string_values": [
+      "1963-02-02",
+      "White",
+      "Female",
+      null,
+      "Type 2 diabetes mellitus",
+      null,
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      945.0,
+      945.0,
+      945.0,
+      945.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2018-05-02T00:00:00"
+  },
+  {
+    "patient_id": 48,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ICD10:I63 ICD10:I10 ICD10:E11 ICD10:C34 ICD10:N18 ICD10:F32 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -1.3317590951919556,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1503615600,
+      1507244400,
+      1513382400,
+      1520553600,
+      1520899200,
+      1525042800,
+      1527894000
+    ],
+    "string_values": [
+      "1968-01-07",
+      "White",
+      "Male",
+      null,
+      "Cerebral infarction (stroke)",
+      "Essential (primary) hypertension",
+      "Type 2 diabetes mellitus",
+      "Malignant neoplasm of bronchus and lung",
+      "Chronic kidney disease",
+      "Major depressive disorder, single episode",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      669.0,
+      2039.0,
+      2039.0,
+      669.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2018-06-02T00:00:00"
+  },
+  {
+    "patient_id": 49,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE RxNorm:N02BE01 LOINC:2571-8 ICD10:C34 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.11069062352180481,
+      1.0,
+      -0.9721599817276001,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1518048000,
+      1518048000,
+      1519516800,
+      1529276400
+    ],
+    "string_values": [
+      "1970-02-28",
+      "White",
+      "Female",
+      null,
+      null,
+      "mg/dL",
+      "Malignant neoplasm of bronchus and lung",
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      188.0,
+      188.0,
+      188.0,
+      188.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2018-06-18T00:00:00"
+  },
+  {
+    "patient_id": 50,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE RxNorm:C09AA02 OMOP_ENROLLMENT RxNorm:C03CA01",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.8150609731674194,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1410994800,
+      1420243200,
+      1420243200
+    ],
+    "string_values": [
+      "1947-02-25",
+      "White",
+      "Male",
+      null,
+      null,
+      null,
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      214.0,
+      214.0,
+      214.0,
+      214.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2015-01-03T00:00:00"
+  },
+  {
+    "patient_id": 51,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2160-0 LOINC:2085-9 LOINC:3094-0 ICD10:F32 RxNorm:B01AC06 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.8227776288986206,
+      -0.44314703345298767,
+      -0.13401058316230774,
+      -1.0742391347885132,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1527289200,
+      1532732400,
+      1542326400,
+      1542844800,
+      1546473600,
+      1547078400
+    ],
+    "string_values": [
+      "1999-11-17",
+      "Asian",
+      "Female",
+      null,
+      "mg/dL",
+      "mg/dL",
+      "mg/dL",
+      "Major depressive disorder, single episode",
+      null,
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      1
+    ],
+    "durations": [
+      183.0,
+      183.0,
+      183.0,
+      76.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2019-01-10T00:00:00"
+  },
+  {
+    "patient_id": 52,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2160-0 LOINC:2093-3 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -1.8696174621582031,
+      0.46998918056488037,
+      -0.694463312625885,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1486080000,
+      1493074800,
+      1498431600
+    ],
+    "string_values": [
+      "1983-03-23",
+      "White",
+      "Male",
+      null,
+      "mg/dL",
+      "mg/dL",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      968.0,
+      968.0,
+      968.0,
+      968.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2017-06-26T00:00:00"
+  },
+  {
+    "patient_id": 53,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2339-0 ENC_INPATIENT OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.11178694665431976,
+      1.1521058082580566,
+      -0.8714787364006042,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1464390000,
+      1467241200,
+      1471302000
+    ],
+    "string_values": [
+      "1986-12-24",
+      "White",
+      "Female",
+      null,
+      "mg/dL",
+      null,
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      1
+    ],
+    "durations": [
+      182.0,
+      182.0,
+      182.0,
+      35.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2016-08-16T00:00:00"
+  },
+  {
+    "patient_id": 54,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2951-2 RxNorm:R03BB04 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.48821377754211426,
+      -0.7500616312026978,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1508972400,
+      1509580800,
+      1537052400
+    ],
+    "string_values": [
+      "1973-06-02",
+      "White",
+      "Female",
+      null,
+      "mmol/L",
+      null,
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      181.0,
+      181.0,
+      181.0,
+      181.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2018-09-16T00:00:00"
+  },
+  {
+    "patient_id": 55,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE RxNorm:A10BA02 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      1.5030180215835571,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1429657200,
+      1444431600
+    ],
+    "string_values": [
+      "1962-07-10",
+      "White",
+      "Female",
+      null,
+      null,
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      210.0,
+      210.0,
+      210.0,
+      210.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2015-10-10T00:00:00"
+  },
+  {
+    "patient_id": 56,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ENC_INPATIENT RxNorm:C08CA01 ICD10:I21 RxNorm:A02BC01 ENC_INPATIENT ENC_INPATIENT OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0,
+      0,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.12016120553016663,
+      2.330805778503418,
+      1.0,
+      1.0,
+      1.0,
+      0.19594939053058624,
+      1.2633775472640991,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1536188400,
+      1536274800,
+      1540594800,
+      1544918400,
+      1558479600,
+      1560380400,
+      1561158000
+    ],
+    "string_values": [
+      "1979-10-24",
+      "White",
+      "Male",
+      null,
+      null,
+      null,
+      "Acute myocardial infarction",
+      null,
+      null,
+      null,
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      328.0,
+      328.0,
+      328.0,
+      1654.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2019-06-22T00:00:00"
+  },
+  {
+    "patient_id": 57,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ENC_INPATIENT LOINC:2093-3 ICD10:N18 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -2.30410099029541,
+      0.19594939053058624,
+      -0.01685878075659275,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1458086400,
+      1465772400,
+      1467586800,
+      1476486000
+    ],
+    "string_values": [
+      "1948-08-18",
+      "White",
+      "Female",
+      null,
+      null,
+      "mg/dL",
+      "Chronic kidney disease",
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      1
+    ],
+    "durations": [
+      720.0,
+      720.0,
+      2634.0,
+      697.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2016-10-15T00:00:00"
+  },
+  {
+    "patient_id": 58,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2951-2 LOINC:3094-0 LOINC:2951-2 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.3664725422859192,
+      -1.2686375379562378,
+      0.4554925858974457,
+      -0.9132943153381348,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1537311600,
+      1540771200,
+      1542585600,
+      1556406000
+    ],
+    "string_values": [
+      "1944-05-04",
+      "White",
+      "Female",
+      null,
+      "mmol/L",
+      "mg/dL",
+      "mmol/L",
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      183.0,
+      183.0,
+      183.0,
+      183.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2019-04-28T00:00:00"
+  },
+  {
+    "patient_id": 59,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE RxNorm:N02BE01 RxNorm:C08CA01 ICD10:I63 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -1.9674994945526123,
+      1.0,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1399417200,
+      1407884400,
+      1413586800,
+      1430780400
+    ],
+    "string_values": [
+      "1950-10-18",
+      "White",
+      "Female",
+      null,
+      null,
+      null,
+      "Cerebral infarction (stroke)",
+      null
+    ],
+    "events": [
+      0,
+      1,
+      0,
+      1
+    ],
+    "durations": [
+      1537.0,
+      1124.0,
+      1537.0,
+      1136.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2015-05-05T00:00:00"
+  },
+  {
+    "patient_id": 60,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE RxNorm:C08CA01 ENC_INPATIENT OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.44881755113601685,
+      1.0,
+      1.6191868782043457,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1507503600,
+      1516060800,
+      1523228400
+    ],
+    "string_values": [
+      "1993-04-09",
+      "White",
+      "Male",
+      null,
+      null,
+      null,
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1496.0,
+      1496.0,
+      1496.0,
+      1496.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2018-04-09T00:00:00"
+  },
+  {
+    "patient_id": 61,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2160-0 LOINC:2823-3 ICD10:I21 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      2.6004321575164795,
+      -0.8581816554069519,
+      -0.1651182472705841,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1524610800,
+      1532991600,
+      1537398000,
+      1541894400
+    ],
+    "string_values": [
+      "1942-10-18",
+      "Other",
+      "Male",
+      null,
+      "mg/dL",
+      "mmol/L",
+      "Acute myocardial infarction",
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1043.0,
+      1043.0,
+      1043.0,
+      1877.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2018-11-11T00:00:00"
+  },
+  {
+    "patient_id": 62,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:4548-4 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      1.3652373552322388,
+      0.5393081903457642,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1496098800,
+      1497135600
+    ],
+    "string_values": [
+      "1971-11-27",
+      "White",
+      "Male",
+      null,
+      "%",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      234.0,
+      234.0,
+      234.0,
+      234.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2017-06-11T00:00:00"
+  },
+  {
+    "patient_id": 63,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ICD10:I10 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.25622883439064026,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1456876800,
+      1467586800
+    ],
+    "string_values": [
+      "1969-08-01",
+      "White",
+      "Male",
+      null,
+      "Essential (primary) hypertension",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      1,
+      0
+    ],
+    "durations": [
+      1242.0,
+      1242.0,
+      1139.0,
+      1242.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2016-07-04T00:00:00"
+  },
+  {
+    "patient_id": 64,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2951-2 LOINC:2339-0 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.6683037877082825,
+      -0.5080918073654175,
+      -0.6610466837882996,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1546819200,
+      1548201600,
+      1568674800
+    ],
+    "string_values": [
+      "1976-09-25",
+      "White",
+      "Male",
+      null,
+      "mmol/L",
+      "mg/dL",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1616.0,
+      1616.0,
+      1616.0,
+      1616.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2019-09-17T00:00:00"
+  },
+  {
+    "patient_id": 65,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:4548-4 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      1.278470516204834,
+      -0.10286065936088562,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1470697200,
+      1494802800
+    ],
+    "string_values": [
+      "1995-05-19",
+      "White",
+      "Male",
+      null,
+      "%",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1273.0,
+      1273.0,
+      1273.0,
+      1273.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2017-05-15T00:00:00"
+  },
+  {
+    "patient_id": 66,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE RxNorm:R03AC02 ICD10:I10 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.6358553767204285,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1487203200,
+      1507244400,
+      1515110400
+    ],
+    "string_values": [
+      "1961-11-15",
+      "White",
+      "Male",
+      null,
+      null,
+      "Essential (primary) hypertension",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1318.0,
+      1318.0,
+      1318.0,
+      1318.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2018-01-05T00:00:00"
+  },
+  {
+    "patient_id": 67,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2951-2 RxNorm:M01AE01 LOINC:2339-0 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.2730141282081604,
+      3.1151790618896484,
+      1.0,
+      -1.291061520576477,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1518912000,
+      1543795200,
+      1544832000,
+      1545955200
+    ],
+    "string_values": [
+      "1966-07-15",
+      "Black",
+      "Male",
+      null,
+      "mmol/L",
+      null,
+      "mg/dL",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      915.0,
+      915.0,
+      915.0,
+      915.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2018-12-28T00:00:00"
+  },
+  {
+    "patient_id": 68,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.5467822551727295,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1488412800
+    ],
+    "string_values": [
+      "1975-07-26",
+      "White",
+      "Male",
+      null,
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      196.0,
+      196.0,
+      196.0,
+      196.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2017-03-02T00:00:00"
+  },
+  {
+    "patient_id": 69,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE RxNorm:A10BA02 LOINC:2339-0 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.9172638654708862,
+      1.0,
+      -0.2811879515647888,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1542326400,
+      1562194800,
+      1571353200
+    ],
+    "string_values": [
+      "1958-10-26",
+      "White",
+      "Female",
+      null,
+      null,
+      "mg/dL",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      207.0,
+      207.0,
+      207.0,
+      207.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2019-10-18T00:00:00"
+  },
+  {
+    "patient_id": 70,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.3728727102279663,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1439420400
+    ],
+    "string_values": [
+      "1955-07-16",
+      "White",
+      "Female",
+      null,
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1021.0,
+      1021.0,
+      1021.0,
+      1021.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2015-08-13T00:00:00"
+  },
+  {
+    "patient_id": 71,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2339-0 LOINC:2951-2 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.42395636439323425,
+      1.620394229888916,
+      -0.18752813339233398,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1529449200,
+      1541548800,
+      1558393200
+    ],
+    "string_values": [
+      "1940-06-10",
+      "White",
+      "Male",
+      null,
+      "mg/dL",
+      "mmol/L",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1329.0,
+      1329.0,
+      1329.0,
+      1329.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2019-05-21T00:00:00"
+  },
+  {
+    "patient_id": 72,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2093-3 LOINC:2093-3 LOINC:4548-4 LOINC:2160-0 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.16463011503219604,
+      -0.3218032121658325,
+      0.24041427671909332,
+      1.0929392576217651,
+      -1.7841317653656006,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1540335600,
+      1541203200,
+      1564009200,
+      1564182000,
+      1565650800
+    ],
+    "string_values": [
+      "1951-10-07",
+      "White",
+      "Female",
+      null,
+      "mg/dL",
+      "mg/dL",
+      "%",
+      "mg/dL",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      148.0,
+      148.0,
+      148.0,
+      148.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2019-08-13T00:00:00"
+  },
+  {
+    "patient_id": 73,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2093-3 LOINC:2951-2 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.9297176003456116,
+      0.514094352722168,
+      0.6683486700057983,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1445295600,
+      1469055600,
+      1472684400
+    ],
+    "string_values": [
+      "1942-09-22",
+      "Black",
+      "Female",
+      null,
+      "mg/dL",
+      "mmol/L",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1379.0,
+      1379.0,
+      1379.0,
+      1379.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2016-09-01T00:00:00"
+  },
+  {
+    "patient_id": 74,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2085-9 ICD10:E11 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.44907107949256897,
+      -1.0374723672866821,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1535842800,
+      1555628400,
+      1558393200
+    ],
+    "string_values": [
+      "1971-07-31",
+      "White",
+      "Female",
+      null,
+      "mg/dL",
+      "Type 2 diabetes mellitus",
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      186.0,
+      186.0,
+      186.0,
+      186.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2019-05-21T00:00:00"
+  },
+  {
+    "patient_id": 75,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:4548-4 ENC_INPATIENT ENC_INPATIENT OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.6451273560523987,
+      -0.1471259891986847,
+      -0.5156693458557129,
+      -0.8714787364006042,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1484352000,
+      1492210800,
+      1494543600,
+      1496962800
+    ],
+    "string_values": [
+      "1960-11-20",
+      "White",
+      "Male",
+      null,
+      "%",
+      null,
+      null,
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "durations": [
+      1215.0,
+      1215.0,
+      1215.0,
+      672.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2017-06-09T00:00:00"
+  },
+  {
+    "patient_id": 76,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ICD10:F32 ICD10:M54 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      1.226282000541687,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1517961600,
+      1518480000,
+      1523574000
+    ],
+    "string_values": [
+      "1942-10-13",
+      "White",
+      "Male",
+      null,
+      "Major depressive disorder, single episode",
+      "Dorsalgia (back pain)",
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1158.0,
+      1158.0,
+      1158.0,
+      1158.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2018-04-13T00:00:00"
+  },
+  {
+    "patient_id": 77,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ICD10:N18 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.39350876212120056,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1562108400,
+      1570489200
+    ],
+    "string_values": [
+      "1963-05-09",
+      "White",
+      "Female",
+      null,
+      "Chronic kidney disease",
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      1
+    ],
+    "durations": [
+      1233.0,
+      1233.0,
+      1546.0,
+      751.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2019-10-08T00:00:00"
+  },
+  {
+    "patient_id": 78,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2089-1 ICD10:N18 RxNorm:C09CA03 LOINC:2085-9 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.6999645829200745,
+      0.17588584125041962,
+      1.0,
+      1.0,
+      0.3434787094593048,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1401231600,
+      1404342000,
+      1419292800,
+      1423785600,
+      1429743600
+    ],
+    "string_values": [
+      "1987-04-06",
+      "White",
+      "Male",
+      null,
+      "mg/dL",
+      "Chronic kidney disease",
+      null,
+      "mg/dL",
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      182.0,
+      182.0,
+      3175.0,
+      182.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2015-04-23T00:00:00"
+  },
+  {
+    "patient_id": 79,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE RxNorm:N06AB06 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.401018351316452,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1488499200,
+      1499468400
+    ],
+    "string_values": [
+      "1965-05-17",
+      "White",
+      "Male",
+      null,
+      null,
+      null
+    ],
+    "events": [
+      0,
+      1,
+      0,
+      0
+    ],
+    "durations": [
+      1034.0,
+      518.0,
+      1034.0,
+      1034.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2017-07-08T00:00:00"
+  },
+  {
+    "patient_id": 80,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE RxNorm:R03BB04 ICD10:N18 ENC_INPATIENT OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.012013529427349567,
+      1.0,
+      1.0,
+      -0.5156693458557129,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1453593600,
+      1454025600,
+      1454371200,
+      1469660400
+    ],
+    "string_values": [
+      "1998-03-28",
+      "White",
+      "Male",
+      null,
+      null,
+      "Chronic kidney disease",
+      null,
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1193.0,
+      1193.0,
+      2713.0,
+      1193.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2016-07-28T00:00:00"
+  },
+  {
+    "patient_id": 81,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE RxNorm:R03BB04 LOINC:2093-3 ICD10:J44 LOINC:2571-8 ICD10:I63 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.8384717702865601,
+      1.0,
+      -0.09267525374889374,
+      1.0,
+      -0.12080273032188416,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1536188400,
+      1538521200,
+      1541808000,
+      1546646400,
+      1562540400,
+      1563490800
+    ],
+    "string_values": [
+      "1973-05-12",
+      "White",
+      "Male",
+      null,
+      null,
+      "mg/dL",
+      "Chronic obstructive pulmonary disease",
+      "mg/dL",
+      "Cerebral infarction (stroke)",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1003.0,
+      1627.0,
+      1003.0,
+      1003.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2019-07-19T00:00:00"
+  },
+  {
+    "patient_id": 82,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2089-1 LOINC:2089-1 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      1.6157976388931274,
+      -0.9979695677757263,
+      0.7663013339042664,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1538694000,
+      1542412800,
+      1555887600
+    ],
+    "string_values": [
+      "1998-02-28",
+      "White",
+      "Female",
+      null,
+      "mg/dL",
+      "mg/dL",
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1067.0,
+      1067.0,
+      1067.0,
+      1067.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2019-04-22T00:00:00"
+  },
+  {
+    "patient_id": 83,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2160-0 LOINC:4548-4 RxNorm:C09AA02 LOINC:2089-1 RxNorm:C03CA01 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.8564462661743164,
+      -0.23311427235603333,
+      -0.4325374960899353,
+      1.0,
+      -0.6969553828239441,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1467500400,
+      1470265200,
+      1480636800,
+      1485388800,
+      1485475200,
+      1487030400
+    ],
+    "string_values": [
+      "1957-05-02",
+      "White",
+      "Male",
+      null,
+      "mg/dL",
+      "%",
+      null,
+      "mg/dL",
+      null,
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      180.0,
+      180.0,
+      180.0,
+      180.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2017-02-14T00:00:00"
+  },
+  {
+    "patient_id": 84,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ICD10:J44 LOINC:2951-2 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.19929514825344086,
+      1.0,
+      0.21703408658504486,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1517702400,
+      1530226800,
+      1543708800
+    ],
+    "string_values": [
+      "1963-06-20",
+      "White",
+      "Female",
+      null,
+      "Chronic obstructive pulmonary disease",
+      "mmol/L",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      808.0,
+      808.0,
+      808.0,
+      808.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2018-12-02T00:00:00"
+  },
+  {
+    "patient_id": 85,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ENC_INPATIENT ICD10:F32 ICD10:I50 ENC_INPATIENT ENC_INPATIENT OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.17296051979064941,
+      -0.8714787364006042,
+      1.0,
+      1.0,
+      -0.15985998511314392,
+      -0.15985998511314392,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1393632000,
+      1400194800,
+      1404169200,
+      1417737600,
+      1422835200,
+      1424649600
+    ],
+    "string_values": [
+      "1959-09-26",
+      "White",
+      "Female",
+      null,
+      null,
+      "Major depressive disorder, single episode",
+      "Heart failure",
+      null,
+      null,
+      null
+    ],
+    "events": [
+      0,
+      0,
+      1,
+      0
+    ],
+    "durations": [
+      1138.0,
+      1138.0,
+      894.0,
+      1138.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2015-02-23T00:00:00"
+  },
+  {
+    "patient_id": 86,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE RxNorm:C08CA01 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.13529960811138153,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1439593200,
+      1452384000
+    ],
+    "string_values": [
+      "1954-06-12",
+      "White",
+      "Female",
+      null,
+      null,
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1442.0,
+      1442.0,
+      1442.0,
+      1442.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2016-01-10T00:00:00"
+  },
+  {
+    "patient_id": 87,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2160-0 OMOP_ENROLLMENT ICD10:J44",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.9495109915733337,
+      0.1558767408132553,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1451347200,
+      1471734000,
+      1471734000
+    ],
+    "string_values": [
+      "1990-07-03",
+      "White",
+      "Male",
+      null,
+      "mg/dL",
+      null,
+      "Chronic obstructive pulmonary disease"
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "durations": [
+      203.0,
+      203.0,
+      203.0,
+      88.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2016-08-21T00:00:00"
+  },
+  {
+    "patient_id": 88,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2160-0 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.5341771841049194,
+      -0.007588546723127365,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1426118400,
+      1447113600
+    ],
+    "string_values": [
+      "1985-01-12",
+      "White",
+      "Male",
+      null,
+      "mg/dL",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1559.0,
+      1559.0,
+      1559.0,
+      1559.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2015-11-10T00:00:00"
+  },
+  {
+    "patient_id": 89,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ICD10:I21 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -1.0356966257095337,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1509840000,
+      1536534000
+    ],
+    "string_values": [
+      "1984-05-25",
+      "Asian",
+      "Male",
+      null,
+      "Acute myocardial infarction",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      1
+    ],
+    "durations": [
+      935.0,
+      935.0,
+      935.0,
+      190.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2018-09-10T00:00:00"
+  },
+  {
+    "patient_id": 90,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE RxNorm:C10AA01 LOINC:4548-4 ICD10:I50 LOINC:2823-3 LOINC:2571-8 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.46775299310684204,
+      1.0,
+      0.12053286284208298,
+      1.0,
+      -0.08034051209688187,
+      0.7542448043823242,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1493938800,
+      1494370800,
+      1513900800,
+      1517097600,
+      1518825600,
+      1522796400
+    ],
+    "string_values": [
+      "1961-12-02",
+      "White",
+      "Male",
+      null,
+      null,
+      "%",
+      "Heart failure",
+      "mmol/L",
+      "mg/dL",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      1,
+      0
+    ],
+    "durations": [
+      548.0,
+      548.0,
+      498.0,
+      548.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2018-04-04T00:00:00"
+  },
+  {
+    "patient_id": 91,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:4548-4 RxNorm:C07AB07 LOINC:2160-0 ICD10:J44 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.017431046813726425,
+      0.4219715893268585,
+      1.0,
+      -0.15938693284988403,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1515801600,
+      1517270400,
+      1528758000,
+      1529190000,
+      1532214000
+    ],
+    "string_values": [
+      "1947-01-12",
+      "White",
+      "Female",
+      null,
+      "%",
+      null,
+      "mg/dL",
+      "Chronic obstructive pulmonary disease",
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      183.0,
+      183.0,
+      183.0,
+      183.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2018-07-22T00:00:00"
+  },
+  {
+    "patient_id": 92,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ICD10:J44 ICD10:I50 RxNorm:A02BC01 LOINC:2085-9 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      1.4870303869247437,
+      1.0,
+      1.0,
+      1.0,
+      -0.08342546224594116,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1441494000,
+      1442185200,
+      1449792000,
+      1455408000,
+      1466982000
+    ],
+    "string_values": [
+      "1999-10-25",
+      "White",
+      "Male",
+      null,
+      "Chronic obstructive pulmonary disease",
+      "Heart failure",
+      null,
+      "mg/dL",
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      229.0,
+      229.0,
+      229.0,
+      229.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2016-06-27T00:00:00"
+  },
+  {
+    "patient_id": 93,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE RxNorm:C03CA01 RxNorm:N06AB06 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -2.2763473987579346,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1399244400,
+      1413586800,
+      1429311600
+    ],
+    "string_values": [
+      "1945-07-20",
+      "White",
+      "Female",
+      null,
+      null,
+      null,
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1319.0,
+      1319.0,
+      1319.0,
+      1319.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2015-04-18T00:00:00"
+  },
+  {
+    "patient_id": 94,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.20514075458049774,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1420934400
+    ],
+    "string_values": [
+      "1947-05-19",
+      "White",
+      "Female",
+      null,
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2015-01-11T00:00:00"
+  },
+  {
+    "patient_id": 95,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE RxNorm:A02BC01 RxNorm:N02BE01 LOINC:2823-3 RxNorm:N06AB06 RxNorm:B01AC06 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.4108317494392395,
+      1.0,
+      1.0,
+      -0.9313499331474304,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1480377600,
+      1486252800,
+      1502578800,
+      1505602800,
+      1508281200,
+      1510358400
+    ],
+    "string_values": [
+      "1982-03-23",
+      "White",
+      "Female",
+      null,
+      null,
+      null,
+      "mmol/L",
+      null,
+      null,
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1061.0,
+      1061.0,
+      1061.0,
+      1061.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2017-11-11T00:00:00"
+  },
+  {
+    "patient_id": 96,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ENC_INPATIENT LOINC:3094-0 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.8114299178123474,
+      -0.5156693458557129,
+      0.30487683415412903,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1509926400,
+      1514505600,
+      1534633200
+    ],
+    "string_values": [
+      "1954-05-25",
+      "White",
+      "Female",
+      null,
+      null,
+      "mg/dL",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      1,
+      0
+    ],
+    "durations": [
+      1019.0,
+      1019.0,
+      110.0,
+      1019.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2018-08-19T00:00:00"
+  },
+  {
+    "patient_id": 97,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.2862561047077179,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1576454400
+    ],
+    "string_values": [
+      "2000-03-28",
+      "White",
+      "Male",
+      null,
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      491.0,
+      491.0,
+      491.0,
+      491.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2019-12-16T00:00:00"
+  },
+  {
+    "patient_id": 98,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ICD10:M54 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      -0.5843266844749451,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1514505600,
+      1521417600
+    ],
+    "string_values": [
+      "1958-06-11",
+      "White",
+      "Male",
+      null,
+      "Dorsalgia (back pain)",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      660.0,
+      660.0,
+      660.0,
+      660.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2018-03-19T00:00:00"
+  },
+  {
+    "patient_id": 99,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE LOINC:2089-1 LOINC:2085-9 RxNorm:C03CA01 ICD10:I10 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      0,
+      0,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      0.9378849864006042,
+      -0.5191643238067627,
+      0.18361377716064453,
+      1.0,
+      1.0,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1427068800,
+      1427155200,
+      1446249600,
+      1450656000,
+      1453852800
+    ],
+    "string_values": [
+      "1941-01-26",
+      "Black",
+      "Male",
+      null,
+      "mg/dL",
+      "mg/dL",
+      null,
+      "Essential (primary) hypertension",
+      null
+    ],
+    "events": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      1104.0,
+      1104.0,
+      1104.0,
+      1104.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2016-01-27T00:00:00"
+  },
+  {
+    "patient_id": 100,
+    "x": "OMOP_BIRTH OMOP_RACE OMOP_SEX OMOP_AGE ENC_INPATIENT LOINC:3094-0 ENC_INPATIENT LOINC:2571-8 OMOP_ENROLLMENT",
+    "modality": [
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      0
+    ],
+    "numerics": [
+      1.0,
+      1.0,
+      1.0,
+      1.2833244800567627,
+      -0.8714787364006042,
+      0.9226472973823547,
+      0.19594939053058624,
+      0.2169577032327652,
+      1.0
+    ],
+    "time": [
+      null,
+      null,
+      null,
+      null,
+      1546646400,
+      1553126400,
+      1558479600,
+      1558911600,
+      1570230000
+    ],
+    "string_values": [
+      "1978-04-17",
+      "White",
+      "Male",
+      null,
+      null,
+      "mg/dL",
+      null,
+      "mg/dL",
+      null
+    ],
+    "events": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "durations": [
+      267.0,
+      267.0,
+      267.0,
+      267.0
+    ],
+    "outcomes": [
+      "mortality",
+      "stroke",
+      "kidney_failure",
+      "myocardial_infarction"
+    ],
+    "anchor_time": "2019-10-05T00:00:00"
+  }
+]

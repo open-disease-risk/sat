@@ -266,7 +266,7 @@ The generated data includes the following event types:
 
 - **Enrollment**: Patient enrollment events with code `OMOP_ENROLLMENT`
 - **Diagnoses**: ICD-10 diagnosis codes
-- **Medications**: RxNorm drug codes  
+- **Medications**: RxNorm drug codes
 - **Lab measurements**: LOINC lab codes
 - **Mortality**: Death events
 - **Static attributes**: Age (normalized), BMI, sex, race
@@ -395,7 +395,7 @@ The generator follows OMOP CDM standards for code naming:
 
 - Enrollment events: `OMOP_ENROLLMENT`
 - Diagnoses: `ICD10CM/` prefix
-- Medications: `RxNorm/` prefix  
+- Medications: `RxNorm/` prefix
 - Lab measurements: `LOINC/` prefix
 - Survival events: `Event_<number>`
 

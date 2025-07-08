@@ -1,0 +1,13 @@
+- learning_rate=0.0008170392780088382
+- weight_decay=0.02937344466455191
+- transformer_hidden_size=16
+- transformer_intermediate_size=64
+- transformer_num_attention_heads=4
+- transformer_num_hidden_layers=4
+- survival_intermediate_size=24
+- token_emb=3
+- sentence_emb=1
+- survival_shared_intermediate_size=8
+- survival_shared_num_hidden_layers=0
+- experiments=hsa_synthetic/survival-moco
+- sweep=survival-multi-event

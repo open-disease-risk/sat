@@ -1,0 +1,16 @@
+{
+    "test_loss": 0.7754287123680115,
+    "test_brier_0th_event": 0.21219536662101746,
+    "test_brier_0th_event_n": 325,
+    "test_brier_weighted_avg": 0.21219536662101746,
+    "test_ipcw_0th_event": 0.6024229269004562,
+    "test_ipcw_0th_event_0.25": 0.6030610799789429,
+    "test_ipcw_0th_event_0.50": 0.6029990911483765,
+    "test_ipcw_0th_event_0.75": 0.6022461652755737,
+    "test_ipcw_0th_event_1.00": 0.6021014451980591,
+    "test_ipcw_0th_event_n": 567,
+    "test_ipcw_weighted_avg": 0.6024229269004562,
+    "test_runtime": 0.1937,
+    "test_samples_per_second": 2927.13,
+    "test_steps_per_second": 10.325
+}

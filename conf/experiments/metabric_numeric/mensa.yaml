@@ -2,7 +2,7 @@ defaults:
   - metabric_numeric/defaults
   - _self_
 task: mensa-survival
-transformer: 
+transformer:
   _target_: sat.models.heads.SurvivalTaskHead
   num_features: ${..num_features}
   num_events: ${..num_events}

@@ -1,0 +1,13 @@
+{
+  "do_data_transform": true,
+  "duration_col": "duration",
+  "event_col": "event",
+  "feature_extractor_type": "SAFeatureExtractor",
+  "is_data_transform_loaded": false,
+  "label_transform_path": "data/model-hub/metabric/labtrans.pkl",
+  "labtrans": null,
+  "transformed_duration_cols": [
+    "t",
+    "f"
+  ]
+}

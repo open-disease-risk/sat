@@ -1,0 +1,943 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\abx@aux@refcontext{nyt/global//global/global}
+\pgfsyspdfmark {pgfid1}{5850398}{46641971}
+\@writefile{toc}{\contentsline {chapter}{\numberline {1}Introduction}{1}{chapter.1}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:introduction}{{1}{1}{Introduction}{chapter.1}{}}
+\newlabel{ch:introduction@cref}{{[chapter][1][]1}{[1][1][]1}}
+\@writefile{toc}{\contentsline {section}{\numberline {1.1}What is Survival Analysis?}{1}{section.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {1.2}Distinctive Features of Survival Data}{1}{section.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.2.1}Censoring}{2}{subsection.1.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Right Censoring}{2}{section*.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Left Censoring}{2}{section*.4}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1.1}{\ignorespaces Illustration of right censoring in a clinical study. Subjects 1 and 2 experience the event of interest, while Subject 3 is right-censored at the end of the study period. We know Subject 3 survived at least until time 8, but we don't know their exact event time.}}{3}{figure.1.1}\protected@file@percent }
+\newlabel{fig:right-censoring}{{1.1}{3}{Illustration of right censoring in a clinical study. Subjects 1 and 2 experience the event of interest, while Subject 3 is right-censored at the end of the study period. We know Subject 3 survived at least until time 8, but we don't know their exact event time}{figure.1.1}{}}
+\newlabel{fig:right-censoring@cref}{{[figure][1][1]1.1}{[1][2][]3}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.2}{\ignorespaces Illustration of left censoring. Subject 1 already has the disease when entering the study, so we only know the disease onset occurred sometime before the study entry point.}}{3}{figure.1.2}\protected@file@percent }
+\newlabel{fig:left-censoring}{{1.2}{3}{Illustration of left censoring. Subject 1 already has the disease when entering the study, so we only know the disease onset occurred sometime before the study entry point}{figure.1.2}{}}
+\newlabel{fig:left-censoring@cref}{{[figure][2][1]1.2}{[1][3][]3}}
+\@writefile{toc}{\contentsline {subsubsection}{Interval Censoring}{4}{section*.5}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1.3}{\ignorespaces Illustration of interval censoring. The condition is negative at Visit 2 but positive at Visit 3, so we know the onset occurred within this time interval, but not the exact time.}}{4}{figure.1.3}\protected@file@percent }
+\newlabel{fig:interval-censoring}{{1.3}{4}{Illustration of interval censoring. The condition is negative at Visit 2 but positive at Visit 3, so we know the onset occurred within this time interval, but not the exact time}{figure.1.3}{}}
+\newlabel{fig:interval-censoring@cref}{{[figure][3][1]1.3}{[1][4][]4}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.2.2}Time-Varying Effects and Covariates}{4}{subsection.1.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.2.3}Multiple Outcomes and Competing Risks}{5}{subsection.1.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {1.3}Core Questions in Survival Analysis}{5}{section.1.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.3.1}Survival Probability Estimation}{5}{subsection.1.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.3.2}Risk Assessment: Hazard Function}{5}{subsection.1.3.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1.4}{\ignorespaces A typical survival function showing the probability of surviving beyond time $t$. The dashed lines indicate how to find the median survival time (where $S(t) = 0.5$).}}{6}{figure.1.4}\protected@file@percent }
+\newlabel{fig:survival-function}{{1.4}{6}{A typical survival function showing the probability of surviving beyond time $t$. The dashed lines indicate how to find the median survival time (where $S(t) = 0.5$)}{figure.1.4}{}}
+\newlabel{fig:survival-function@cref}{{[figure][4][1]1.4}{[1][5][]6}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1.5}{\ignorespaces Different patterns of hazard functions. The constant hazard corresponds to the exponential distribution, increasing hazard might indicate aging or wear, decreasing hazard can represent early failures, and the bathtub pattern is common in reliability engineering.}}{6}{figure.1.5}\protected@file@percent }
+\newlabel{fig:hazard-patterns}{{1.5}{6}{Different patterns of hazard functions. The constant hazard corresponds to the exponential distribution, increasing hazard might indicate aging or wear, decreasing hazard can represent early failures, and the bathtub pattern is common in reliability engineering}{figure.1.5}{}}
+\newlabel{fig:hazard-patterns@cref}{{[figure][5][1]1.5}{[1][5][]6}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.3.3}Covariate Effects}{6}{subsection.1.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.3.4}Group Comparisons}{7}{subsection.1.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.3.5}Advanced Questions}{7}{subsection.1.3.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {1.4}Traditional Approaches to Survival Analysis}{7}{section.1.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.4.1}Non-Parametric Methods}{7}{subsection.1.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Kaplan-Meier Estimator}{7}{section*.6}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1.6}{\ignorespaces Kaplan-Meier survival curve. The step function drops at each event time, and censored observations are shown as open circles. The median survival time is 5 (where the curve crosses the 0.5 probability line).}}{8}{figure.1.6}\protected@file@percent }
+\newlabel{fig:kaplan-meier}{{1.6}{8}{Kaplan-Meier survival curve. The step function drops at each event time, and censored observations are shown as open circles. The median survival time is 5 (where the curve crosses the 0.5 probability line)}{figure.1.6}{}}
+\newlabel{fig:kaplan-meier@cref}{{[figure][6][1]1.6}{[1][7][]8}}
+\@writefile{toc}{\contentsline {subsubsection}{Log-Rank Test}{8}{section*.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.4.2}Semi-Parametric Methods}{8}{subsection.1.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Cox Proportional Hazards Model}{8}{section*.8}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1.7}{\ignorespaces Illustration of the proportional hazards assumption in the Cox model. The hazard ratios between different covariate values remain constant over time, regardless of the shape of the baseline hazard.}}{9}{figure.1.7}\protected@file@percent }
+\newlabel{fig:proportional-hazards}{{1.7}{9}{Illustration of the proportional hazards assumption in the Cox model. The hazard ratios between different covariate values remain constant over time, regardless of the shape of the baseline hazard}{figure.1.7}{}}
+\newlabel{fig:proportional-hazards@cref}{{[figure][7][1]1.7}{[1][9][]9}}
+\@writefile{toc}{\contentsline {subsubsection}{Extensions of the Cox Model}{9}{section*.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.4.3}Fully Parametric Methods}{10}{subsection.1.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Common Parametric Distributions}{10}{section*.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Exponential Distribution}{10}{section*.11}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Weibull Distribution}{10}{section*.12}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Log-normal and Log-logistic Distributions}{10}{section*.13}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Generalized Gamma Distribution}{10}{section*.14}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1.8}{\ignorespaces Hazard functions for different parametric survival distributions. Note how the shape parameter in the Weibull distribution controls whether the hazard increases or decreases with time, while the log-logistic allows for a non-monotonic hazard.}}{11}{figure.1.8}\protected@file@percent }
+\newlabel{fig:parametric-hazards}{{1.8}{11}{Hazard functions for different parametric survival distributions. Note how the shape parameter in the Weibull distribution controls whether the hazard increases or decreases with time, while the log-logistic allows for a non-monotonic hazard}{figure.1.8}{}}
+\newlabel{fig:parametric-hazards@cref}{{[figure][8][1]1.8}{[1][10][]11}}
+\@writefile{toc}{\contentsline {subsubsection}{Parametric Regression Models}{11}{section*.15}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {1.5}Limitations of Traditional Methods}{11}{section.1.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.5.1}Modeling Constraints}{11}{subsection.1.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Linear Relationship Assumptions}{11}{section*.16}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Restrictive Functional Forms}{12}{section*.17}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.5.2}High-Dimensional Data Challenges}{12}{subsection.1.5.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.5.3}Time-Varying Challenges}{12}{subsection.1.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {1.6}Modern Deep Learning Approaches}{12}{section.1.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.6.1}Neural Cox Extensions}{12}{subsection.1.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.6.2}Discrete-Time Neural Survival Models}{13}{subsection.1.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.6.3}Deep Parametric Survival Models}{13}{subsection.1.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.6.4}Representation-Focused Models}{13}{subsection.1.6.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {1.7}Advantages of Deep Learning for Survival Analysis}{13}{section.1.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.7.1}Feature Learning}{14}{subsection.1.7.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.7.2}Flexible Relationship Modeling}{14}{subsection.1.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.7.3}Beyond Proportional Hazards}{14}{subsection.1.7.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.7.4}Multi-Event Modeling}{14}{subsection.1.7.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {1.8}Course Roadmap}{14}{section.1.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.8.1}Foundations (Chapters 1-3)}{15}{subsection.1.8.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.8.2}Data Representation (Chapter 4)}{15}{subsection.1.8.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.8.3}Deep Survival Models (Chapters 5-7)}{15}{subsection.1.8.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {1.8.4}Advanced Topics (Chapters 8-9)}{15}{subsection.1.8.4}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1.9}{\ignorespaces Course roadmap showing the progression from foundational concepts to advanced topics in deep learning for survival analysis.}}{16}{figure.1.9}\protected@file@percent }
+\newlabel{fig:course-roadmap}{{1.9}{16}{Course roadmap showing the progression from foundational concepts to advanced topics in deep learning for survival analysis}{figure.1.9}{}}
+\newlabel{fig:course-roadmap@cref}{{[figure][9][1]1.9}{[1][15][]16}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {2}Motivation and Problem Setting}{17}{chapter.2}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:motivation}{{2}{17}{Motivation and Problem Setting}{chapter.2}{}}
+\newlabel{ch:motivation@cref}{{[chapter][2][]2}{[1][17][]17}}
+\@writefile{toc}{\contentsline {section}{\numberline {2.1}The Need for Time-to-Event Analysis}{17}{section.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2.2}Applications Across Domains}{17}{section.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2.1}Healthcare Applications}{17}{subsection.2.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2.2}Engineering and Reliability Applications}{18}{subsection.2.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2.3}Business and Economic Applications}{18}{subsection.2.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2.4}Other Diverse Applications}{19}{subsection.2.2.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2.3}Unique Characteristics of Time-to-Event Data}{19}{section.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.1}Incomplete Observations}{19}{subsection.2.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.2}Variable Follow-up Durations}{19}{subsection.2.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.3}Time-Varying Covariates}{20}{subsection.2.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.4}Multiple Competing Events}{20}{subsection.2.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3.5}Informative Observation Patterns}{20}{subsection.2.3.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2.4}The Fundamental Challenge: Censoring}{20}{section.2.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2.5}Visualizing Survival Data}{21}{section.2.5}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2.1}{\ignorespaces Visualization of time-to-event data for five subjects. Each horizontal line represents a subject's follow-up period. Red crosses indicate observed events, while blue circles represent right-censored observations. Note the varying follow-up durations and the mixture of event types.}}{21}{figure.2.1}\protected@file@percent }
+\newlabel{fig:survival-data-viz}{{2.1}{21}{Visualization of time-to-event data for five subjects. Each horizontal line represents a subject's follow-up period. Red crosses indicate observed events, while blue circles represent right-censored observations. Note the varying follow-up durations and the mixture of event types}{figure.2.1}{}}
+\newlabel{fig:survival-data-viz@cref}{{[figure][1][2]2.1}{[1][21][]21}}
+\@writefile{toc}{\contentsline {section}{\numberline {2.6}Competing Risks: Another Challenge}{21}{section.2.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2.7}Beyond Binary Events: Complex Time-to-Event Scenarios}{22}{section.2.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.7.1}Recurrent Events}{22}{subsection.2.7.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.7.2}Multi-State Processes}{22}{subsection.2.7.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2.2}{\ignorespaces A multi-state process model. Subjects can transition between transient states and eventually reach absorbing states (terminal events). Each transition has its own hazard function that may depend on subject characteristics and history.}}{23}{figure.2.2}\protected@file@percent }
+\newlabel{fig:multi-state}{{2.2}{23}{A multi-state process model. Subjects can transition between transient states and eventually reach absorbing states (terminal events). Each transition has its own hazard function that may depend on subject characteristics and history}{figure.2.2}{}}
+\newlabel{fig:multi-state@cref}{{[figure][2][2]2.2}{[1][22][]23}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.7.3}Joint Longitudinal and Time-to-Event Data}{23}{subsection.2.7.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {2.8}Summary}{23}{section.2.8}\protected@file@percent }
+\abx@aux@cite{0}{kleinbaum2012}
+\abx@aux@segm{0}{0}{kleinbaum2012}
+\abx@aux@cite{0}{cox1972}
+\abx@aux@segm{0}{0}{cox1972}
+\@writefile{toc}{\contentsline {chapter}{\numberline {3}Survival Analysis Foundations}{25}{chapter.3}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:foundations}{{3}{25}{Survival Analysis Foundations}{chapter.3}{}}
+\newlabel{ch:foundations@cref}{{[chapter][3][]3}{[1][25][]25}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.1}Foundations of Survival Analysis}{25}{section.3.1}\protected@file@percent }
+\abx@aux@page{1}{25}
+\abx@aux@page{2}{25}
+\@writefile{toc}{\contentsline {section}{\numberline {3.2}Mathematical Framework of Survival Analysis}{25}{section.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2.1}Core Functions and Their Definitions}{26}{subsection.3.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2.2}Relationships Between Survival Functions}{28}{subsection.3.2.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.1}{\ignorespaces Relationships between the core functions in survival analysis. Each function can be derived from the others through the transformations shown on the arrows.}}{28}{figure.3.1}\protected@file@percent }
+\newlabel{fig:survival-function-relationships}{{3.1}{28}{Relationships between the core functions in survival analysis. Each function can be derived from the others through the transformations shown on the arrows}{figure.3.1}{}}
+\newlabel{fig:survival-function-relationships@cref}{{[figure][1][3]3.1}{[1][28][]28}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.3}Understanding Hazard Functions}{29}{section.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3.1}Interpretation of the Hazard Function}{29}{subsection.3.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3.2}Common Hazard Patterns}{29}{subsection.3.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Constant Hazard}{30}{section*.18}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.2}{\ignorespaces Constant hazard functions with different rate parameters $\lambda $. A constant hazard indicates that the instantaneous risk remains stable over time, regardless of how long the subject has survived.}}{30}{figure.3.2}\protected@file@percent }
+\newlabel{fig:constant-hazard-rates}{{3.2}{30}{Constant hazard functions with different rate parameters $\lambda $. A constant hazard indicates that the instantaneous risk remains stable over time, regardless of how long the subject has survived}{figure.3.2}{}}
+\newlabel{fig:constant-hazard-rates@cref}{{[figure][2][3]3.2}{[1][30][]30}}
+\@writefile{toc}{\contentsline {subsubsection}{Monotonically Increasing Hazard}{31}{section*.19}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.3}{\ignorespaces Monotonically increasing hazard functions. These patterns indicate that risk increases with time, which is characteristic of aging, wear-out, and progressive deterioration processes.}}{31}{figure.3.3}\protected@file@percent }
+\newlabel{fig:increasing-hazard}{{3.3}{31}{Monotonically increasing hazard functions. These patterns indicate that risk increases with time, which is characteristic of aging, wear-out, and progressive deterioration processes}{figure.3.3}{}}
+\newlabel{fig:increasing-hazard@cref}{{[figure][3][3]3.3}{[1][31][]31}}
+\@writefile{toc}{\contentsline {subsubsection}{Monotonically Decreasing Hazard}{32}{section*.20}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.4}{\ignorespaces Monotonically decreasing hazard functions. These patterns show risk diminishing with time, which can indicate early vulnerability followed by strengthening or stabilization.}}{32}{figure.3.4}\protected@file@percent }
+\newlabel{fig:decreasing-hazard}{{3.4}{32}{Monotonically decreasing hazard functions. These patterns show risk diminishing with time, which can indicate early vulnerability followed by strengthening or stabilization}{figure.3.4}{}}
+\newlabel{fig:decreasing-hazard@cref}{{[figure][4][3]3.4}{[1][32][]32}}
+\@writefile{toc}{\contentsline {subsubsection}{Non-Monotonic Hazard Patterns}{33}{section*.21}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Bathtub-Shaped Hazard}{33}{section*.22}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.5}{\ignorespaces Bathtub-shaped hazard function showing high initial risk, followed by a period of relative stability, and ending with increasing risk. This pattern is common in human mortality and complex system lifecycles.}}{33}{figure.3.5}\protected@file@percent }
+\newlabel{fig:bathtub-hazard}{{3.5}{33}{Bathtub-shaped hazard function showing high initial risk, followed by a period of relative stability, and ending with increasing risk. This pattern is common in human mortality and complex system lifecycles}{figure.3.5}{}}
+\newlabel{fig:bathtub-hazard@cref}{{[figure][5][3]3.5}{[1][33][]33}}
+\@writefile{toc}{\contentsline {paragraph}{Hump-Shaped Hazard}{33}{section*.23}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3.3}Hazard Patterns in Real-World Applications}{33}{subsection.3.3.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.6}{\ignorespaces Hump-shaped hazard function showing risk that increases to a peak and then decreases. This pattern often occurs in scenarios with a critical time window of vulnerability.}}{34}{figure.3.6}\protected@file@percent }
+\newlabel{fig:hump-hazard}{{3.6}{34}{Hump-shaped hazard function showing risk that increases to a peak and then decreases. This pattern often occurs in scenarios with a critical time window of vulnerability}{figure.3.6}{}}
+\newlabel{fig:hump-hazard@cref}{{[figure][6][3]3.6}{[1][33][]34}}
+\@writefile{toc}{\contentsline {subsubsection}{Medical Applications}{34}{section*.24}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Engineering Applications}{34}{section*.25}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.4}Censoring in Survival Analysis}{35}{section.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4.1}Truncation vs. Censoring}{35}{subsection.3.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.5}Likelihood Functions for Survival Data}{35}{section.3.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5.1}General Principles of Likelihood Functions}{36}{subsection.3.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5.2}Survival Likelihood with Censoring}{36}{subsection.3.5.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5.3}Alternative Formulations}{36}{subsection.3.5.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.7}{\ignorespaces Likelihood contributions for different observation types. For observed events (blue), the contribution is the density $f(t)$ at the exact event time. For censored observations (red), the contribution is the survival function $S(t)$ at the censoring time.}}{37}{figure.3.7}\protected@file@percent }
+\newlabel{fig:likelihood-contributions}{{3.7}{37}{Likelihood contributions for different observation types. For observed events (blue), the contribution is the density $f(t)$ at the exact event time. For censored observations (red), the contribution is the survival function $S(t)$ at the censoring time}{figure.3.7}{}}
+\newlabel{fig:likelihood-contributions@cref}{{[figure][7][3]3.7}{[1][36][]37}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5.4}Handling Other Types of Censoring}{37}{subsection.3.5.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.6}Non-Parametric Survival Estimation}{38}{section.3.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.6.1}The Kaplan-Meier Estimator}{38}{subsection.3.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Confidence Intervals for Kaplan-Meier Estimates}{38}{section*.26}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.8}{\ignorespaces Kaplan-Meier estimate of the survival function with 95\% confidence intervals. The step function decreases only at observed event times, while + marks indicate censored observations. The confidence intervals (shaded region) widen over time as information decreases.}}{39}{figure.3.8}\protected@file@percent }
+\newlabel{fig:km-estimate-with-ci}{{3.8}{39}{Kaplan-Meier estimate of the survival function with 95\% confidence intervals. The step function decreases only at observed event times, while + marks indicate censored observations. The confidence intervals (shaded region) widen over time as information decreases}{figure.3.8}{}}
+\newlabel{fig:km-estimate-with-ci@cref}{{[figure][8][3]3.8}{[1][38][]39}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.6.2}Nelson-Aalen Estimator}{39}{subsection.3.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.6.3}Comparing Groups with Non-Parametric Methods}{40}{subsection.3.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Log-Rank Test}{40}{section*.27}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Weighted Log-Rank Tests}{40}{section*.28}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.7}The Cox Proportional Hazards Model}{40}{section.3.7}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.9}{\ignorespaces Kaplan-Meier curves comparing survival between two groups, with the log-rank test result indicating a significant difference.}}{41}{figure.3.9}\protected@file@percent }
+\newlabel{fig:km-comparison}{{3.9}{41}{Kaplan-Meier curves comparing survival between two groups, with the log-rank test result indicating a significant difference}{figure.3.9}{}}
+\newlabel{fig:km-comparison@cref}{{[figure][9][3]3.9}{[1][40][]41}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.7.1}Model Formulation}{41}{subsection.3.7.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.7.2}Partial Likelihood Estimation}{41}{subsection.3.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.7.3}Interpretation of Parameters}{42}{subsection.3.7.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.7.4}Baseline Hazard Estimation}{42}{subsection.3.7.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.7.5}Extensions of the Cox Model}{43}{subsection.3.7.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Time-Dependent Covariates}{43}{section*.29}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Stratified Cox Model}{43}{section*.30}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Frailty Models}{43}{section*.31}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.8}Competing Risks Analysis}{43}{section.3.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.8.1}Framework and Terminology}{44}{subsection.3.8.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.8.2}Key Functions in Competing Risks}{44}{subsection.3.8.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.8.3}Modeling Approaches for Competing Risks}{44}{subsection.3.8.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Cause-Specific Hazards Approach}{44}{section*.32}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Fine-Gray Subdistribution Hazards Approach}{45}{section*.33}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.10}{\ignorespaces Example of a competing risks model. From the initial state, a subject can transition to one of several possible event states, each with its own hazard function.}}{45}{figure.3.10}\protected@file@percent }
+\newlabel{fig:competing-risks-model}{{3.10}{45}{Example of a competing risks model. From the initial state, a subject can transition to one of several possible event states, each with its own hazard function}{figure.3.10}{}}
+\newlabel{fig:competing-risks-model@cref}{{[figure][10][3]3.10}{[1][45][]45}}
+\@writefile{toc}{\contentsline {section}{\numberline {3.9}Limitations of Classical Methods}{45}{section.3.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.9.1}Limitations of Parametric Models}{45}{subsection.3.9.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.9.2}Limitations of the Cox Model}{46}{subsection.3.9.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.9.3}Limitations in Competing Risks Analysis}{46}{subsection.3.9.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.9.4}The Case for Advanced Methods}{46}{subsection.3.9.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.10}Modern Extensions of Classical Methods}{46}{section.3.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.10.1}Machine Learning Adaptations}{47}{subsection.3.10.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.10.2}Flexible Modeling Approaches}{47}{subsection.3.10.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.10.3}Causal Inference Methods}{47}{subsection.3.10.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.11}Transition to Deep Learning Approaches}{47}{section.3.11}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3.12}Summary}{48}{section.3.12}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {4}Censoring and Competing Risks}{49}{chapter.4}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:censoring}{{4}{49}{Censoring and Competing Risks}{chapter.4}{}}
+\newlabel{ch:censoring@cref}{{[chapter][4][]4}{[1][49][]49}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.1}Understanding Censoring}{49}{section.4.1}\protected@file@percent }
+\newlabel{sec:understanding-censoring}{{4.1}{49}{Understanding Censoring}{section.4.1}{}}
+\newlabel{sec:understanding-censoring@cref}{{[section][1][4]4.1}{[1][49][]49}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1.1}Types of Censoring}{49}{subsection.4.1.1}\protected@file@percent }
+\newlabel{subsec:types-of-censoring}{{4.1.1}{49}{Types of Censoring}{subsection.4.1.1}{}}
+\newlabel{subsec:types-of-censoring@cref}{{[subsection][1][4,1]4.1.1}{[1][49][]49}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.1}{\ignorespaces Different types of censoring in survival analysis and competing risks. The plot shows various scenarios including complete observation, right censoring, left truncation, interval censoring, and competing risks. Solid lines represent observed follow-up, dashed lines represent unobserved time, and markers indicate events or censoring.}}{49}{figure.4.1}\protected@file@percent }
+\newlabel{fig:censoring}{{4.1}{49}{Different types of censoring in survival analysis and competing risks. The plot shows various scenarios including complete observation, right censoring, left truncation, interval censoring, and competing risks. Solid lines represent observed follow-up, dashed lines represent unobserved time, and markers indicate events or censoring}{figure.4.1}{}}
+\newlabel{fig:censoring@cref}{{[figure][1][4]4.1}{[1][49][]49}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.2}{\ignorespaces Visualization of competing risks: survival curves and cumulative incidence functions (CIFs). The overall survival (thick blue line) decreases more rapidly than any cause-specific survival curve. The dashed lines show the cumulative incidence functions for each competing event. Note that the sum of all CIFs (dotted line) can exceed 1.0 when viewing causes independently, illustrating why proper competing risks analysis is important.}}{50}{figure.4.2}\protected@file@percent }
+\newlabel{fig:competing-risks}{{4.2}{50}{Visualization of competing risks: survival curves and cumulative incidence functions (CIFs). The overall survival (thick blue line) decreases more rapidly than any cause-specific survival curve. The dashed lines show the cumulative incidence functions for each competing event. Note that the sum of all CIFs (dotted line) can exceed 1.0 when viewing causes independently, illustrating why proper competing risks analysis is important}{figure.4.2}{}}
+\newlabel{fig:competing-risks@cref}{{[figure][2][4]4.2}{[1][49][]50}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1.2}Time-to-Event Data Visualization}{50}{subsection.4.1.2}\protected@file@percent }
+\newlabel{subsec:time-to-event}{{4.1.2}{50}{Time-to-Event Data Visualization}{subsection.4.1.2}{}}
+\newlabel{subsec:time-to-event@cref}{{[subsection][2][4,1]4.1.2}{[1][50][]50}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.3}{\ignorespaces Time-to-event data for five subjects showing various censoring and event patterns. Subject 1 experiences right censoring due to loss to follow-up. Subject 2 has an observed event. Subject 3 enters the study late (left truncation) and experiences an event. Subject 4 enters late and is right-censored at the end of the study. Subject 5 experiences a competing risk event.}}{51}{figure.4.3}\protected@file@percent }
+\newlabel{fig:time-to-event-subjects}{{4.3}{51}{Time-to-event data for five subjects showing various censoring and event patterns. Subject 1 experiences right censoring due to loss to follow-up. Subject 2 has an observed event. Subject 3 enters the study late (left truncation) and experiences an event. Subject 4 enters late and is right-censored at the end of the study. Subject 5 experiences a competing risk event}{figure.4.3}{}}
+\newlabel{fig:time-to-event-subjects@cref}{{[figure][3][4]4.3}{[1][50][]51}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1.3}Clinical Study Visualization}{51}{subsection.4.1.3}\protected@file@percent }
+\newlabel{subsec:clinical-censoring}{{4.1.3}{51}{Clinical Study Visualization}{subsection.4.1.3}{}}
+\newlabel{subsec:clinical-censoring@cref}{{[subsection][3][4,1]4.1.3}{[1][50][]51}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1.4}Censoring Mechanisms and Their Implications}{51}{subsection.4.1.4}\protected@file@percent }
+\newlabel{subsec:censoring-mechanisms}{{4.1.4}{51}{Censoring Mechanisms and Their Implications}{subsection.4.1.4}{}}
+\newlabel{subsec:censoring-mechanisms@cref}{{[subsection][4][4,1]4.1.4}{[1][51][]51}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.4}{\ignorespaces Examples of left censoring in survival analysis. Case 1 shows an event known to have occurred before screening, with the exact time unknown. Case 2 shows a condition detected at the initial screening (left censored). Case 3 shows delayed detection where a test initially misses the condition but later detects it. Case 4 shows both left and right censoring in the same subject. For left censoring, we only know that the event occurred before a certain time point, in contrast to right censoring where we know it occurred after.}}{52}{figure.4.4}\protected@file@percent }
+\newlabel{fig:left-censoring-examples}{{4.4}{52}{Examples of left censoring in survival analysis. Case 1 shows an event known to have occurred before screening, with the exact time unknown. Case 2 shows a condition detected at the initial screening (left censored). Case 3 shows delayed detection where a test initially misses the condition but later detects it. Case 4 shows both left and right censoring in the same subject. For left censoring, we only know that the event occurred before a certain time point, in contrast to right censoring where we know it occurred after}{figure.4.4}{}}
+\newlabel{fig:left-censoring-examples@cref}{{[figure][4][4]4.4}{[1][50][]52}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.5}{\ignorespaces Visualization of patient follow-up in a 36-month clinical trial. The plot shows various scenarios including complete follow-up, early/late enrollment, loss to follow-up, treatment discontinuation, competing events, and interval censoring. Vertical lines represent scheduled assessment visits at 6-month intervals. This visual representation illustrates the complexity of longitudinal data in clinical studies and the various types of censoring that must be accounted for in survival analysis.}}{53}{figure.4.5}\protected@file@percent }
+\newlabel{fig:clinical-censoring}{{4.5}{53}{Visualization of patient follow-up in a 36-month clinical trial. The plot shows various scenarios including complete follow-up, early/late enrollment, loss to follow-up, treatment discontinuation, competing events, and interval censoring. Vertical lines represent scheduled assessment visits at 6-month intervals. This visual representation illustrates the complexity of longitudinal data in clinical studies and the various types of censoring that must be accounted for in survival analysis}{figure.4.5}{}}
+\newlabel{fig:clinical-censoring@cref}{{[figure][5][4]4.5}{[1][50][]53}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.6}{\ignorespaces Kaplan-Meier event-free survival curves comparing treatment and control arms in a clinical trial with 36-month follow-up. Shaded areas represent 95\% confidence intervals, and '+' marks indicate censored observations. The treatment arm shows a significant improvement in event-free survival with a hazard ratio of 0.57 (95\% CI: 0.41-0.78) and a log-rank p-value of 0.0015. The median event-free survival is 18 months in the control arm and has not been reached in the treatment arm at the 36-month study endpoint. The number of patients at risk is shown below the graph.}}{54}{figure.4.6}\protected@file@percent }
+\newlabel{fig:km-clinical}{{4.6}{54}{Kaplan-Meier event-free survival curves comparing treatment and control arms in a clinical trial with 36-month follow-up. Shaded areas represent 95\% confidence intervals, and '+' marks indicate censored observations. The treatment arm shows a significant improvement in event-free survival with a hazard ratio of 0.57 (95\% CI: 0.41-0.78) and a log-rank p-value of 0.0015. The median event-free survival is 18 months in the control arm and has not been reached in the treatment arm at the 36-month study endpoint. The number of patients at risk is shown below the graph}{figure.4.6}{}}
+\newlabel{fig:km-clinical@cref}{{[figure][6][4]4.6}{[1][51][]54}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.7}{\ignorespaces Directed acyclic graphs illustrating different censoring mechanisms. Arrows indicate dependencies between variables. Under MCAR, censoring is independent of other variables. Under MAR, censoring depends on observed covariates. Under MNAR, censoring depends on the unobserved event time.}}{54}{figure.4.7}\protected@file@percent }
+\newlabel{fig:censoring-mechanisms}{{4.7}{54}{Directed acyclic graphs illustrating different censoring mechanisms. Arrows indicate dependencies between variables. Under MCAR, censoring is independent of other variables. Under MAR, censoring depends on observed covariates. Under MNAR, censoring depends on the unobserved event time}{figure.4.7}{}}
+\newlabel{fig:censoring-mechanisms@cref}{{[figure][7][4]4.7}{[1][53][]54}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.2}Competing Risks}{55}{section.4.2}\protected@file@percent }
+\newlabel{sec:competing-risks}{{4.2}{55}{Competing Risks}{section.4.2}{}}
+\newlabel{sec:competing-risks@cref}{{[section][2][4]4.2}{[1][55][]55}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.8}{\ignorespaces Competing risks framework. From the initial state, a subject can transition to one of several possible event states, each with its own hazard function. Once one event occurs, the subject is no longer at risk for the other events.}}{55}{figure.4.8}\protected@file@percent }
+\newlabel{fig:competing-risks}{{4.8}{55}{Competing risks framework. From the initial state, a subject can transition to one of several possible event states, each with its own hazard function. Once one event occurs, the subject is no longer at risk for the other events}{figure.4.8}{}}
+\newlabel{fig:competing-risks@cref}{{[figure][8][4]4.8}{[1][55][]55}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.1}Analyzing Competing Risks}{56}{subsection.4.2.1}\protected@file@percent }
+\newlabel{subsec:analyzing-competing-risks}{{4.2.1}{56}{Analyzing Competing Risks}{subsection.4.2.1}{}}
+\newlabel{subsec:analyzing-competing-risks@cref}{{[subsection][1][4,2]4.2.1}{[1][55][]56}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.2}Modeling Approaches for Competing Risks}{56}{subsection.4.2.2}\protected@file@percent }
+\newlabel{subsec:modeling-competing-risks}{{4.2.2}{56}{Modeling Approaches for Competing Risks}{subsection.4.2.2}{}}
+\newlabel{subsec:modeling-competing-risks@cref}{{[subsection][2][4,2]4.2.2}{[1][56][]56}}
+\abx@aux@cite{0}{nagpal2021dsm}
+\abx@aux@segm{0}{0}{nagpal2021dsm}
+\abx@aux@cite{0}{cox1972}
+\abx@aux@segm{0}{0}{cox1972}
+\abx@aux@cite{0}{kaplan1958}
+\abx@aux@segm{0}{0}{kaplan1958}
+\abx@aux@cite{0}{katzman2018}
+\abx@aux@segm{0}{0}{katzman2018}
+\abx@aux@cite{0}{chapfuwa2018}
+\abx@aux@segm{0}{0}{chapfuwa2018}
+\@writefile{toc}{\contentsline {chapter}{\numberline {5}Deep Survival Machines}{59}{chapter.5}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:dsm}{{5}{59}{Deep Survival Machines}{chapter.5}{}}
+\newlabel{ch:dsm@cref}{{[chapter][5][]5}{[1][59][]59}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.1}Introduction to Deep Survival Machines}{59}{section.5.1}\protected@file@percent }
+\abx@aux@page{3}{59}
+\abx@aux@page{4}{59}
+\abx@aux@page{5}{59}
+\abx@aux@page{6}{59}
+\abx@aux@page{7}{59}
+\@writefile{toc}{\contentsline {section}{\numberline {5.2}Limitations of Traditional Survival Analysis Methods}{59}{section.5.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2.1}Limitations of Non-parametric Methods}{60}{subsection.5.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2.2}Limitations of the Cox Proportional Hazards Model}{60}{subsection.5.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2.3}Limitations of Early Neural Network Adaptations}{60}{subsection.5.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5.3}Complex Hazard Patterns in Real-World Data}{61}{section.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3.1}Multi-Modal Hazard Functions}{61}{subsection.5.3.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5.1}{\ignorespaces Examples of different hazard patterns observed in real-world survival data. Traditional models often assume a single pattern (such as constant or monotonically increasing/decreasing), but real processes frequently exhibit more complex behavior.}}{61}{figure.5.1}\protected@file@percent }
+\newlabel{fig:dsm-hazard-patterns}{{5.1}{61}{Examples of different hazard patterns observed in real-world survival data. Traditional models often assume a single pattern (such as constant or monotonically increasing/decreasing), but real processes frequently exhibit more complex behavior}{figure.5.1}{}}
+\newlabel{fig:dsm-hazard-patterns@cref}{{[figure][1][5]5.1}{[1][61][]61}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3.2}The Need for Uncertainty Quantification}{62}{subsection.5.3.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5.2}{\ignorespaces Survival curve with uncertainty bounds. The shaded region represents the uncertainty in the survival estimates, which increases over time as less information is available. This visualization provides decision-makers with both the point estimate and a measure of confidence in that estimate.}}{62}{figure.5.2}\protected@file@percent }
+\newlabel{fig:survival-uncertainty}{{5.2}{62}{Survival curve with uncertainty bounds. The shaded region represents the uncertainty in the survival estimates, which increases over time as less information is available. This visualization provides decision-makers with both the point estimate and a measure of confidence in that estimate}{figure.5.2}{}}
+\newlabel{fig:survival-uncertainty@cref}{{[figure][2][5]5.2}{[1][62][]62}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.4}Deep Survival Machines: Core Conceptual Innovation}{63}{section.5.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4.1}The Mixture Distribution Approach}{63}{subsection.5.4.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5.3}{\ignorespaces Conceptual architecture of Deep Survival Machines. Input covariates are processed through a shared representation layer, which then feeds into parameter networks for each mixture component. The final survival function is a weighted combination of the component survival functions.}}{63}{figure.5.3}\protected@file@percent }
+\newlabel{fig:dsm-architecture}{{5.3}{63}{Conceptual architecture of Deep Survival Machines. Input covariates are processed through a shared representation layer, which then feeds into parameter networks for each mixture component. The final survival function is a weighted combination of the component survival functions}{figure.5.3}{}}
+\newlabel{fig:dsm-architecture@cref}{{[figure][3][5]5.3}{[1][63][]63}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4.2}Architectural Components}{63}{subsection.5.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Representation Network}{64}{section*.34}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Mixture Model}{64}{section*.35}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Parameter Networks}{64}{section*.36}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5.5}Key Innovations of Deep Survival Machines}{64}{section.5.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5.1}End-to-End Learning}{64}{subsection.5.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5.2}Flexible Hazard Modeling}{65}{subsection.5.5.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5.3}Uncertainty Quantification}{65}{subsection.5.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5.4}Risk Prediction Capabilities}{65}{subsection.5.5.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5.6}Mathematical Foundation of Deep Survival Machines}{65}{section.5.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.6.1}Survival Analysis Fundamentals: A Brief Recap}{65}{subsection.5.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.6.2}The Mixture Framework}{66}{subsection.5.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.6.3}Insight into Hazard Composition}{66}{subsection.5.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5.7}Parametric Component Distributions}{67}{section.5.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.7.1}Weibull Distribution}{67}{subsection.5.7.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.7.2}Log-Normal Distribution}{67}{subsection.5.7.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5.4}{\ignorespaces Weibull hazard functions with different shape parameters. When $\alpha = 1$ (blue), the hazard is constant. When $\alpha > 1$ (red), the hazard increases with time. When $\alpha < 1$ (green), the hazard decreases with time.}}{68}{figure.5.4}\protected@file@percent }
+\newlabel{fig:weibull-hazards}{{5.4}{68}{Weibull hazard functions with different shape parameters. When $\alpha = 1$ (blue), the hazard is constant. When $\alpha > 1$ (red), the hazard increases with time. When $\alpha < 1$ (green), the hazard decreases with time}{figure.5.4}{}}
+\newlabel{fig:weibull-hazards@cref}{{[figure][4][5]5.4}{[1][67][]68}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.7.3}The Power of Mixtures}{68}{subsection.5.7.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5.5}{\ignorespaces Complex hazard patterns that can be modeled using mixtures of simple parametric distributions. The bathtub pattern (blue) shows high initial risk, followed by a stable period, and then increasing risk. The bimodal pattern (red) shows two distinct risk peaks.}}{69}{figure.5.5}\protected@file@percent }
+\newlabel{fig:complex-hazards}{{5.5}{69}{Complex hazard patterns that can be modeled using mixtures of simple parametric distributions. The bathtub pattern (blue) shows high initial risk, followed by a stable period, and then increasing risk. The bimodal pattern (red) shows two distinct risk peaks}{figure.5.5}{}}
+\newlabel{fig:complex-hazards@cref}{{[figure][5][5]5.5}{[1][69][]69}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.8}Neural Parameter Mapping}{69}{section.5.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.8.1}From Features to Distribution Parameters}{69}{subsection.5.8.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.8.2}Network Architecture}{70}{subsection.5.8.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5.6}{\ignorespaces Neural network architecture for DSM. Input features are processed through shared hidden layers to create a representation $\phi (\mathbf  {x})$, which is then fed into parameter-specific output heads to generate distribution parameters and mixture weights.}}{70}{figure.5.6}\protected@file@percent }
+\newlabel{fig:dsm-network}{{5.6}{70}{Neural network architecture for DSM. Input features are processed through shared hidden layers to create a representation $\phi (\mathbf {x})$, which is then fed into parameter-specific output heads to generate distribution parameters and mixture weights}{figure.5.6}{}}
+\newlabel{fig:dsm-network@cref}{{[figure][6][5]5.6}{[1][70][]70}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.9}Training Deep Survival Machines}{70}{section.5.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.9.1}Loss Function Formulation}{70}{subsection.5.9.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.9.2}ELBO-Based Regularization}{71}{subsection.5.9.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5.10}Implementation Challenges and Solutions}{71}{section.5.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.10.1}Numerical Stability Challenges}{72}{subsection.5.10.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.10.2}Log-Sum-Exp Trick}{72}{subsection.5.10.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.10.3}Gradient Detachment Strategy}{72}{subsection.5.10.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5.11}Advantages of DSM over Traditional Methods}{72}{section.5.11}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.11.1}Compared to Cox Proportional Hazards}{73}{subsection.5.11.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.11.2}Compared to Neural Cox Models}{73}{subsection.5.11.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.11.3}Compared to Random Survival Forests}{73}{subsection.5.11.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.11.4}Limitations and Considerations}{73}{subsection.5.11.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5.12}Practical Applications of DSM}{74}{section.5.12}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.12.1}Cancer Survival Prediction}{74}{subsection.5.12.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5.7}{\ignorespaces Risk stratification using DSM for breast cancer patients. The model identifies distinct risk groups with different survival trajectories, enabling more personalized treatment planning.}}{74}{figure.5.7}\protected@file@percent }
+\newlabel{fig:risk-stratification}{{5.7}{74}{Risk stratification using DSM for breast cancer patients. The model identifies distinct risk groups with different survival trajectories, enabling more personalized treatment planning}{figure.5.7}{}}
+\newlabel{fig:risk-stratification@cref}{{[figure][7][5]5.7}{[1][74][]74}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.13}Summary: DSM in the Bigger Picture}{74}{section.5.13}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.13.1}Key Contributions}{75}{subsection.5.13.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.13.2}Future Directions}{75}{subsection.5.13.2}\protected@file@percent }
+\abx@aux@cite{0}{fine1999}
+\abx@aux@segm{0}{0}{fine1999}
+\abx@aux@cite{0}{prentice1978}
+\abx@aux@segm{0}{0}{prentice1978}
+\abx@aux@cite{0}{austin2016}
+\abx@aux@segm{0}{0}{austin2016}
+\abx@aux@cite{0}{koller2012}
+\abx@aux@segm{0}{0}{koller2012}
+\abx@aux@cite{0}{zhong2021}
+\abx@aux@segm{0}{0}{zhong2021}
+\@writefile{toc}{\contentsline {chapter}{\numberline {6}Multi-Event Neural Survival Analysis}{77}{chapter.6}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:mensa}{{6}{77}{Multi-Event Neural Survival Analysis}{chapter.6}{}}
+\newlabel{ch:mensa@cref}{{[chapter][6][]6}{[1][77][]77}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.1}Introduction to Multi-Event Neural Survival Analysis}{77}{section.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1.1}The Big Picture: Moving Beyond Single-Event Survival}{77}{subsection.6.1.1}\protected@file@percent }
+\abx@aux@page{8}{77}
+\abx@aux@page{9}{77}
+\abx@aux@page{10}{77}
+\abx@aux@page{11}{77}
+\abx@aux@page{12}{77}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.1.2}Challenges in Multi-Event Survival Analysis}{77}{subsection.6.1.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.1}{\ignorespaces Conceptual overview of the MENSA framework, showing its relationship to DSM and multi-state models, as well as its ability to model multiple event risks simultaneously.}}{78}{figure.6.1}\protected@file@percent }
+\newlabel{fig:mensa-overview}{{6.1}{78}{Conceptual overview of the MENSA framework, showing its relationship to DSM and multi-state models, as well as its ability to model multiple event risks simultaneously}{figure.6.1}{}}
+\newlabel{fig:mensa-overview@cref}{{[figure][1][6]6.1}{[1][77][]78}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6.2}{\ignorespaces Competing risks structure, showing transitions from a starting state to multiple possible events, with dependencies between events.}}{78}{figure.6.2}\protected@file@percent }
+\newlabel{fig:mensa-competing-risks-diagram}{{6.2}{78}{Competing risks structure, showing transitions from a starting state to multiple possible events, with dependencies between events}{figure.6.2}{}}
+\newlabel{fig:mensa-competing-risks-diagram@cref}{{[figure][2][6]6.2}{[1][78][]78}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.2}The Competing Risks Framework}{79}{section.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2.1}Data Representation in Competing Risks}{79}{subsection.6.2.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {6.1}{\ignorespaces Example of competing risks data structure}}{79}{table.6.1}\protected@file@percent }
+\newlabel{tab:competing-risks-data}{{6.1}{79}{Example of competing risks data structure}{table.6.1}{}}
+\newlabel{tab:competing-risks-data@cref}{{[table][1][6]6.1}{[1][79][]79}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.2.2}Censoring in Competing Risks}{79}{subsection.6.2.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.3}{\ignorespaces Illustration of censoring in competing risks. The occurrence of Event 1 prevents observing whether Event 2 would have occurred, creating a form of informative censoring specific to competing risks.}}{80}{figure.6.3}\protected@file@percent }
+\newlabel{fig:competing-risks-censoring}{{6.3}{80}{Illustration of censoring in competing risks. The occurrence of Event 1 prevents observing whether Event 2 would have occurred, creating a form of informative censoring specific to competing risks}{figure.6.3}{}}
+\newlabel{fig:competing-risks-censoring@cref}{{[figure][3][6]6.3}{[1][79][]80}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.3}Key Functions in Competing Risks}{80}{section.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3.1}Cause-Specific Hazard Function}{80}{subsection.6.3.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.4}{\ignorespaces Cause-specific hazard functions for three different event types. Note how each event can have a distinct hazard pattern (constant, increasing, or decreasing over time).}}{81}{figure.6.4}\protected@file@percent }
+\newlabel{fig:cause-specific-hazards}{{6.4}{81}{Cause-specific hazard functions for three different event types. Note how each event can have a distinct hazard pattern (constant, increasing, or decreasing over time)}{figure.6.4}{}}
+\newlabel{fig:cause-specific-hazards@cref}{{[figure][4][6]6.4}{[1][80][]81}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3.2}Overall Survival Function}{81}{subsection.6.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3.3}Cumulative Incidence Function}{81}{subsection.6.3.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.5}{\ignorespaces Overall survival function and cause-specific cumulative incidence functions (CIFs) for three competing events. Note how all CIFs plus the survival function sum to 1 at any time point.}}{82}{figure.6.5}\protected@file@percent }
+\newlabel{fig:survival-cif}{{6.5}{82}{Overall survival function and cause-specific cumulative incidence functions (CIFs) for three competing events. Note how all CIFs plus the survival function sum to 1 at any time point}{figure.6.5}{}}
+\newlabel{fig:survival-cif@cref}{{[figure][5][6]6.5}{[1][82][]82}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.3.4}Sub-Density Function}{82}{subsection.6.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.4}Traditional Approaches to Competing Risks}{82}{section.6.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.4.1}Cause-Specific Cox Models}{82}{subsection.6.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.4.2}Fine-Gray Model}{83}{subsection.6.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.5}The MENSA Framework}{83}{section.6.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.5.1}Core Conceptual Innovation}{83}{subsection.6.5.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.6}{\ignorespaces MENSA architecture showing the flow from input features through shared representation to event-specific networks and ultimately to the parameterization of the mixture distributions for each event type.}}{84}{figure.6.6}\protected@file@percent }
+\newlabel{fig:mensa-architecture}{{6.6}{84}{MENSA architecture showing the flow from input features through shared representation to event-specific networks and ultimately to the parameterization of the mixture distributions for each event type}{figure.6.6}{}}
+\newlabel{fig:mensa-architecture@cref}{{[figure][6][6]6.6}{[1][83][]84}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.5.2}Mathematical Formulation}{84}{subsection.6.5.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.5.3}Neural Network Architecture}{85}{subsection.6.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.6}Training and Optimization}{85}{section.6.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.6.1}Likelihood Function}{85}{subsection.6.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.6.2}Optimization Techniques}{86}{subsection.6.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.6.3}Avoiding Numerical Issues}{86}{subsection.6.6.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.7}Inference and Risk Prediction}{87}{section.6.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.7.1}Risk Predictions with MENSA}{87}{subsection.6.7.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.7.2}Uncertainty Quantification}{87}{subsection.6.7.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.7.3}Interpreting MENSA Models}{87}{subsection.6.7.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6.7}{\ignorespaces Interpretation of mixture components for an event's hazard function. Each component might represent a different risk sub-group or risk mechanism.}}{88}{figure.6.7}\protected@file@percent }
+\newlabel{fig:mixture-interpretation}{{6.7}{88}{Interpretation of mixture components for an event's hazard function. Each component might represent a different risk sub-group or risk mechanism}{figure.6.7}{}}
+\newlabel{fig:mixture-interpretation@cref}{{[figure][7][6]6.7}{[1][87][]88}}
+\@writefile{toc}{\contentsline {section}{\numberline {6.8}Applications of MENSA}{88}{section.6.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.8.1}Medical Applications}{88}{subsection.6.8.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.8.2}Industrial Applications}{88}{subsection.6.8.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {6.8.3}Business Applications}{88}{subsection.6.8.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.9}Future Directions}{89}{section.6.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6.10}Summary}{89}{section.6.10}\protected@file@percent }
+\abx@aux@cite{0}{lee2018}
+\abx@aux@segm{0}{0}{lee2018}
+\abx@aux@cite{0}{kvamme2019}
+\abx@aux@segm{0}{0}{kvamme2019}
+\abx@aux@cite{0}{ibrahim2001}
+\abx@aux@segm{0}{0}{ibrahim2001}
+\abx@aux@cite{0}{kleinbaum2012}
+\abx@aux@segm{0}{0}{kleinbaum2012}
+\@writefile{toc}{\contentsline {chapter}{\numberline {7}Loss Functions}{91}{chapter.7}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:loss-functions}{{7}{91}{Loss Functions}{chapter.7}{}}
+\newlabel{ch:loss-functions@cref}{{[chapter][7][]7}{[1][91][]91}}
+\@writefile{toc}{\contentsline {section}{\numberline {7.1}Loss Functions for Survival Analysis}{91}{section.7.1}\protected@file@percent }
+\abx@aux@page{13}{91}
+\abx@aux@page{14}{91}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1.1}Survival Losses}{91}{subsection.7.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Negative Log-Likelihood with Piecewise Constant Hazards}{92}{section*.37}\protected@file@percent }
+\abx@aux@page{15}{92}
+\abx@aux@page{16}{92}
+\abx@aux@cite{0}{nagpal2021dsm}
+\abx@aux@segm{0}{0}{nagpal2021dsm}
+\abx@aux@cite{0}{mclachlan1988}
+\abx@aux@segm{0}{0}{mclachlan1988}
+\abx@aux@cite{0}{bishop2006}
+\abx@aux@segm{0}{0}{bishop2006}
+\@writefile{toc}{\contentsline {subsubsection}{Deep Survival Machines}{93}{section*.38}\protected@file@percent }
+\abx@aux@page{17}{93}
+\abx@aux@page{18}{93}
+\abx@aux@page{19}{93}
+\abx@aux@cite{0}{zhong2021}
+\abx@aux@segm{0}{0}{zhong2021}
+\abx@aux@cite{0}{austin2016}
+\abx@aux@segm{0}{0}{austin2016}
+\abx@aux@cite{0}{fine1999}
+\abx@aux@segm{0}{0}{fine1999}
+\abx@aux@cite{0}{prentice1978}
+\abx@aux@segm{0}{0}{prentice1978}
+\@writefile{toc}{\contentsline {subsubsection}{Multi-Event Neural Survival Analysis (MENSA)}{94}{section*.39}\protected@file@percent }
+\abx@aux@page{20}{94}
+\abx@aux@page{21}{94}
+\abx@aux@page{22}{94}
+\abx@aux@page{23}{94}
+\abx@aux@cite{0}{lee2018}
+\abx@aux@segm{0}{0}{lee2018}
+\abx@aux@cite{0}{gensheimer2019}
+\abx@aux@segm{0}{0}{gensheimer2019}
+\@writefile{toc}{\contentsline {subsubsection}{DeepHit: Discrete-Time Survival Approach}{95}{section*.40}\protected@file@percent }
+\abx@aux@page{24}{95}
+\abx@aux@page{25}{95}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1.2}Ranking Losses in Survival Analysis}{96}{subsection.7.1.2}\protected@file@percent }
+\newlabel{sec:ranking}{{7.1.2}{96}{Ranking Losses in Survival Analysis}{subsection.7.1.2}{}}
+\newlabel{sec:ranking@cref}{{[subsection][2][7,1]7.1.2}{[1][96][]96}}
+\@writefile{toc}{\contentsline {subsubsection}{Motivation for Ranking in Survival Analysis}{96}{section*.41}\protected@file@percent }
+\abx@aux@cite{0}{harrell1982}
+\abx@aux@segm{0}{0}{harrell1982}
+\abx@aux@cite{0}{antolini2005}
+\abx@aux@segm{0}{0}{antolini2005}
+\abx@aux@cite{0}{burges2005}
+\abx@aux@segm{0}{0}{burges2005}
+\abx@aux@cite{0}{chapfuwa2018}
+\abx@aux@segm{0}{0}{chapfuwa2018}
+\abx@aux@cite{0}{kvamme2019}
+\abx@aux@segm{0}{0}{kvamme2019}
+\abx@aux@page{26}{97}
+\abx@aux@page{27}{97}
+\@writefile{toc}{\contentsline {subsubsection}{Pairwise Ranking: RankNet}{97}{section*.42}\protected@file@percent }
+\abx@aux@page{28}{97}
+\abx@aux@page{29}{97}
+\abx@aux@page{30}{97}
+\abx@aux@cite{0}{kvamme2019}
+\abx@aux@segm{0}{0}{kvamme2019}
+\abx@aux@cite{0}{xia2008}
+\abx@aux@segm{0}{0}{xia2008}
+\abx@aux@cite{0}{kvamme2019}
+\abx@aux@segm{0}{0}{kvamme2019}
+\@writefile{toc}{\contentsline {subsubsection}{SOAP: Statistically Optimal Accelerated Pairwise Loss}{98}{section*.43}\protected@file@percent }
+\abx@aux@page{31}{98}
+\@writefile{toc}{\contentsline {subsubsection}{ListMLE: Listwise Maximum Likelihood Estimation}{98}{section*.44}\protected@file@percent }
+\abx@aux@page{32}{98}
+\abx@aux@page{33}{98}
+\abx@aux@cite{0}{kvamme2021survrnc}
+\abx@aux@segm{0}{0}{kvamme2021survrnc}
+\@writefile{toc}{\contentsline {subsubsection}{SurvRNC: Survival Rank-N-Contrast Loss}{99}{section*.45}\protected@file@percent }
+\abx@aux@page{34}{99}
+\@writefile{toc}{\contentsline {subsubsection}{Efficient Ranking Implementations}{99}{section*.46}\protected@file@percent }
+\abx@aux@cite{0}{zhong2020}
+\abx@aux@segm{0}{0}{zhong2020}
+\abx@aux@cite{0}{gensheimer2019}
+\abx@aux@segm{0}{0}{gensheimer2019}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1.3}Regression Losses for Survival Analysis}{100}{subsection.7.1.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Motivation for Regression Approaches}{100}{section*.47}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{L1 Loss with Censoring}{100}{section*.48}\protected@file@percent }
+\abx@aux@page{35}{100}
+\abx@aux@page{36}{100}
+\abx@aux@cite{0}{biganzoli2001}
+\abx@aux@segm{0}{0}{biganzoli2001}
+\@writefile{toc}{\contentsline {subsubsection}{MSE Loss for Survival Analysis}{101}{section*.49}\protected@file@percent }
+\abx@aux@page{37}{101}
+\abx@aux@cite{0}{koenker2001}
+\abx@aux@segm{0}{0}{koenker2001}
+\abx@aux@cite{0}{tagasovska2019}
+\abx@aux@segm{0}{0}{tagasovska2019}
+\@writefile{toc}{\contentsline {subsubsection}{Quantile Loss for Survival}{102}{section*.50}\protected@file@percent }
+\abx@aux@page{38}{102}
+\abx@aux@page{39}{102}
+\@writefile{toc}{\contentsline {subsubsection}{Regression Losses: Applications and Limitations}{102}{section*.51}\protected@file@percent }
+\abx@aux@cite{0}{graf1999}
+\abx@aux@segm{0}{0}{graf1999}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1.4}Classification Losses for Survival Analysis}{103}{subsection.7.1.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Binary Cross-Entropy for Survival}{103}{section*.52}\protected@file@percent }
+\abx@aux@page{40}{103}
+\@writefile{toc}{\contentsline {subsubsection}{Multi-Class Classification for Survival}{104}{section*.53}\protected@file@percent }
+\abx@aux@cite{0}{lin2017focal}
+\abx@aux@segm{0}{0}{lin2017focal}
+\abx@aux@cite{0}{steiner2021}
+\abx@aux@segm{0}{0}{steiner2021}
+\abx@aux@cite{0}{fotso2018}
+\abx@aux@segm{0}{0}{fotso2018}
+\abx@aux@cite{0}{wiegrebe2023}
+\abx@aux@segm{0}{0}{wiegrebe2023}
+\@writefile{toc}{\contentsline {subsubsection}{Classification for Survival: Advantages and Limitations}{105}{section*.54}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1.5}Auxiliary Losses and Loss Balancing}{105}{subsection.7.1.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Focal Loss for Survival Analysis}{105}{section*.55}\protected@file@percent }
+\abx@aux@page{41}{105}
+\abx@aux@page{42}{105}
+\abx@aux@page{43}{105}
+\abx@aux@page{44}{105}
+\@writefile{toc}{\contentsline {subsubsection}{Loss Balancing Strategies}{106}{section*.56}\protected@file@percent }
+\abx@aux@cite{0}{kendall2018}
+\abx@aux@segm{0}{0}{kendall2018}
+\abx@aux@cite{0}{fotso2018}
+\abx@aux@segm{0}{0}{fotso2018}
+\abx@aux@cite{0}{kaplan1958}
+\abx@aux@segm{0}{0}{kaplan1958}
+\abx@aux@cite{0}{he2020momentum}
+\abx@aux@segm{0}{0}{he2020momentum}
+\abx@aux@cite{0}{ibrahim2001}
+\abx@aux@segm{0}{0}{ibrahim2001}
+\abx@aux@page{45}{107}
+\abx@aux@page{46}{107}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1.6}Momentum Contrast for Survival Analysis}{107}{subsection.7.1.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7.2}Momentum Contrast for Survival Analysis}{107}{section.7.2}\protected@file@percent }
+\abx@aux@page{47}{107}
+\abx@aux@page{48}{107}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2.1}Event Sparsity and Censoring Challenges}{107}{subsection.7.2.1}\protected@file@percent }
+\abx@aux@page{49}{107}
+\abx@aux@cite{0}{ranganath2016}
+\abx@aux@segm{0}{0}{ranganath2016}
+\abx@aux@page{50}{108}
+\@writefile{lof}{\contentsline {figure}{\numberline {7.1}{\ignorespaces The relationship between censoring rate and expected events per mini-batch. As censoring increases, the number of events decreases linearly, falling below practical thresholds for effective learning.}}{108}{figure.7.1}\protected@file@percent }
+\newlabel{fig:event-sparsity}{{7.1}{108}{The relationship between censoring rate and expected events per mini-batch. As censoring increases, the number of events decreases linearly, falling below practical thresholds for effective learning}{figure.7.1}{}}
+\newlabel{fig:event-sparsity@cref}{{[figure][1][7]7.1}{[1][108][]108}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2.2}Momentum Contrast: Core Principles}{108}{subsection.7.2.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7.2}{\ignorespaces Overview of Momentum Contrast (MoCo) for survival analysis. Past embeddings are stored in a FIFO queue and combined with the current batch during loss computation.}}{109}{figure.7.2}\protected@file@percent }
+\newlabel{fig:moco-overview}{{7.2}{109}{Overview of Momentum Contrast (MoCo) for survival analysis. Past embeddings are stored in a FIFO queue and combined with the current batch during loss computation}{figure.7.2}{}}
+\newlabel{fig:moco-overview@cref}{{[figure][2][7]7.2}{[1][109][]109}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2.3}Mathematical Formulation}{109}{subsection.7.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Standard MoCo Loss}{109}{section*.57}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Dynamic Weight Formulation}{110}{section*.58}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7.3}{\ignorespaces Dynamic weight interpolation in MoCo. Weights for the current batch and buffer components change over time, allowing for gradual transition from batch-focused to buffer-enhanced learning.}}{111}{figure.7.3}\protected@file@percent }
+\newlabel{fig:dynamic-weights}{{7.3}{111}{Dynamic weight interpolation in MoCo. Weights for the current batch and buffer components change over time, allowing for gradual transition from batch-focused to buffer-enhanced learning}{figure.7.3}{}}
+\newlabel{fig:dynamic-weights@cref}{{[figure][3][7]7.3}{[1][111][]111}}
+\@writefile{toc}{\contentsline {subsubsection}{Adaptive Buffer Formulation}{111}{section*.59}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7.4}{\ignorespaces Adaptive buffer size adjustment during training. The buffer size increases in response to detected loss instability events, eventually reaching its maximum capacity.}}{112}{figure.7.4}\protected@file@percent }
+\newlabel{fig:adaptive-buffer}{{7.4}{112}{Adaptive buffer size adjustment during training. The buffer size increases in response to detected loss instability events, eventually reaching its maximum capacity}{figure.7.4}{}}
+\newlabel{fig:adaptive-buffer@cref}{{[figure][4][7]7.4}{[1][112][]112}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2.4}Implementation Variants and Selection}{112}{subsection.7.2.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Standard MoCoSurvivalLoss}{112}{section*.60}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{DynamicWeightMoCoLoss}{113}{section*.61}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{AdaptiveMoCoLoss}{113}{section*.62}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2.5}MoCo Recommender System}{113}{subsection.7.2.5}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7.5}{\ignorespaces Decision process for the MoCo recommender system. The system analyzes dataset and training characteristics to suggest the appropriate MoCo variant and optimal parameter settings.}}{114}{figure.7.5}\protected@file@percent }
+\newlabel{fig:moco-recommender}{{7.5}{114}{Decision process for the MoCo recommender system. The system analyzes dataset and training characteristics to suggest the appropriate MoCo variant and optimal parameter settings}{figure.7.5}{}}
+\newlabel{fig:moco-recommender@cref}{{[figure][5][7]7.5}{[1][113][]114}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2.6}Experimental Results}{115}{subsection.7.2.6}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7.1}{\ignorespaces Performance comparison of survival models with and without MoCo enhancements on datasets with varying censoring rates.}}{115}{table.7.1}\protected@file@percent }
+\newlabel{tab:moco-results}{{7.1}{115}{Performance comparison of survival models with and without MoCo enhancements on datasets with varying censoring rates}{table.7.1}{}}
+\newlabel{tab:moco-results@cref}{{[table][1][7]7.1}{[1][115][]115}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2.7}Practical Considerations}{115}{subsection.7.2.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Memory Usage}{115}{section*.63}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7.6}{\ignorespaces Relative improvement in concordance index (C-index) with different MoCo variants across datasets with varying censoring rates. The performance gap between variants widens as censoring increases.}}{116}{figure.7.6}\protected@file@percent }
+\newlabel{fig:moco-improvement}{{7.6}{116}{Relative improvement in concordance index (C-index) with different MoCo variants across datasets with varying censoring rates. The performance gap between variants widens as censoring increases}{figure.7.6}{}}
+\newlabel{fig:moco-improvement@cref}{{[figure][6][7]7.6}{[1][115][]116}}
+\@writefile{toc}{\contentsline {subsubsection}{Batch Size and Buffer Size Relationship}{116}{section*.64}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Integration with Other Loss Functions}{116}{section*.65}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7.7}{\ignorespaces Relationship between batch size and recommended buffer size for different censoring rates, assuming a target of 32 events in the effective batch.}}{117}{figure.7.7}\protected@file@percent }
+\newlabel{fig:batch-buffer-relationship}{{7.7}{117}{Relationship between batch size and recommended buffer size for different censoring rates, assuming a target of 32 events in the effective batch}{figure.7.7}{}}
+\newlabel{fig:batch-buffer-relationship@cref}{{[figure][7][7]7.7}{[1][116][]117}}
+\@writefile{toc}{\contentsline {subsubsection}{Computational Overhead}{117}{section*.66}\protected@file@percent }
+\abx@aux@cite{0}{lee2018}
+\abx@aux@segm{0}{0}{lee2018}
+\abx@aux@cite{0}{kvamme2019}
+\abx@aux@segm{0}{0}{kvamme2019}
+\abx@aux@cite{0}{nagpal2021dsm}
+\abx@aux@segm{0}{0}{nagpal2021dsm}
+\abx@aux@cite{0}{harrell1982}
+\abx@aux@segm{0}{0}{harrell1982}
+\abx@aux@cite{0}{ibrahim2001}
+\abx@aux@segm{0}{0}{ibrahim2001}
+\abx@aux@cite{0}{kvamme2021survrnc}
+\abx@aux@segm{0}{0}{kvamme2021survrnc}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2.8}Conclusion}{118}{subsection.7.2.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2.9}Summary and Best Practices}{118}{subsection.7.2.9}\protected@file@percent }
+\abx@aux@page{51}{118}
+\abx@aux@page{52}{118}
+\abx@aux@page{53}{118}
+\abx@aux@page{54}{118}
+\abx@aux@page{55}{118}
+\abx@aux@page{56}{118}
+\abx@aux@cite{0}{goldberg1991}
+\abx@aux@segm{0}{0}{goldberg1991}
+\abx@aux@cite{0}{hanin2022}
+\abx@aux@segm{0}{0}{hanin2022}
+\abx@aux@cite{0}{nagpal2021dsm}
+\abx@aux@segm{0}{0}{nagpal2021dsm}
+\abx@aux@cite{0}{zhong2021}
+\abx@aux@segm{0}{0}{zhong2021}
+\@writefile{toc}{\contentsline {chapter}{\numberline {8}Numerical Stability}{119}{chapter.8}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:numerical-stability}{{8}{119}{Numerical Stability}{chapter.8}{}}
+\newlabel{ch:numerical-stability@cref}{{[chapter][8][]8}{[1][119][]119}}
+\@writefile{toc}{\contentsline {section}{\numberline {8.1}Importance of Numerical Stability in Survival Models}{119}{section.8.1}\protected@file@percent }
+\abx@aux@page{57}{119}
+\abx@aux@page{58}{119}
+\abx@aux@page{59}{119}
+\abx@aux@page{60}{119}
+\@writefile{toc}{\contentsline {section}{\numberline {8.2}Common Numerical Challenges}{119}{section.8.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.2.1}Underflow and Overflow}{120}{subsection.8.2.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8.1}{\ignorespaces Floating-point representation ranges for 32-bit floats. Values outside the normal range suffer from underflow or overflow, leading to precision loss or invalid operations.}}{120}{figure.8.1}\protected@file@percent }
+\newlabel{fig:float-ranges}{{8.1}{120}{Floating-point representation ranges for 32-bit floats. Values outside the normal range suffer from underflow or overflow, leading to precision loss or invalid operations}{figure.8.1}{}}
+\newlabel{fig:float-ranges@cref}{{[figure][1][8]8.1}{[1][120][]120}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.2.2}Precision Loss and Invalid Operations}{120}{subsection.8.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8.3}Critical Calculations in Survival Models}{121}{section.8.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.3.1}Hazard Function Calculations}{121}{subsection.8.3.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8.2}{\ignorespaces Weibull hazard functions with different shape parameters. When $\alpha < 1$ (blue), the hazard explodes as $t$ approaches zero, creating numerical instability.}}{122}{figure.8.2}\protected@file@percent }
+\newlabel{fig:weibull-hazards}{{8.2}{122}{Weibull hazard functions with different shape parameters. When $\alpha < 1$ (blue), the hazard explodes as $t$ approaches zero, creating numerical instability}{figure.8.2}{}}
+\newlabel{fig:weibull-hazards@cref}{{[figure][2][8]8.2}{[1][121][]122}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.3.2}Mixture Model Challenges}{122}{subsection.8.3.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8.3}{\ignorespaces A mixture model combines multiple component distributions. Near the tails, some components' densities can be orders of magnitude smaller than others, leading to numerical challenges.}}{123}{figure.8.3}\protected@file@percent }
+\newlabel{fig:mixture-densities}{{8.3}{123}{A mixture model combines multiple component distributions. Near the tails, some components' densities can be orders of magnitude smaller than others, leading to numerical challenges}{figure.8.3}{}}
+\newlabel{fig:mixture-densities@cref}{{[figure][3][8]8.3}{[1][123][]123}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.3.3}Gradient Computation Challenges}{123}{subsection.8.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8.4}Solutions for Numerical Stability}{123}{section.8.4}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8.4}{\ignorespaces NaN propagation in the backward pass: a single numerical error in gradient computation propagates and corrupts all parameter updates.}}{124}{figure.8.4}\protected@file@percent }
+\newlabel{fig:nan-gradient-propagation}{{8.4}{124}{NaN propagation in the backward pass: a single numerical error in gradient computation propagates and corrupts all parameter updates}{figure.8.4}{}}
+\newlabel{fig:nan-gradient-propagation@cref}{{[figure][4][8]8.4}{[1][123][]124}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.4.1}Log-Domain Calculations}{124}{subsection.8.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.4.2}Log-Sum-Exp Trick}{125}{subsection.8.4.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8.5}{\ignorespaces The log-sum-exp trick: By subtracting the maximum value before exponentiation, all values in the exponential become $\leq 1$, preventing overflow while maintaining mathematical equivalence.}}{126}{figure.8.5}\protected@file@percent }
+\newlabel{fig:log-sum-exp}{{8.5}{126}{The log-sum-exp trick: By subtracting the maximum value before exponentiation, all values in the exponential become $\leq 1$, preventing overflow while maintaining mathematical equivalence}{figure.8.5}{}}
+\newlabel{fig:log-sum-exp@cref}{{[figure][5][8]8.5}{[1][125][]126}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.4.3}Gradient Detachment Strategy}{127}{subsection.8.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.4.4}Case Study: Weibull Hazard Stabilization}{127}{subsection.8.4.4}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8.6}{\ignorespaces Gradient detachment with safe masking: Input values are classified into safe and unsafe regions, with a separate computation path for each, then combined using masks to ensure stability.}}{128}{figure.8.6}\protected@file@percent }
+\newlabel{fig:gradient-detachment}{{8.6}{128}{Gradient detachment with safe masking: Input values are classified into safe and unsafe regions, with a separate computation path for each, then combined using masks to ensure stability}{figure.8.6}{}}
+\newlabel{fig:gradient-detachment@cref}{{[figure][6][8]8.6}{[1][127][]128}}
+\@writefile{toc}{\contentsline {section}{\numberline {8.5}Loss Function Stability Techniques}{128}{section.8.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.5.1}NaN Detection and Reporting}{129}{subsection.8.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.5.2}Safe Loss Aggregation}{129}{subsection.8.5.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.5.3}Fallback Mechanism}{129}{subsection.8.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {8.6}Testing for Numerical Stability}{130}{section.8.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.6.1}Extreme Value Testing}{130}{subsection.8.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.6.2}Gradient Testing}{130}{subsection.8.6.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.6.3}Comprehensive Test Coverage}{130}{subsection.8.6.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8.7}{\ignorespaces A comprehensive testing pipeline for ensuring numerical stability, combining automated tests with manual verification of edge cases.}}{131}{figure.8.7}\protected@file@percent }
+\newlabel{fig:testing-pipeline}{{8.7}{131}{A comprehensive testing pipeline for ensuring numerical stability, combining automated tests with manual verification of edge cases}{figure.8.7}{}}
+\newlabel{fig:testing-pipeline@cref}{{[figure][7][8]8.7}{[1][130][]131}}
+\@writefile{toc}{\contentsline {section}{\numberline {8.7}The Importance of Numerical Stability for Deployment}{131}{section.8.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.7.1}Critical Applications}{131}{subsection.8.7.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8.8}{\ignorespaces The impact chain of numerical instability: Fundamental numerical issues propagate upward through the model to affect critical applications and ultimately patient outcomes.}}{131}{figure.8.8}\protected@file@percent }
+\newlabel{fig:stability-impact}{{8.8}{131}{The impact chain of numerical instability: Fundamental numerical issues propagate upward through the model to affect critical applications and ultimately patient outcomes}{figure.8.8}{}}
+\newlabel{fig:stability-impact@cref}{{[figure][8][8]8.8}{[1][131][]131}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {8.7.2}Technical Benefits}{132}{subsection.8.7.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {8.9}{\ignorespaces Comparison of outcomes between numerically stable and unstable models. Stable models are reliable, deployable, and generalizable, while unstable models suffer from crashes, invalid results, and training failures.}}{132}{figure.8.9}\protected@file@percent }
+\newlabel{fig:stability-comparison}{{8.9}{132}{Comparison of outcomes between numerically stable and unstable models. Stable models are reliable, deployable, and generalizable, while unstable models suffer from crashes, invalid results, and training failures}{figure.8.9}{}}
+\newlabel{fig:stability-comparison@cref}{{[figure][9][8]8.9}{[1][132][]132}}
+\@writefile{toc}{\contentsline {section}{\numberline {8.8}Summary}{132}{section.8.8}\protected@file@percent }
+\abx@aux@cite{0}{katzman2018}
+\abx@aux@segm{0}{0}{katzman2018}
+\abx@aux@cite{0}{lee2018}
+\abx@aux@segm{0}{0}{lee2018}
+\abx@aux@cite{0}{radfar2022}
+\abx@aux@segm{0}{0}{radfar2022}
+\abx@aux@cite{0}{rudin2022}
+\abx@aux@segm{0}{0}{rudin2022}
+\abx@aux@cite{0}{kuo2020}
+\abx@aux@segm{0}{0}{kuo2020}
+\abx@aux@cite{0}{ghassemi2022}
+\abx@aux@segm{0}{0}{ghassemi2022}
+\abx@aux@cite{0}{karimi2021}
+\abx@aux@segm{0}{0}{karimi2021}
+\@writefile{toc}{\contentsline {chapter}{\numberline {9}Expert Knowledge Integration}{135}{chapter.9}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:expert-knowledge}{{9}{135}{Expert Knowledge Integration}{chapter.9}{}}
+\newlabel{ch:expert-knowledge@cref}{{[chapter][9][]9}{[1][135][]135}}
+\@writefile{toc}{\contentsline {section}{\numberline {9.1}The Importance of Expert Knowledge in Survival Analysis}{135}{section.9.1}\protected@file@percent }
+\abx@aux@page{61}{135}
+\abx@aux@page{62}{135}
+\abx@aux@page{63}{135}
+\abx@aux@page{64}{135}
+\abx@aux@page{65}{135}
+\abx@aux@page{66}{135}
+\abx@aux@page{67}{135}
+\@writefile{toc}{\contentsline {section}{\numberline {9.2}Why Expert Knowledge Matters in Survival Analysis}{135}{section.9.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.2.1}Limitations of Data-Only Approaches}{135}{subsection.9.2.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {9.1}{\ignorespaces The performance gap between data-only and expert-guided models. Expert knowledge provides the greatest benefit with smaller datasets but continues to improve performance even as data size increases.}}{136}{figure.9.1}\protected@file@percent }
+\newlabel{fig:expert-knowledge-impact}{{9.1}{136}{The performance gap between data-only and expert-guided models. Expert knowledge provides the greatest benefit with smaller datasets but continues to improve performance even as data size increases}{figure.9.1}{}}
+\newlabel{fig:expert-knowledge-impact@cref}{{[figure][1][9]9.1}{[1][136][]136}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.2.2}The Gap Between Data and Understanding}{136}{subsection.9.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9.3}Types of Expert Knowledge in Survival Analysis}{137}{section.9.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.3.1}Forms of Domain Expertise}{137}{subsection.9.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Distributional Knowledge}{137}{section*.67}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Feature Relationships}{137}{section*.68}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Temporal Patterns}{138}{section*.69}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Event Dependencies}{138}{section*.70}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Population Heterogeneity}{138}{section*.71}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Biological Mechanisms}{138}{section*.72}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.3.2}Sources of Expert Knowledge}{139}{subsection.9.3.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {9.2}{\ignorespaces Sources of expert knowledge for integration into survival models. Multiple sources contribute to a comprehensive understanding that can guide model development.}}{139}{figure.9.2}\protected@file@percent }
+\newlabel{fig:expert-knowledge-sources}{{9.2}{139}{Sources of expert knowledge for integration into survival models. Multiple sources contribute to a comprehensive understanding that can guide model development}{figure.9.2}{}}
+\newlabel{fig:expert-knowledge-sources@cref}{{[figure][2][9]9.2}{[1][139][]139}}
+\@writefile{toc}{\contentsline {section}{\numberline {9.4}Challenges in Knowledge Integration}{139}{section.9.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.4.1}Formalization Challenges}{139}{subsection.9.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.4.2}Integration Challenges}{140}{subsection.9.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.4.3}Validation Challenges}{140}{subsection.9.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9.5}Knowledge Formalization Techniques}{140}{section.9.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.5.1}Elicitation Methods}{141}{subsection.9.5.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {9.3}{\ignorespaces The knowledge formalization process converts qualitative expert insights into quantitative model constraints through structured elicitation and representation techniques.}}{141}{figure.9.3}\protected@file@percent }
+\newlabel{fig:knowledge-formalization}{{9.3}{141}{The knowledge formalization process converts qualitative expert insights into quantitative model constraints through structured elicitation and representation techniques}{figure.9.3}{}}
+\newlabel{fig:knowledge-formalization@cref}{{[figure][3][9]9.3}{[1][141][]141}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.5.2}Bayesian Frameworks}{141}{subsection.9.5.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9.6}Parameter Constraints in Survival Models}{142}{section.9.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.6.1}Disease-Specific Shape Parameters}{142}{subsection.9.6.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.6.2}Implementation Approaches for Parameter Constraints}{142}{subsection.9.6.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {9.4}{\ignorespaces Expert-guided hazard shapes for different disease types. Cancer typically shows increasing hazard (red), chronic conditions often have constant hazard (blue), and infectious complications frequently show decreasing hazard over time (green).}}{143}{figure.9.4}\protected@file@percent }
+\newlabel{fig:expert-hazard-shapes}{{9.4}{143}{Expert-guided hazard shapes for different disease types. Cancer typically shows increasing hazard (red), chronic conditions often have constant hazard (blue), and infectious complications frequently show decreasing hazard over time (green)}{figure.9.4}{}}
+\newlabel{fig:expert-hazard-shapes@cref}{{[figure][4][9]9.4}{[1][143][]143}}
+\@writefile{toc}{\contentsline {section}{\numberline {9.7}Feature-Level Expert Constraints}{143}{section.9.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.7.1}Knowledge About Risk Factors}{143}{subsection.9.7.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.7.2}Monotonicity Constraints}{144}{subsection.9.7.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {9.5}{\ignorespaces Comparison of unconstrained (blue) and monotonically constrained (red) feature effects. The unconstrained function can learn arbitrary patterns, while the monotonic constraint ensures the relationship consistently increases with the feature value, aligning with expert knowledge.}}{144}{figure.9.5}\protected@file@percent }
+\newlabel{fig:monotonic-constraints}{{9.5}{144}{Comparison of unconstrained (blue) and monotonically constrained (red) feature effects. The unconstrained function can learn arbitrary patterns, while the monotonic constraint ensures the relationship consistently increases with the feature value, aligning with expert knowledge}{figure.9.5}{}}
+\newlabel{fig:monotonic-constraints@cref}{{[figure][5][9]9.5}{[1][144][]144}}
+\@writefile{toc}{\contentsline {section}{\numberline {9.8}Expert-Guided Neural Architectures}{144}{section.9.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.8.1}Structure Constraints for Networks}{145}{subsection.9.8.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.8.2}Dedicated Architecture for Expert Constraints}{145}{subsection.9.8.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {9.6}{\ignorespaces Architecture for expert knowledge integration into a neural survival model. Expert knowledge influences the network at multiple levels: constraining intermediate representations, guiding feature learning, and directly shaping distribution parameters.}}{145}{figure.9.6}\protected@file@percent }
+\newlabel{fig:expert-architecture}{{9.6}{145}{Architecture for expert knowledge integration into a neural survival model. Expert knowledge influences the network at multiple levels: constraining intermediate representations, guiding feature learning, and directly shaping distribution parameters}{figure.9.6}{}}
+\newlabel{fig:expert-architecture@cref}{{[figure][6][9]9.6}{[1][145][]145}}
+\@writefile{toc}{\contentsline {section}{\numberline {9.9}Expert Knowledge as Regularization}{146}{section.9.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.9.1}Training with Expert Priors}{146}{subsection.9.9.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.9.2}Common Regularization Forms}{146}{subsection.9.9.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9.10}Knowledge Distillation from Expert Models}{146}{section.9.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.10.1}Model Distillation Process}{147}{subsection.9.10.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {9.7}{\ignorespaces Knowledge distillation process. A simple, expert-developed clinical model serves as a teacher for a more complex neural survival model, transferring domain knowledge while maintaining the flexibility of deep learning approaches.}}{147}{figure.9.7}\protected@file@percent }
+\newlabel{fig:knowledge-distillation}{{9.7}{147}{Knowledge distillation process. A simple, expert-developed clinical model serves as a teacher for a more complex neural survival model, transferring domain knowledge while maintaining the flexibility of deep learning approaches}{figure.9.7}{}}
+\newlabel{fig:knowledge-distillation@cref}{{[figure][7][9]9.7}{[1][147][]147}}
+\@writefile{toc}{\contentsline {section}{\numberline {9.11}Expert-Guided Ensemble Methods}{147}{section.9.11}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.11.1}Combining Models with Expert Weights}{148}{subsection.9.11.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9.12}Case Study: Expert-Guided MENSA for Cardiovascular Disease}{148}{section.9.12}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.12.1}Problem: Complex Dependencies in Cardiovascular Disease}{148}{subsection.9.12.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.12.2}Expert Knowledge Integration}{149}{subsection.9.12.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.12.3}Results and Evaluation}{149}{subsection.9.12.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9.13}Integrating Expert Knowledge in the Workflow}{149}{section.9.13}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {9.8}{\ignorespaces Calibration plot comparing standard MENSA (blue) and expert-guided MENSA (red). The expert-guided model shows improved alignment with the perfect calibration line (dashed), indicating better agreement between predicted and observed risks.}}{150}{figure.9.8}\protected@file@percent }
+\newlabel{fig:calibration-comparison}{{9.8}{150}{Calibration plot comparing standard MENSA (blue) and expert-guided MENSA (red). The expert-guided model shows improved alignment with the perfect calibration line (dashed), indicating better agreement between predicted and observed risks}{figure.9.8}{}}
+\newlabel{fig:calibration-comparison@cref}{{[figure][8][9]9.8}{[1][149][]150}}
+\@writefile{toc}{\contentsline {section}{\numberline {9.14}Measuring the Impact of Expert Knowledge}{150}{section.9.14}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.14.1}Evaluation Approaches}{150}{subsection.9.14.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9.15}Challenges and Future Research Directions}{150}{section.9.15}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {9.9}{\ignorespaces Integrated workflow for expert knowledge in survival modeling. Expert knowledge and data flow in parallel through the modeling process, with expertise informing architecture design, parameter constraints, and training regularization.}}{151}{figure.9.9}\protected@file@percent }
+\newlabel{fig:expert-workflow}{{9.9}{151}{Integrated workflow for expert knowledge in survival modeling. Expert knowledge and data flow in parallel through the modeling process, with expertise informing architecture design, parameter constraints, and training regularization}{figure.9.9}{}}
+\newlabel{fig:expert-workflow@cref}{{[figure][9][9]9.9}{[1][149][]151}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.15.1}Current Limitations}{152}{subsection.9.15.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {9.15.2}Future Research Directions}{152}{subsection.9.15.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {9.16}Summary: The Value of Expert Knowledge}{152}{section.9.16}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {10}Conclusion}{155}{chapter.10}\protected@file@percent }
+\@writefile{lof}{\addvspace {10\p@ }}
+\@writefile{lot}{\addvspace {10\p@ }}
+\newlabel{ch:conclusion}{{10}{155}{Conclusion}{chapter.10}{}}
+\newlabel{ch:conclusion@cref}{{[chapter][10][]10}{[1][155][]155}}
+\@writefile{toc}{\contentsline {section}{\numberline {10.1}Conclusion}{155}{section.10.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {10.1.1}Key Contributions and Insights}{155}{subsection.10.1.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Architectural Innovations}{155}{section*.73}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Loss Function Innovations}{156}{section*.74}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Incorporation of Domain Expertise}{156}{section*.75}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {10.1.2}Current Challenges}{156}{subsection.10.1.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Interpretability and Explainability}{157}{section*.76}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Data Limitations}{157}{section*.77}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Evaluation Metrics and Benchmarking}{157}{section*.78}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {10.1.3}Future Directions}{157}{subsection.10.1.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Integration with Multi-modal Data}{158}{section*.79}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Causal Inference for Survival Outcomes}{158}{section*.80}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Federated and Privacy-Preserving Learning}{158}{section*.81}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {10.1.4}Practical Implementation Guidelines}{158}{subsection.10.1.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Model Selection}{159}{section*.82}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Implementation Best Practices}{159}{section*.83}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Deployment Considerations}{159}{section*.84}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {10.1.5}Ethical Considerations}{159}{subsection.10.1.5}\protected@file@percent }
+\abx@aux@cite{0}{lee2018}
+\abx@aux@segm{0}{0}{lee2018}
+\abx@aux@cite{0}{nagpal2021dsm}
+\abx@aux@segm{0}{0}{nagpal2021dsm}
+\abx@aux@cite{0}{kvamme2019}
+\abx@aux@segm{0}{0}{kvamme2019}
+\abx@aux@cite{0}{zhong2021}
+\abx@aux@segm{0}{0}{zhong2021}
+\abx@aux@cite{0}{chapfuwa2018}
+\abx@aux@segm{0}{0}{chapfuwa2018}
+\abx@aux@cite{0}{nagpal2021deepsurv}
+\abx@aux@segm{0}{0}{nagpal2021deepsurv}
+\@writefile{toc}{\contentsline {subsubsection}{Fairness and Equity}{160}{section*.85}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Transparency and Accountability}{160}{section*.86}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{Patient Autonomy and Shared Decision-Making}{160}{section*.87}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {10.1.6}Concluding Remarks}{160}{subsection.10.1.6}\protected@file@percent }
+\abx@aux@page{68}{160}
+\abx@aux@page{69}{160}
+\abx@aux@page{70}{160}
+\abx@aux@page{71}{161}
+\abx@aux@page{72}{161}
+\abx@aux@page{73}{161}
+\@writefile{toc}{\contentsline {chapter}{Bibliography}{163}{chapter*.88}\protected@file@percent }
+\abx@aux@page{74}{163}
+\abx@aux@page{75}{163}
+\abx@aux@page{76}{163}
+\abx@aux@page{77}{163}
+\abx@aux@page{78}{163}
+\abx@aux@page{79}{163}
+\abx@aux@page{80}{163}
+\abx@aux@page{81}{163}
+\abx@aux@page{82}{163}
+\abx@aux@page{83}{163}
+\abx@aux@page{84}{163}
+\abx@aux@page{85}{163}
+\abx@aux@page{86}{163}
+\abx@aux@page{87}{163}
+\abx@aux@page{88}{163}
+\abx@aux@page{89}{163}
+\abx@aux@page{90}{164}
+\abx@aux@page{91}{164}
+\abx@aux@page{92}{164}
+\abx@aux@page{93}{164}
+\abx@aux@page{94}{164}
+\abx@aux@page{95}{164}
+\abx@aux@page{96}{164}
+\abx@aux@page{97}{164}
+\abx@aux@page{98}{164}
+\abx@aux@page{99}{164}
+\abx@aux@page{100}{164}
+\abx@aux@page{101}{164}
+\abx@aux@page{102}{164}
+\abx@aux@page{103}{164}
+\abx@aux@page{104}{164}
+\abx@aux@page{105}{164}
+\abx@aux@page{106}{164}
+\abx@aux@page{107}{164}
+\abx@aux@page{108}{164}
+\abx@aux@page{109}{165}
+\abx@aux@page{110}{165}
+\abx@aux@page{111}{165}
+\abx@aux@page{112}{165}
+\abx@aux@page{113}{165}
+\abx@aux@page{114}{165}
+\abx@aux@page{115}{165}
+\abx@aux@read@bbl@mdfivesum{32C04F5CE7D0B0C36CF1E0BA3BB0C8A8}
+\abx@aux@defaultrefcontext{0}{antolini2005}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{austin2016}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{biganzoli2001}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{bishop2006}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{burges2005}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{chapfuwa2018}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{cox1972}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{fine1999}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{fotso2018}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{gensheimer2019}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{ghassemi2022}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{goldberg1991}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{graf1999}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{hanin2022}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{harrell1982}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{he2020momentum}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{ibrahim2001}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{kaplan1958}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{karimi2021}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{katzman2018}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{kendall2018}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{kleinbaum2012}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{koenker2001}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{koller2012}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{kuo2020}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{kvamme2021survrnc}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{kvamme2019}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{lee2018}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{lin2017focal}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{mclachlan1988}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{nagpal2021dsm}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{nagpal2021deepsurv}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{prentice1978}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{radfar2022}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{ranganath2016}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{rudin2022}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{steiner2021}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{tagasovska2019}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{wiegrebe2023}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{xia2008}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{zhong2020}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{zhong2021}{nyt/global//global/global}
+\gdef \@abspage@last{177}

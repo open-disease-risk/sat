@@ -1,0 +1,11 @@
+- learning_rate=0.0004929160836785712
+- weight_decay=0.03864403689527847
+- transformer_hidden_size=32
+- transformer_intermediate_size=64
+- transformer_num_attention_heads=2
+- transformer_num_hidden_layers=2
+- survival_intermediate_size=8
+- token_emb=4
+- sentence_emb=3
+- experiments=hsa_synthetic/survival
+- sweep=survival
