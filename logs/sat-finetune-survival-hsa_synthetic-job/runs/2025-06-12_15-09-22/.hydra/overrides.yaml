@@ -1,2 +1,0 @@
-- experiments=hsa_synthetic/survival
-- tasks.metrics=brier_cindex_within_cindex

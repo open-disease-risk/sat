@@ -1,6 +1,0 @@
-- experiments=metabric/survival
-- sweep=metabric/survival
-- transformer_hidden_size=16
-- transformer_intermediate_size=64
-- transformer_num_attention_heads=2
-- transformer_num_hidden_layers=2

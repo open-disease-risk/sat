@@ -1,3 +1,0 @@
-trial_number,objective_1,objective_2,learning_rate,sentence_emb,survival_intermediate_size,token_emb,transformer_hidden_size,transformer_intermediate_size,transformer_num_attention_heads,transformer_num_hidden_layers,weight_decay
-15,0.6748068245933297,0.1750175908837226,0.00028141071778163497,1,8,3,32,96,4,4,0.002209409294519883
-19,0.645229664525643,0.0,0.00011320873131291127,1,24,4,32,32,4,4,0.001026369648707569
