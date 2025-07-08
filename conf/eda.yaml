@@ -8,8 +8,8 @@ defaults:
 # Output configuration
 outputs:
   dir: outputs/eda/${dataset}
-  
-# Performance configuration  
+
+# Performance configuration
 performance:
   # Export results as CSV for external visualization
   export_csv: true
@@ -20,62 +20,62 @@ analysis:
   run_distribution_analysis: true
   run_censoring_analysis: true
   run_covariate_analysis: true
-  
+
   # Whether to use covariates in censoring analysis
   use_covariates: true
-  
+
   # Distribution analysis settings
   distributions:
     - weibull
     - lognormal
     - loglogistic
-  
+
   # How many distributions to return as recommendations
   top_recommendations: 2
-  
+
   # Use BIC by default as it penalizes complexity more strongly
   prefer_metric: bic  # 'aic' or 'bic'
-  
+
   # Whether to automatically generate a DSM config file
   create_config: true
-  
+
   # Censoring analysis settings
   censoring:
     # Significance threshold for statistical tests
     alpha: 0.05
-    
+
     # Whether to plot survival functions
     plot_survival_curves: true
-    
+
     # Whether to analyze informative censoring
     analyze_informative_censoring: true
-    
+
   # Covariate analysis settings
   covariates:
     # Optional: explicitly define columns to use as covariates
     # If not provided, will try to infer by excluding known non-feature columns
     # columns: []
-    
+
     # Significance threshold for statistical tests
     alpha: 0.05
-    
+
     # Number of top features to show in importance plots
     top_n_features: 10
-    
+
     # Methods for feature importance
     importance_methods:
       - cox_ph
       - mutual_information
-    
+
     # Methods for risk factor analysis
     risk_factor_methods:
       - univariate_cox
       - correlation
-      
+
     # Visualization settings
     visualizations:
       # Whether to create distribution plots for each covariate
       distribution_plots: true
-      
+
       # Whether to create survival curves stratified by important covariates
       stratified_survival_curves: true

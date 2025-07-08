@@ -727,14 +727,14 @@ Cardiologists provided structured knowledge to enhance the MENSA model:
         \end{array}
     \end{align}
 
-    \item \textbf{Feature importance constraints:} 
+    \item \textbf{Feature importance constraints:}
     Based on established Framingham risk score
     \begin{itemize}
         \item Age, blood pressure, cholesterol given stronger weights
         \item Novel biomarkers allowed more flexibility
     \end{itemize}
 
-    \item \textbf{Parameter constraints:} 
+    \item \textbf{Parameter constraints:}
     Age-dependent hazard shapes for each event
 \end{itemize}
 
@@ -809,33 +809,33 @@ Expert knowledge integration should be a systematic process throughout the model
       \node[box, fill=blue!10] (expert) {Domain Expertise};
       \node[box, fill=blue!10, below=of expert] (formalization) {Knowledge Formalization};
       \node[box, fill=blue!10, below=of formalization] (constraints) {Constraints \& Priors};
-      
+
       % Data side
       \node[box, fill=green!10, right=6cm of expert] (data) {Survival Data};
       \node[box, fill=green!10, below=of data] (preprocessing) {Preprocessing};
       \node[box, fill=green!10, below=of preprocessing] (features) {Feature Engineering};
-      
+
       % Model side (center, bottom)
       \node[box, fill=orange!10, below=3cm of constraints, xshift=3cm] (architecture) {Model Architecture};
       \node[box, fill=orange!10, below=of architecture] (training) {Constrained Training};
       \node[box, fill=orange!10, below=of training] (evaluation) {Evaluation};
-      
+
       % Connections from expert side
       \draw[-latex] (expert) -- (formalization);
       \draw[-latex] (formalization) -- (constraints);
       \draw[-latex] (constraints) -- node[left, align=right] {Shape\\constraints} (architecture);
       \draw[-latex] (constraints) -| node[above, align=center, near start] {Prior\\distributions} (training);
-      
+
       % Connections from data side
       \draw[-latex] (data) -- (preprocessing);
       \draw[-latex] (preprocessing) -- (features);
       \draw[-latex] (features) -| (architecture);
       \draw[-latex] (features) -| (training);
-      
+
       % Model flow
       \draw[-latex] (architecture) -- (training);
       \draw[-latex] (training) -- (evaluation);
-      
+
       % Expert validation
       \draw[-latex] (evaluation) -- ++(0,-1) -| node[below, align=center, near end] {Validation against\\expert knowledge} (expert);
     \end{tikzpicture}

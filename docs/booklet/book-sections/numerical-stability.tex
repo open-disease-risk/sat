@@ -32,7 +32,7 @@ Floating-point arithmetic has inherent limitations in representing very small or
         \item Problem: $\log(S(t))$ becomes $-\infty$
         \item Occurs when values are smaller than minimum representable float ($\approx 10^{-38}$ for float32)
     \end{itemize}
-    
+
     \item \textbf{Overflow:} Occurs when a value becomes too large to be represented, resulting in it being set to infinity.
     \begin{itemize}
         \item Example: $e^x$ for $x > 709$ in float64
@@ -48,16 +48,16 @@ These issues are particularly relevant in survival analysis where we often calcu
     \centering
     \begin{tikzpicture}
         \draw[->,thick] (0,2) -- (8,2) node[right] {value magnitude};
-        
+
         % Underflow region
         \filldraw[blue!15] (0,1) rectangle (2,3);
         \node at (1,3.5) {Underflow};
         \node at (1,0.5) {$< 10^{-38}$};
-        
+
         % Normal region
         \filldraw[green!15] (2,1) rectangle (6,3);
         \node at (4,3.5) {Normal Range};
-        
+
         % Overflow region
         \filldraw[red!15] (6,1) rectangle (8,3);
         \node at (7,3.5) {Overflow};
@@ -127,16 +127,16 @@ The hazard function, defined as $h(t) = \frac{f(t)}{S(t)}$, is a common source o
             ymax=12,
             legend pos=north east,
           ]
-          
+
           % Weibull hazard with alpha < 1
           \addplot[blue, thick] {0.5*x^(-0.5)};
-          
+
           % Weibull hazard with alpha = 1
           \addplot[green, thick] {1};
-          
+
           % Weibull hazard with alpha > 1
           \addplot[red, thick] {1.5*x^0.5};
-          
+
           \legend{$\alpha = 0.5$, $\alpha = 1.0$, $\alpha = 1.5$}
         \end{axis}
     \end{tikzpicture}
@@ -180,7 +180,7 @@ Mixture models like DSM face additional numerical challenges:
         \item Sum becomes effectively zero, leading to $\log(0) = -\infty$
         \item Common for points in tails of all components
     \end{itemize}
-    
+
     \item \textbf{Component scale disparity:} Component densities can span many orders of magnitude
     \begin{itemize}
         \item Some components contribute negligibly
@@ -202,15 +202,15 @@ Mixture models like DSM face additional numerical challenges:
             ymax=1,
             legend pos=north east,
           ]
-          
+
           % Component densities
           \addplot[blue, thick] {0.8*exp(-(x-2)^2/0.5)};
           \addplot[red, thick] {0.4*exp(-(x-5)^2/1)};
           \addplot[green, thick] {0.2*exp(-(x-8)^2/2)};
-          
+
           % Mixture density
           \addplot[black, thick, dashed] {0.5*0.8*exp(-(x-2)^2/0.5) + 0.3*0.4*exp(-(x-5)^2/1) + 0.2*0.2*exp(-(x-8)^2/2)};
-          
+
           \legend{Component 1, Component 2, Component 3, Mixture}
         \end{axis}
     \end{tikzpicture}
@@ -230,14 +230,14 @@ Automatic differentiation in deep learning frameworks produces gradients that ca
         \item For very negative $x$, gradient vanishes
         \item Example: $x = 100 \Rightarrow e^x \approx 10^{43} \Rightarrow \nabla_x e^x \approx 10^{43}$
     \end{itemize}
-    
+
     \item \textbf{Weibull-specific gradient issues:}
     \begin{itemize}
         \item Shape parameter gradient scales with time values
         \item Can lead to instability with diverse time ranges
         \item Extreme parameter values exacerbate gradient issues
     \end{itemize}
-    
+
     \item \textbf{NaN propagation in gradients:}
     \begin{itemize}
         \item One invalid operation can corrupt the entire backward pass
@@ -253,23 +253,23 @@ Automatic differentiation in deep learning frameworks produces gradients that ca
         \node[draw, rounded corners, fill=blue!10, minimum width=3cm, minimum height=0.8cm] (input) at (0,0) {Parameter Inputs};
         \node[draw, rounded corners, fill=blue!10, minimum width=3cm, minimum height=0.8cm] (forward) at (0,-1.5) {Forward Computation};
         \node[draw, rounded corners, fill=blue!10, minimum width=3cm, minimum height=0.8cm] (loss) at (0,-3) {Loss Value};
-        
+
         % Backward computation (gradient)
         \node[draw, rounded corners, fill=red!10, minimum width=3cm, minimum height=0.8cm] (dloss) at (5,-3) {$\nabla$ Loss};
         \node[draw, rounded corners, fill=red!10, minimum width=3cm, minimum height=0.8cm] (dforward) at (5,-1.5) {$\nabla$ Computation};
         \node[draw, rounded corners, fill=red!10, minimum width=3cm, minimum height=0.8cm] (dparam) at (5,0) {$\nabla$ Parameters};
-        
+
         % NaN contamination
         \node[draw, star, fill=yellow, inner sep=1pt] at (5,-1.5) {};
         \node[text width=3cm] at (8,-1.5) {NaN generated here};
-        
+
         % Connect nodes
         \draw[->, thick] (input) -- (forward);
         \draw[->, thick] (forward) -- (loss);
         \draw[->, thick] (loss) -- (dloss);
         \draw[->, thick] (dloss) -- (dforward);
         \draw[->, thick, red, dashed] (dforward) -- (dparam) node[midway, right] {NaN propagation};
-        
+
         % Draw x through whole gradient path to indicate corruption
         \draw[red, thick, line width=1pt] (3.5,-3.5) -- (6.5,0.5);
         \draw[red, thick, line width=1pt] (3.5,0.5) -- (6.5,-3.5);
@@ -355,23 +355,23 @@ This technique subtracts the maximum value before exponentiation, preventing ove
     \begin{tikzpicture}
         \draw[->,thick] (0,0) -- (8,0) node[right] {$z$};
         \draw[->,thick] (0,0) -- (0,4) node[above] {$e^z$};
-        
+
         % Original values
         \filldraw[blue] (1,0.1) circle (2pt) node[below] {$z_1$};
         \filldraw[blue] (3,0.1) circle (2pt) node[below] {$z_2$};
         \filldraw[blue] (6,0.1) circle (2pt) node[below] {$z_3 = a$};
-        
+
         % Exponential curve
         \draw[domain=0:6.2,smooth,variable=\x,blue] plot ({\x},{0.2*exp(\x-1)});
-        
+
         % Shifted values
         \filldraw[red] (1,0.1) circle (2pt) node[above left] {$z_1-a$};
         \filldraw[red] (3,0.1) circle (2pt) node[above left] {$z_2-a$};
         \filldraw[red] (6,0.1) circle (2pt) node[above left] {$z_3-a=0$};
-        
+
         % Shifted exponential (manageable values)
         \draw[domain=0:6.2,smooth,variable=\x,red] plot ({\x},{0.2*exp(\x-6)});
-        
+
         \node[text width=4cm] at (4,3) {Shifting by max value keeps exponentials manageable};
     \end{tikzpicture}
     \caption{The log-sum-exp trick: By subtracting the maximum value before exponentiation, all values in the exponential become $\leq 1$, preventing overflow while maintaining mathematical equivalence.}
@@ -435,18 +435,18 @@ This approach:
         % Visualization of the safe masking approach
         % Input and branches
         \node[draw, circle, fill=blue!10, minimum size=1cm] (input) at (0,0) {Input};
-        
+
         % Two computation paths
         \node[draw, ellipse, fill=green!10, minimum width=2cm, minimum height=1cm] (normal) at (-1.5,-2) {Normal Path};
         \node[draw, ellipse, fill=yellow!10, minimum width=2cm, minimum height=1cm] (fallback) at (1.5,-2) {Fallback Path};
-        
+
         % Masks
         \node[draw, ellipse, fill=blue!10, minimum width=1.5cm, minimum height=0.8cm] (safe) at (-2.5,-0.8) {Safe Mask};
         \node[draw, ellipse, fill=blue!10, minimum width=1.5cm, minimum height=0.8cm] (unsafe) at (2.5,-0.8) {Unsafe Mask};
-        
+
         % Output combination
         \node[draw, ellipse, fill=blue!10, minimum width=2cm, minimum height=1cm] (output) at (0,-4) {Combined Result};
-        
+
         % Arrows
         \draw[->, thick] (input) -- (normal);
         \draw[->, thick] (input) -- (fallback);
@@ -456,7 +456,7 @@ This approach:
         \draw[->, thick] (fallback) -- node[right] {$\times$} (output);
         \draw[->, thick, dashed] (safe) -- (-1.5,-3);
         \draw[->, thick, dashed] (unsafe) -- (1.5,-3);
-        
+
         % Formula at bottom
         \node[text width=6cm, align=center] at (0,-5) {result = safe\_mask $\times$ normal\_result + unsafe\_mask $\times$ fallback};
     \end{tikzpicture}
@@ -562,11 +562,11 @@ Test models with input values at the extremes of expected ranges:
         \item Test with very large $t$ (e.g., $10^{10}$)
         \item Check edge cases where $S(t) \approx 0$ or $S(t) \approx 1$
     \end{itemize}
-    
+
     \item \textbf{Boundary shape parameters:}
     \begin{itemize}
         \item Test with $\alpha$ very close to 0 (e.g., 0.01)
-        \item Test with $\alpha$ near 1.0 (important transition point) 
+        \item Test with $\alpha$ near 1.0 (important transition point)
         \item Test with very large $\alpha$ values (e.g., 20+)
     \end{itemize}
 \end{itemize}
@@ -582,7 +582,7 @@ Explicitly test the backward pass to ensure stable gradient computation:
         \item Ensure gradients are finite for all parameters
         \item Compare analytical vs. numerical gradients
     \end{itemize}
-    
+
     \item \textbf{Gradient monitoring during training:}
     \begin{itemize}
         \item Track gradient norms over training epochs
@@ -609,14 +609,14 @@ Ensure test coverage across all critical aspects of the model:
     \begin{tikzpicture}
         % Create a test pipeline visualization
         \node[draw, rectangle, fill=blue!10, minimum width=3cm, minimum height=0.8cm] (code) at (0,0) {Model Code};
-        
+
         \node[draw, rectangle, fill=orange!10, minimum width=2.5cm, minimum height=0.8cm] (tests) at (0,-1.5) {Test Suite};
-        
+
         \node[draw, rectangle, fill=green!10, minimum width=2.8cm, minimum height=0.8cm] (auto) at (-3,-3) {Automated Tests};
         \node[draw, rectangle, fill=yellow!10, minimum width=2.8cm, minimum height=0.8cm] (manual) at (3,-3) {Manual Edge Cases};
-        
+
         \node[draw, rectangle, fill=green!10, minimum width=4cm, minimum height=0.8cm] (deploy) at (0,-4.5) {Stable Deployment};
-        
+
         % Connect nodes
         \draw[->, thick] (code) -- (tests);
         \draw[->, thick] (tests) -- (auto);
@@ -648,18 +648,18 @@ In high-stakes domains like healthcare, numerical instability can have serious c
     \begin{tikzpicture}
         % Critical applications stack
         \node[draw, rectangle, fill=red!10, minimum width=5cm, minimum height=0.8cm] (unstable) at (0,0) {Unstable Numerical Foundation};
-        
+
         \node[draw, rectangle, fill=red!10, minimum width=5cm, minimum height=0.8cm] (model) at (0,1) {Unreliable Model Behavior};
-        
+
         \node[draw, rectangle, fill=red!10, minimum width=5cm, minimum height=0.8cm] (application) at (0,2) {Medical Diagnosis Application};
-        
+
         \node[draw, rectangle, fill=red!10, minimum width=5cm, minimum height=0.8cm] (risk) at (0,3) {Patient Risk};
-        
+
         % Arrows connecting layers
         \draw[->, thick] (unstable) -- (model);
         \draw[->, thick] (model) -- (application);
         \draw[->, thick] (application) -- (risk);
-        
+
         % Warning text
         \node[text width=6cm, align=center] at (0,-1.5) {Problems in numerical foundation propagate up to critical applications};
     \end{tikzpicture}
@@ -685,22 +685,22 @@ Beyond preventing catastrophic failures, numerical stability offers several tech
         % Stable vs unstable architecture diagram
         \node[draw, rounded corners, fill=green!10, minimum width=3cm, minimum height=1cm] (stable) at (0,0) {Numerically Stable Model};
         \node[draw, rounded corners, fill=red!10, minimum width=3cm, minimum height=1cm] (unstable) at (6,0) {Unstable Model};
-        
+
         % Benefits of stable models
         \node[draw, rounded corners, fill=blue!10, minimum width=2cm, minimum height=0.8cm] (reliable) at (-2,-2) {Reliable};
         \node[draw, rounded corners, fill=blue!10, minimum width=2cm, minimum height=0.8cm] (deployable) at (0,-2) {Deployable};
         \node[draw, rounded corners, fill=blue!10, minimum width=2cm, minimum height=0.8cm] (generalizable) at (2,-2) {Generalizable};
-        
+
         % Problems with unstable models
         \node[draw, rounded corners, fill=orange!10, minimum width=2cm, minimum height=0.8cm] (crashes) at (4,-2) {Crashes};
         \node[draw, rounded corners, fill=orange!10, minimum width=2cm, minimum height=0.8cm] (errors) at (6,-2) {Invalid Results};
         \node[draw, rounded corners, fill=orange!10, minimum width=2cm, minimum height=0.8cm] (training) at (8,-2) {Training Failures};
-        
+
         % Connect nodes
         \draw[->] (stable) -- (reliable);
         \draw[->] (stable) -- (deployable);
         \draw[->] (stable) -- (generalizable);
-        
+
         \draw[->] (unstable) -- (crashes);
         \draw[->] (unstable) -- (errors);
         \draw[->] (unstable) -- (training);

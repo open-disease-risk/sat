@@ -21,7 +21,7 @@ logger = logging.get_default_logger()
 
 
 @rand.seed
-def objective(cfg: DictConfig) -> float or tuple:
+def objective(cfg: DictConfig) -> float | tuple[float, ...]:
     """Run a single Optuna trial and return the objective value(s).
 
     For single-objective optimization, returns a float.
@@ -115,10 +115,11 @@ def objective(cfg: DictConfig) -> float or tuple:
             f"Number of metrics ({len(metric_names)}) doesn't match number of directions ({len(metric_directions)})"
         )
         # Default to bad values based on directions
-        return [
+        bad_values = [
             float("-inf") if direction == "maximize" else float("inf")
             for direction in metric_directions
         ]
+        return float(bad_values[0]) if len(bad_values) == 1 else tuple(bad_values)
 
     try:
         # Run the finetune function with the current configuration
@@ -132,9 +133,11 @@ def objective(cfg: DictConfig) -> float or tuple:
         missing_metrics = []
 
         for idx, metric_name in enumerate(metric_names):
-            # Check if metric exists in validation
-            if glom(val_metrics, metric_name, default=None) is not None:
-                metric_values.append(glom(val_metrics, metric_name))
+            # Use glom to safely access the metric value
+            metric_value = glom(val_metrics, metric_name, default=None)
+
+            if metric_value is not None:
+                metric_values.append(metric_value)
             else:
                 missing_metrics.append(metric_name)
                 # Add a bad value based on direction

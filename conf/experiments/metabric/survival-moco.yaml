@@ -32,7 +32,7 @@ survival_loss_weight: 1.0
 # MoCo parameters
 moco_buffer_size: 256
 moco_initial_buffer_size: 256
-moco_use_buffer: true 
+moco_use_buffer: true
 moco_batch_weight: 1.0
 moco_buffer_weight: 1.0
 moco_dynamic_buffer: false

@@ -23,9 +23,9 @@ We have examined several innovative model architectures designed specifically fo
 
 \begin{itemize}
     \item \textbf{Deep Survival Machines (DSM)} represents a paradigm shift in parametric survival modeling, offering a mixture-based approach that captures complex survival distributions while providing uncertainty quantification.
-    
+
     \item \textbf{Multi-Event Neural Survival Analysis (MENSA)} extends the DSM framework to handle competing risks with explicit modeling of dependencies between event types, offering a more nuanced view of complex disease progression.
-    
+
     \item \textbf{Non-parametric approaches} like DeepHit provide flexible alternatives that make minimal assumptions about the underlying survival distributions, allowing the data to speak for itself.
 \end{itemize}
 
@@ -37,9 +37,9 @@ The development of specialized loss functions for censored data has been crucial
 
 \begin{itemize}
     \item \textbf{Ranking-based losses} like RankNet, SOAP, and ListMLE directly optimize for discrimination, aligning model training with the concordance index evaluation metric that is central to survival analysis.
-    
+
     \item \textbf{Likelihood-based losses} adapted for neural networks enable proper probabilistic modeling of survival times, capturing uncertainty and producing calibrated predictions.
-    
+
     \item \textbf{Multi-task losses} combine different objectives, allowing models to simultaneously optimize for time prediction, ranking, and calibration.
 \end{itemize}
 
@@ -51,9 +51,9 @@ A recurring theme has been the importance of domain knowledge in survival modeli
 
 \begin{itemize}
     \item \textbf{Parameter constraints} encode known biological and clinical relationships, improving model generalization and robustness.
-    
+
     \item \textbf{Distribution selection} informed by domain knowledge leads to more appropriate modeling choices for specific disease contexts.
-    
+
     \item \textbf{Feature engineering} guided by clinical understanding enhances model interpretability and performance.
 \end{itemize}
 
@@ -69,9 +69,9 @@ While deep learning models offer superior predictive performance, their interpre
 
 \begin{itemize}
     \item \textbf{Black-box nature} of deep networks can limit their acceptance in clinical settings where decisions must be understood and justified.
-    
+
     \item \textbf{Post-hoc explanation methods} like SHAP or LIME struggle with the complex temporal dependencies in survival data.
-    
+
     \item \textbf{Balancing interpretability and performance} remains a persistent challenge, with inherent trade-offs between model complexity and transparency.
 \end{itemize}
 
@@ -83,9 +83,9 @@ The effectiveness of deep learning approaches is often constrained by data avail
 
 \begin{itemize}
     \item \textbf{Sample size limitations} in many medical datasets make it difficult to fully leverage the representational capacity of deep models.
-    
+
     \item \textbf{Selection bias} in observational data can lead to models that perpetuate or amplify existing disparities in healthcare.
-    
+
     \item \textbf{Informative censoring} violates assumptions of many models and can lead to biased estimates if not properly addressed.
 \end{itemize}
 
@@ -97,9 +97,9 @@ The evaluation of survival models presents unique challenges:
 
 \begin{itemize}
     \item \textbf{Multiple competing metrics} (concordance, calibration, Brier score) capture different aspects of performance, making model comparison difficult.
-    
+
     \item \textbf{Lack of standardized benchmarks} with consistent preprocessing and evaluation protocols hampers reproducible comparison of methods.
-    
+
     \item \textbf{Clinical relevance} of statistical metrics is not always clear, leading to a gap between methodological advances and practical utility.
 \end{itemize}
 
@@ -115,9 +115,9 @@ Future survival models will increasingly leverage diverse data types:
 
 \begin{itemize}
     \item \textbf{Imaging data} integration with tabular clinical data can capture complex spatial patterns relevant to disease progression.
-    
+
     \item \textbf{Genomic and molecular data} incorporation can identify biological mechanisms underlying disease trajectories.
-    
+
     \item \textbf{Longitudinal measurements} and time series data can track disease evolution and response to interventions.
 \end{itemize}
 
@@ -129,9 +129,9 @@ Moving beyond prediction to causal understanding is a crucial frontier:
 
 \begin{itemize}
     \item \textbf{Treatment effect estimation} with censored outcomes requires specialized approaches that combine causal inference with survival analysis.
-    
+
     \item \textbf{Counterfactual reasoning} about survival times can inform personalized treatment decisions and policy interventions.
-    
+
     \item \textbf{Mediation analysis} can identify mechanisms through which risk factors influence survival outcomes.
 \end{itemize}
 
@@ -143,9 +143,9 @@ Addressing privacy concerns while leveraging distributed data will be increasing
 
 \begin{itemize}
     \item \textbf{Federated learning} approaches can train models across institutions without sharing raw patient data.
-    
+
     \item \textbf{Differential privacy} techniques can provide formal guarantees against re-identification of individuals.
-    
+
     \item \textbf{Synthetic data generation} can enable sharing of realistic but non-identifiable datasets for benchmarking and method development.
 \end{itemize}
 
@@ -161,9 +161,9 @@ When choosing a survival model for a specific application:
 
 \begin{itemize}
     \item \textbf{Consider the primary objective} (e.g., risk stratification, time prediction, understanding risk factors) to guide the choice of model architecture and loss function.
-    
+
     \item \textbf{Evaluate data characteristics} including sample size, censoring rate, and feature dimensionality to determine the appropriate model complexity.
-    
+
     \item \textbf{Balance interpretability and performance} based on the specific requirements of the application context.
 \end{itemize}
 
@@ -175,11 +175,11 @@ To ensure robust implementation and evaluation:
 
 \begin{itemize}
     \item \textbf{Use proper cross-validation} techniques that account for censoring and preserve the temporal structure of the data.
-    
+
     \item \textbf{Evaluate multiple metrics} capturing different aspects of performance (discrimination, calibration, accuracy).
-    
+
     \item \textbf{Conduct thorough sensitivity analyses} to assess model robustness to different assumptions and hyperparameter choices.
-    
+
     \item \textbf{Compare against appropriate baselines}, including both traditional statistical methods and simpler machine learning approaches.
 \end{itemize}
 
@@ -191,11 +191,11 @@ When deploying survival models in clinical settings:
 
 \begin{itemize}
     \item \textbf{Develop clear visualization and explanation tools} that communicate model predictions and uncertainty to clinicians.
-    
+
     \item \textbf{Implement monitoring systems} to detect distribution shifts and performance degradation over time.
-    
+
     \item \textbf{Establish updating protocols} for retraining models as new data becomes available.
-    
+
     \item \textbf{Integrate with existing clinical workflows} to minimize disruption and maximize adoption.
 \end{itemize}
 
@@ -211,9 +211,9 @@ Ensuring that survival models do not perpetuate or amplify existing health dispa
 
 \begin{itemize}
     \item \textbf{Evaluate model performance across demographic groups} to identify potential disparities in predictive accuracy.
-    
+
     \item \textbf{Consider the representativeness of training data} and potential biases in data collection processes.
-    
+
     \item \textbf{Implement fairness constraints or objectives} during model training when appropriate.
 \end{itemize}
 
@@ -225,9 +225,9 @@ Fostering trust through transparent modeling practices:
 
 \begin{itemize}
     \item \textbf{Document model development decisions} including data preprocessing, feature selection, and hyperparameter choices.
-    
+
     \item \textbf{Disclose limitations and uncertainties} in model predictions to end-users.
-    
+
     \item \textbf{Establish clear lines of responsibility} for model outcomes when used in clinical decision-making.
 \end{itemize}
 
@@ -239,9 +239,9 @@ Respecting patient agency in the use of predictive models:
 
 \begin{itemize}
     \item \textbf{Present survival predictions in a way that supports informed decision-making} rather than dictating courses of action.
-    
+
     \item \textbf{Acknowledge the probabilistic nature of predictions} and the importance of individual preferences in healthcare decisions.
-    
+
     \item \textbf{Involve patients in the design and evaluation} of systems that will use survival predictions.
 \end{itemize}
 

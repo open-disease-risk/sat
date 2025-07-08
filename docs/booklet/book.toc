@@ -1,0 +1,364 @@
+\contentsline {chapter}{\numberline {1}Introduction}{1}{chapter.1}%
+\contentsline {section}{\numberline {1.1}What is Survival Analysis?}{1}{section.1.1}%
+\contentsline {section}{\numberline {1.2}Distinctive Features of Survival Data}{1}{section.1.2}%
+\contentsline {subsection}{\numberline {1.2.1}Censoring}{2}{subsection.1.2.1}%
+\contentsline {subsubsection}{Right Censoring}{2}{section*.3}%
+\contentsline {subsubsection}{Left Censoring}{2}{section*.4}%
+\contentsline {subsubsection}{Interval Censoring}{4}{section*.5}%
+\contentsline {subsection}{\numberline {1.2.2}Time-Varying Effects and Covariates}{4}{subsection.1.2.2}%
+\contentsline {subsection}{\numberline {1.2.3}Multiple Outcomes and Competing Risks}{5}{subsection.1.2.3}%
+\contentsline {section}{\numberline {1.3}Core Questions in Survival Analysis}{5}{section.1.3}%
+\contentsline {subsection}{\numberline {1.3.1}Survival Probability Estimation}{5}{subsection.1.3.1}%
+\contentsline {subsection}{\numberline {1.3.2}Risk Assessment: Hazard Function}{5}{subsection.1.3.2}%
+\contentsline {subsection}{\numberline {1.3.3}Covariate Effects}{6}{subsection.1.3.3}%
+\contentsline {subsection}{\numberline {1.3.4}Group Comparisons}{7}{subsection.1.3.4}%
+\contentsline {subsection}{\numberline {1.3.5}Advanced Questions}{7}{subsection.1.3.5}%
+\contentsline {section}{\numberline {1.4}Traditional Approaches to Survival Analysis}{7}{section.1.4}%
+\contentsline {subsection}{\numberline {1.4.1}Non-Parametric Methods}{7}{subsection.1.4.1}%
+\contentsline {subsubsection}{Kaplan-Meier Estimator}{7}{section*.6}%
+\contentsline {subsubsection}{Log-Rank Test}{8}{section*.7}%
+\contentsline {subsection}{\numberline {1.4.2}Semi-Parametric Methods}{8}{subsection.1.4.2}%
+\contentsline {subsubsection}{Cox Proportional Hazards Model}{8}{section*.8}%
+\contentsline {subsubsection}{Extensions of the Cox Model}{9}{section*.9}%
+\contentsline {subsection}{\numberline {1.4.3}Fully Parametric Methods}{10}{subsection.1.4.3}%
+\contentsline {subsubsection}{Common Parametric Distributions}{10}{section*.10}%
+\contentsline {paragraph}{Exponential Distribution}{10}{section*.11}%
+\contentsline {paragraph}{Weibull Distribution}{10}{section*.12}%
+\contentsline {paragraph}{Log-normal and Log-logistic Distributions}{10}{section*.13}%
+\contentsline {paragraph}{Generalized Gamma Distribution}{10}{section*.14}%
+\contentsline {subsubsection}{Parametric Regression Models}{11}{section*.15}%
+\contentsline {section}{\numberline {1.5}Limitations of Traditional Methods}{11}{section.1.5}%
+\contentsline {subsection}{\numberline {1.5.1}Modeling Constraints}{11}{subsection.1.5.1}%
+\contentsline {subsubsection}{Linear Relationship Assumptions}{11}{section*.16}%
+\contentsline {subsubsection}{Restrictive Functional Forms}{12}{section*.17}%
+\contentsline {subsection}{\numberline {1.5.2}High-Dimensional Data Challenges}{12}{subsection.1.5.2}%
+\contentsline {subsection}{\numberline {1.5.3}Time-Varying Challenges}{12}{subsection.1.5.3}%
+\contentsline {section}{\numberline {1.6}Modern Deep Learning Approaches}{12}{section.1.6}%
+\contentsline {subsection}{\numberline {1.6.1}Neural Cox Extensions}{12}{subsection.1.6.1}%
+\contentsline {subsection}{\numberline {1.6.2}Discrete-Time Neural Survival Models}{13}{subsection.1.6.2}%
+\contentsline {subsection}{\numberline {1.6.3}Deep Parametric Survival Models}{13}{subsection.1.6.3}%
+\contentsline {subsection}{\numberline {1.6.4}Representation-Focused Models}{13}{subsection.1.6.4}%
+\contentsline {section}{\numberline {1.7}Advantages of Deep Learning for Survival Analysis}{13}{section.1.7}%
+\contentsline {subsection}{\numberline {1.7.1}Feature Learning}{14}{subsection.1.7.1}%
+\contentsline {subsection}{\numberline {1.7.2}Flexible Relationship Modeling}{14}{subsection.1.7.2}%
+\contentsline {subsection}{\numberline {1.7.3}Beyond Proportional Hazards}{14}{subsection.1.7.3}%
+\contentsline {subsection}{\numberline {1.7.4}Multi-Event Modeling}{14}{subsection.1.7.4}%
+\contentsline {section}{\numberline {1.8}Course Roadmap}{14}{section.1.8}%
+\contentsline {subsection}{\numberline {1.8.1}Foundations (Chapters 1-3)}{15}{subsection.1.8.1}%
+\contentsline {subsection}{\numberline {1.8.2}Data Representation (Chapter 4)}{15}{subsection.1.8.2}%
+\contentsline {subsection}{\numberline {1.8.3}Deep Survival Models (Chapters 5-7)}{15}{subsection.1.8.3}%
+\contentsline {subsection}{\numberline {1.8.4}Advanced Topics (Chapters 8-9)}{15}{subsection.1.8.4}%
+\contentsline {chapter}{\numberline {2}Motivation and Problem Setting}{17}{chapter.2}%
+\contentsline {section}{\numberline {2.1}The Need for Time-to-Event Analysis}{17}{section.2.1}%
+\contentsline {section}{\numberline {2.2}Applications Across Domains}{17}{section.2.2}%
+\contentsline {subsection}{\numberline {2.2.1}Healthcare Applications}{17}{subsection.2.2.1}%
+\contentsline {subsection}{\numberline {2.2.2}Engineering and Reliability Applications}{18}{subsection.2.2.2}%
+\contentsline {subsection}{\numberline {2.2.3}Business and Economic Applications}{18}{subsection.2.2.3}%
+\contentsline {subsection}{\numberline {2.2.4}Other Diverse Applications}{19}{subsection.2.2.4}%
+\contentsline {section}{\numberline {2.3}Unique Characteristics of Time-to-Event Data}{19}{section.2.3}%
+\contentsline {subsection}{\numberline {2.3.1}Incomplete Observations}{19}{subsection.2.3.1}%
+\contentsline {subsection}{\numberline {2.3.2}Variable Follow-up Durations}{19}{subsection.2.3.2}%
+\contentsline {subsection}{\numberline {2.3.3}Time-Varying Covariates}{20}{subsection.2.3.3}%
+\contentsline {subsection}{\numberline {2.3.4}Multiple Competing Events}{20}{subsection.2.3.4}%
+\contentsline {subsection}{\numberline {2.3.5}Informative Observation Patterns}{20}{subsection.2.3.5}%
+\contentsline {section}{\numberline {2.4}The Fundamental Challenge: Censoring}{20}{section.2.4}%
+\contentsline {section}{\numberline {2.5}Visualizing Survival Data}{21}{section.2.5}%
+\contentsline {section}{\numberline {2.6}Competing Risks: Another Challenge}{21}{section.2.6}%
+\contentsline {section}{\numberline {2.7}Beyond Binary Events: Complex Time-to-Event Scenarios}{22}{section.2.7}%
+\contentsline {subsection}{\numberline {2.7.1}Recurrent Events}{22}{subsection.2.7.1}%
+\contentsline {subsection}{\numberline {2.7.2}Multi-State Processes}{22}{subsection.2.7.2}%
+\contentsline {subsection}{\numberline {2.7.3}Joint Longitudinal and Time-to-Event Data}{23}{subsection.2.7.3}%
+\contentsline {section}{\numberline {2.8}Summary}{23}{section.2.8}%
+\contentsline {chapter}{\numberline {3}Survival Analysis Foundations}{25}{chapter.3}%
+\contentsline {section}{\numberline {3.1}Foundations of Survival Analysis}{25}{section.3.1}%
+\contentsline {section}{\numberline {3.2}Mathematical Framework of Survival Analysis}{25}{section.3.2}%
+\contentsline {subsection}{\numberline {3.2.1}Core Functions and Their Definitions}{26}{subsection.3.2.1}%
+\contentsline {subsection}{\numberline {3.2.2}Relationships Between Survival Functions}{28}{subsection.3.2.2}%
+\contentsline {section}{\numberline {3.3}Understanding Hazard Functions}{29}{section.3.3}%
+\contentsline {subsection}{\numberline {3.3.1}Interpretation of the Hazard Function}{29}{subsection.3.3.1}%
+\contentsline {subsection}{\numberline {3.3.2}Common Hazard Patterns}{29}{subsection.3.3.2}%
+\contentsline {subsubsection}{Constant Hazard}{30}{section*.18}%
+\contentsline {subsubsection}{Monotonically Increasing Hazard}{31}{section*.19}%
+\contentsline {subsubsection}{Monotonically Decreasing Hazard}{32}{section*.20}%
+\contentsline {subsubsection}{Non-Monotonic Hazard Patterns}{33}{section*.21}%
+\contentsline {paragraph}{Bathtub-Shaped Hazard}{33}{section*.22}%
+\contentsline {paragraph}{Hump-Shaped Hazard}{33}{section*.23}%
+\contentsline {subsection}{\numberline {3.3.3}Hazard Patterns in Real-World Applications}{33}{subsection.3.3.3}%
+\contentsline {subsubsection}{Medical Applications}{34}{section*.24}%
+\contentsline {subsubsection}{Engineering Applications}{34}{section*.25}%
+\contentsline {section}{\numberline {3.4}Censoring in Survival Analysis}{35}{section.3.4}%
+\contentsline {subsection}{\numberline {3.4.1}Truncation vs. Censoring}{35}{subsection.3.4.1}%
+\contentsline {section}{\numberline {3.5}Likelihood Functions for Survival Data}{35}{section.3.5}%
+\contentsline {subsection}{\numberline {3.5.1}General Principles of Likelihood Functions}{36}{subsection.3.5.1}%
+\contentsline {subsection}{\numberline {3.5.2}Survival Likelihood with Censoring}{36}{subsection.3.5.2}%
+\contentsline {subsection}{\numberline {3.5.3}Alternative Formulations}{36}{subsection.3.5.3}%
+\contentsline {subsection}{\numberline {3.5.4}Handling Other Types of Censoring}{37}{subsection.3.5.4}%
+\contentsline {section}{\numberline {3.6}Non-Parametric Survival Estimation}{38}{section.3.6}%
+\contentsline {subsection}{\numberline {3.6.1}The Kaplan-Meier Estimator}{38}{subsection.3.6.1}%
+\contentsline {subsubsection}{Confidence Intervals for Kaplan-Meier Estimates}{38}{section*.26}%
+\contentsline {subsection}{\numberline {3.6.2}Nelson-Aalen Estimator}{39}{subsection.3.6.2}%
+\contentsline {subsection}{\numberline {3.6.3}Comparing Groups with Non-Parametric Methods}{40}{subsection.3.6.3}%
+\contentsline {subsubsection}{Log-Rank Test}{40}{section*.27}%
+\contentsline {subsubsection}{Weighted Log-Rank Tests}{40}{section*.28}%
+\contentsline {section}{\numberline {3.7}The Cox Proportional Hazards Model}{40}{section.3.7}%
+\contentsline {subsection}{\numberline {3.7.1}Model Formulation}{41}{subsection.3.7.1}%
+\contentsline {subsection}{\numberline {3.7.2}Partial Likelihood Estimation}{41}{subsection.3.7.2}%
+\contentsline {subsection}{\numberline {3.7.3}Interpretation of Parameters}{42}{subsection.3.7.3}%
+\contentsline {subsection}{\numberline {3.7.4}Baseline Hazard Estimation}{42}{subsection.3.7.4}%
+\contentsline {subsection}{\numberline {3.7.5}Extensions of the Cox Model}{43}{subsection.3.7.5}%
+\contentsline {subsubsection}{Time-Dependent Covariates}{43}{section*.29}%
+\contentsline {subsubsection}{Stratified Cox Model}{43}{section*.30}%
+\contentsline {subsubsection}{Frailty Models}{43}{section*.31}%
+\contentsline {section}{\numberline {3.8}Competing Risks Analysis}{43}{section.3.8}%
+\contentsline {subsection}{\numberline {3.8.1}Framework and Terminology}{44}{subsection.3.8.1}%
+\contentsline {subsection}{\numberline {3.8.2}Key Functions in Competing Risks}{44}{subsection.3.8.2}%
+\contentsline {subsection}{\numberline {3.8.3}Modeling Approaches for Competing Risks}{44}{subsection.3.8.3}%
+\contentsline {subsubsection}{Cause-Specific Hazards Approach}{44}{section*.32}%
+\contentsline {subsubsection}{Fine-Gray Subdistribution Hazards Approach}{45}{section*.33}%
+\contentsline {section}{\numberline {3.9}Limitations of Classical Methods}{45}{section.3.9}%
+\contentsline {subsection}{\numberline {3.9.1}Limitations of Parametric Models}{45}{subsection.3.9.1}%
+\contentsline {subsection}{\numberline {3.9.2}Limitations of the Cox Model}{46}{subsection.3.9.2}%
+\contentsline {subsection}{\numberline {3.9.3}Limitations in Competing Risks Analysis}{46}{subsection.3.9.3}%
+\contentsline {subsection}{\numberline {3.9.4}The Case for Advanced Methods}{46}{subsection.3.9.4}%
+\contentsline {section}{\numberline {3.10}Modern Extensions of Classical Methods}{46}{section.3.10}%
+\contentsline {subsection}{\numberline {3.10.1}Machine Learning Adaptations}{47}{subsection.3.10.1}%
+\contentsline {subsection}{\numberline {3.10.2}Flexible Modeling Approaches}{47}{subsection.3.10.2}%
+\contentsline {subsection}{\numberline {3.10.3}Causal Inference Methods}{47}{subsection.3.10.3}%
+\contentsline {section}{\numberline {3.11}Transition to Deep Learning Approaches}{47}{section.3.11}%
+\contentsline {section}{\numberline {3.12}Summary}{48}{section.3.12}%
+\contentsline {chapter}{\numberline {4}Censoring and Competing Risks}{49}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Understanding Censoring}{49}{section.4.1}%
+\contentsline {subsection}{\numberline {4.1.1}Types of Censoring}{49}{subsection.4.1.1}%
+\contentsline {subsection}{\numberline {4.1.2}Time-to-Event Data Visualization}{50}{subsection.4.1.2}%
+\contentsline {subsection}{\numberline {4.1.3}Clinical Study Visualization}{51}{subsection.4.1.3}%
+\contentsline {subsection}{\numberline {4.1.4}Censoring Mechanisms and Their Implications}{51}{subsection.4.1.4}%
+\contentsline {section}{\numberline {4.2}Competing Risks}{55}{section.4.2}%
+\contentsline {subsection}{\numberline {4.2.1}Analyzing Competing Risks}{56}{subsection.4.2.1}%
+\contentsline {subsection}{\numberline {4.2.2}Modeling Approaches for Competing Risks}{56}{subsection.4.2.2}%
+\contentsline {chapter}{\numberline {5}Deep Survival Machines}{59}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Introduction to Deep Survival Machines}{59}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Limitations of Traditional Survival Analysis Methods}{59}{section.5.2}%
+\contentsline {subsection}{\numberline {5.2.1}Limitations of Non-parametric Methods}{60}{subsection.5.2.1}%
+\contentsline {subsection}{\numberline {5.2.2}Limitations of the Cox Proportional Hazards Model}{60}{subsection.5.2.2}%
+\contentsline {subsection}{\numberline {5.2.3}Limitations of Early Neural Network Adaptations}{60}{subsection.5.2.3}%
+\contentsline {section}{\numberline {5.3}Complex Hazard Patterns in Real-World Data}{61}{section.5.3}%
+\contentsline {subsection}{\numberline {5.3.1}Multi-Modal Hazard Functions}{61}{subsection.5.3.1}%
+\contentsline {subsection}{\numberline {5.3.2}The Need for Uncertainty Quantification}{62}{subsection.5.3.2}%
+\contentsline {section}{\numberline {5.4}Deep Survival Machines: Core Conceptual Innovation}{63}{section.5.4}%
+\contentsline {subsection}{\numberline {5.4.1}The Mixture Distribution Approach}{63}{subsection.5.4.1}%
+\contentsline {subsection}{\numberline {5.4.2}Architectural Components}{63}{subsection.5.4.2}%
+\contentsline {subsubsection}{Representation Network}{64}{section*.34}%
+\contentsline {subsubsection}{Mixture Model}{64}{section*.35}%
+\contentsline {subsubsection}{Parameter Networks}{64}{section*.36}%
+\contentsline {section}{\numberline {5.5}Key Innovations of Deep Survival Machines}{64}{section.5.5}%
+\contentsline {subsection}{\numberline {5.5.1}End-to-End Learning}{64}{subsection.5.5.1}%
+\contentsline {subsection}{\numberline {5.5.2}Flexible Hazard Modeling}{65}{subsection.5.5.2}%
+\contentsline {subsection}{\numberline {5.5.3}Uncertainty Quantification}{65}{subsection.5.5.3}%
+\contentsline {subsection}{\numberline {5.5.4}Risk Prediction Capabilities}{65}{subsection.5.5.4}%
+\contentsline {section}{\numberline {5.6}Mathematical Foundation of Deep Survival Machines}{65}{section.5.6}%
+\contentsline {subsection}{\numberline {5.6.1}Survival Analysis Fundamentals: A Brief Recap}{65}{subsection.5.6.1}%
+\contentsline {subsection}{\numberline {5.6.2}The Mixture Framework}{66}{subsection.5.6.2}%
+\contentsline {subsection}{\numberline {5.6.3}Insight into Hazard Composition}{66}{subsection.5.6.3}%
+\contentsline {section}{\numberline {5.7}Parametric Component Distributions}{67}{section.5.7}%
+\contentsline {subsection}{\numberline {5.7.1}Weibull Distribution}{67}{subsection.5.7.1}%
+\contentsline {subsection}{\numberline {5.7.2}Log-Normal Distribution}{67}{subsection.5.7.2}%
+\contentsline {subsection}{\numberline {5.7.3}The Power of Mixtures}{68}{subsection.5.7.3}%
+\contentsline {section}{\numberline {5.8}Neural Parameter Mapping}{69}{section.5.8}%
+\contentsline {subsection}{\numberline {5.8.1}From Features to Distribution Parameters}{69}{subsection.5.8.1}%
+\contentsline {subsection}{\numberline {5.8.2}Network Architecture}{70}{subsection.5.8.2}%
+\contentsline {section}{\numberline {5.9}Training Deep Survival Machines}{70}{section.5.9}%
+\contentsline {subsection}{\numberline {5.9.1}Loss Function Formulation}{70}{subsection.5.9.1}%
+\contentsline {subsection}{\numberline {5.9.2}ELBO-Based Regularization}{71}{subsection.5.9.2}%
+\contentsline {section}{\numberline {5.10}Implementation Challenges and Solutions}{71}{section.5.10}%
+\contentsline {subsection}{\numberline {5.10.1}Numerical Stability Challenges}{72}{subsection.5.10.1}%
+\contentsline {subsection}{\numberline {5.10.2}Log-Sum-Exp Trick}{72}{subsection.5.10.2}%
+\contentsline {subsection}{\numberline {5.10.3}Gradient Detachment Strategy}{72}{subsection.5.10.3}%
+\contentsline {section}{\numberline {5.11}Advantages of DSM over Traditional Methods}{72}{section.5.11}%
+\contentsline {subsection}{\numberline {5.11.1}Compared to Cox Proportional Hazards}{73}{subsection.5.11.1}%
+\contentsline {subsection}{\numberline {5.11.2}Compared to Neural Cox Models}{73}{subsection.5.11.2}%
+\contentsline {subsection}{\numberline {5.11.3}Compared to Random Survival Forests}{73}{subsection.5.11.3}%
+\contentsline {subsection}{\numberline {5.11.4}Limitations and Considerations}{73}{subsection.5.11.4}%
+\contentsline {section}{\numberline {5.12}Practical Applications of DSM}{74}{section.5.12}%
+\contentsline {subsection}{\numberline {5.12.1}Cancer Survival Prediction}{74}{subsection.5.12.1}%
+\contentsline {section}{\numberline {5.13}Summary: DSM in the Bigger Picture}{74}{section.5.13}%
+\contentsline {subsection}{\numberline {5.13.1}Key Contributions}{75}{subsection.5.13.1}%
+\contentsline {subsection}{\numberline {5.13.2}Future Directions}{75}{subsection.5.13.2}%
+\contentsline {chapter}{\numberline {6}Multi-Event Neural Survival Analysis}{77}{chapter.6}%
+\contentsline {section}{\numberline {6.1}Introduction to Multi-Event Neural Survival Analysis}{77}{section.6.1}%
+\contentsline {subsection}{\numberline {6.1.1}The Big Picture: Moving Beyond Single-Event Survival}{77}{subsection.6.1.1}%
+\contentsline {subsection}{\numberline {6.1.2}Challenges in Multi-Event Survival Analysis}{77}{subsection.6.1.2}%
+\contentsline {section}{\numberline {6.2}The Competing Risks Framework}{79}{section.6.2}%
+\contentsline {subsection}{\numberline {6.2.1}Data Representation in Competing Risks}{79}{subsection.6.2.1}%
+\contentsline {subsection}{\numberline {6.2.2}Censoring in Competing Risks}{79}{subsection.6.2.2}%
+\contentsline {section}{\numberline {6.3}Key Functions in Competing Risks}{80}{section.6.3}%
+\contentsline {subsection}{\numberline {6.3.1}Cause-Specific Hazard Function}{80}{subsection.6.3.1}%
+\contentsline {subsection}{\numberline {6.3.2}Overall Survival Function}{81}{subsection.6.3.2}%
+\contentsline {subsection}{\numberline {6.3.3}Cumulative Incidence Function}{81}{subsection.6.3.3}%
+\contentsline {subsection}{\numberline {6.3.4}Sub-Density Function}{82}{subsection.6.3.4}%
+\contentsline {section}{\numberline {6.4}Traditional Approaches to Competing Risks}{82}{section.6.4}%
+\contentsline {subsection}{\numberline {6.4.1}Cause-Specific Cox Models}{82}{subsection.6.4.1}%
+\contentsline {subsection}{\numberline {6.4.2}Fine-Gray Model}{83}{subsection.6.4.2}%
+\contentsline {section}{\numberline {6.5}The MENSA Framework}{83}{section.6.5}%
+\contentsline {subsection}{\numberline {6.5.1}Core Conceptual Innovation}{83}{subsection.6.5.1}%
+\contentsline {subsection}{\numberline {6.5.2}Mathematical Formulation}{84}{subsection.6.5.2}%
+\contentsline {subsection}{\numberline {6.5.3}Neural Network Architecture}{85}{subsection.6.5.3}%
+\contentsline {section}{\numberline {6.6}Training and Optimization}{85}{section.6.6}%
+\contentsline {subsection}{\numberline {6.6.1}Likelihood Function}{85}{subsection.6.6.1}%
+\contentsline {subsection}{\numberline {6.6.2}Optimization Techniques}{86}{subsection.6.6.2}%
+\contentsline {subsection}{\numberline {6.6.3}Avoiding Numerical Issues}{86}{subsection.6.6.3}%
+\contentsline {section}{\numberline {6.7}Inference and Risk Prediction}{87}{section.6.7}%
+\contentsline {subsection}{\numberline {6.7.1}Risk Predictions with MENSA}{87}{subsection.6.7.1}%
+\contentsline {subsection}{\numberline {6.7.2}Uncertainty Quantification}{87}{subsection.6.7.2}%
+\contentsline {subsection}{\numberline {6.7.3}Interpreting MENSA Models}{87}{subsection.6.7.3}%
+\contentsline {section}{\numberline {6.8}Applications of MENSA}{88}{section.6.8}%
+\contentsline {subsection}{\numberline {6.8.1}Medical Applications}{88}{subsection.6.8.1}%
+\contentsline {subsection}{\numberline {6.8.2}Industrial Applications}{88}{subsection.6.8.2}%
+\contentsline {subsection}{\numberline {6.8.3}Business Applications}{88}{subsection.6.8.3}%
+\contentsline {section}{\numberline {6.9}Future Directions}{89}{section.6.9}%
+\contentsline {section}{\numberline {6.10}Summary}{89}{section.6.10}%
+\contentsline {chapter}{\numberline {7}Loss Functions}{91}{chapter.7}%
+\contentsline {section}{\numberline {7.1}Loss Functions for Survival Analysis}{91}{section.7.1}%
+\contentsline {subsection}{\numberline {7.1.1}Survival Losses}{91}{subsection.7.1.1}%
+\contentsline {subsubsection}{Negative Log-Likelihood with Piecewise Constant Hazards}{92}{section*.37}%
+\contentsline {subsubsection}{Deep Survival Machines}{93}{section*.38}%
+\contentsline {subsubsection}{Multi-Event Neural Survival Analysis (MENSA)}{94}{section*.39}%
+\contentsline {subsubsection}{DeepHit: Discrete-Time Survival Approach}{95}{section*.40}%
+\contentsline {subsection}{\numberline {7.1.2}Ranking Losses in Survival Analysis}{96}{subsection.7.1.2}%
+\contentsline {subsubsection}{Motivation for Ranking in Survival Analysis}{96}{section*.41}%
+\contentsline {subsubsection}{Pairwise Ranking: RankNet}{97}{section*.42}%
+\contentsline {subsubsection}{SOAP: Statistically Optimal Accelerated Pairwise Loss}{98}{section*.43}%
+\contentsline {subsubsection}{ListMLE: Listwise Maximum Likelihood Estimation}{98}{section*.44}%
+\contentsline {subsubsection}{SurvRNC: Survival Rank-N-Contrast Loss}{99}{section*.45}%
+\contentsline {subsubsection}{Efficient Ranking Implementations}{99}{section*.46}%
+\contentsline {subsection}{\numberline {7.1.3}Regression Losses for Survival Analysis}{100}{subsection.7.1.3}%
+\contentsline {subsubsection}{Motivation for Regression Approaches}{100}{section*.47}%
+\contentsline {subsubsection}{L1 Loss with Censoring}{100}{section*.48}%
+\contentsline {subsubsection}{MSE Loss for Survival Analysis}{101}{section*.49}%
+\contentsline {subsubsection}{Quantile Loss for Survival}{102}{section*.50}%
+\contentsline {subsubsection}{Regression Losses: Applications and Limitations}{102}{section*.51}%
+\contentsline {subsection}{\numberline {7.1.4}Classification Losses for Survival Analysis}{103}{subsection.7.1.4}%
+\contentsline {subsubsection}{Binary Cross-Entropy for Survival}{103}{section*.52}%
+\contentsline {subsubsection}{Multi-Class Classification for Survival}{104}{section*.53}%
+\contentsline {subsubsection}{Classification for Survival: Advantages and Limitations}{105}{section*.54}%
+\contentsline {subsection}{\numberline {7.1.5}Auxiliary Losses and Loss Balancing}{105}{subsection.7.1.5}%
+\contentsline {subsubsection}{Focal Loss for Survival Analysis}{105}{section*.55}%
+\contentsline {subsubsection}{Loss Balancing Strategies}{106}{section*.56}%
+\contentsline {subsection}{\numberline {7.1.6}Momentum Contrast for Survival Analysis}{107}{subsection.7.1.6}%
+\contentsline {section}{\numberline {7.2}Momentum Contrast for Survival Analysis}{107}{section.7.2}%
+\contentsline {subsection}{\numberline {7.2.1}Event Sparsity and Censoring Challenges}{107}{subsection.7.2.1}%
+\contentsline {subsection}{\numberline {7.2.2}Momentum Contrast: Core Principles}{108}{subsection.7.2.2}%
+\contentsline {subsection}{\numberline {7.2.3}Mathematical Formulation}{109}{subsection.7.2.3}%
+\contentsline {subsubsection}{Standard MoCo Loss}{109}{section*.57}%
+\contentsline {subsubsection}{Dynamic Weight Formulation}{110}{section*.58}%
+\contentsline {subsubsection}{Adaptive Buffer Formulation}{111}{section*.59}%
+\contentsline {subsection}{\numberline {7.2.4}Implementation Variants and Selection}{112}{subsection.7.2.4}%
+\contentsline {subsubsection}{Standard MoCoSurvivalLoss}{112}{section*.60}%
+\contentsline {subsubsection}{DynamicWeightMoCoLoss}{113}{section*.61}%
+\contentsline {subsubsection}{AdaptiveMoCoLoss}{113}{section*.62}%
+\contentsline {subsection}{\numberline {7.2.5}MoCo Recommender System}{113}{subsection.7.2.5}%
+\contentsline {subsection}{\numberline {7.2.6}Experimental Results}{115}{subsection.7.2.6}%
+\contentsline {subsection}{\numberline {7.2.7}Practical Considerations}{115}{subsection.7.2.7}%
+\contentsline {subsubsection}{Memory Usage}{115}{section*.63}%
+\contentsline {subsubsection}{Batch Size and Buffer Size Relationship}{116}{section*.64}%
+\contentsline {subsubsection}{Integration with Other Loss Functions}{116}{section*.65}%
+\contentsline {subsubsection}{Computational Overhead}{117}{section*.66}%
+\contentsline {subsection}{\numberline {7.2.8}Conclusion}{118}{subsection.7.2.8}%
+\contentsline {subsection}{\numberline {7.2.9}Summary and Best Practices}{118}{subsection.7.2.9}%
+\contentsline {chapter}{\numberline {8}Numerical Stability}{119}{chapter.8}%
+\contentsline {section}{\numberline {8.1}Importance of Numerical Stability in Survival Models}{119}{section.8.1}%
+\contentsline {section}{\numberline {8.2}Common Numerical Challenges}{119}{section.8.2}%
+\contentsline {subsection}{\numberline {8.2.1}Underflow and Overflow}{120}{subsection.8.2.1}%
+\contentsline {subsection}{\numberline {8.2.2}Precision Loss and Invalid Operations}{120}{subsection.8.2.2}%
+\contentsline {section}{\numberline {8.3}Critical Calculations in Survival Models}{121}{section.8.3}%
+\contentsline {subsection}{\numberline {8.3.1}Hazard Function Calculations}{121}{subsection.8.3.1}%
+\contentsline {subsection}{\numberline {8.3.2}Mixture Model Challenges}{122}{subsection.8.3.2}%
+\contentsline {subsection}{\numberline {8.3.3}Gradient Computation Challenges}{123}{subsection.8.3.3}%
+\contentsline {section}{\numberline {8.4}Solutions for Numerical Stability}{123}{section.8.4}%
+\contentsline {subsection}{\numberline {8.4.1}Log-Domain Calculations}{124}{subsection.8.4.1}%
+\contentsline {subsection}{\numberline {8.4.2}Log-Sum-Exp Trick}{125}{subsection.8.4.2}%
+\contentsline {subsection}{\numberline {8.4.3}Gradient Detachment Strategy}{127}{subsection.8.4.3}%
+\contentsline {subsection}{\numberline {8.4.4}Case Study: Weibull Hazard Stabilization}{127}{subsection.8.4.4}%
+\contentsline {section}{\numberline {8.5}Loss Function Stability Techniques}{128}{section.8.5}%
+\contentsline {subsection}{\numberline {8.5.1}NaN Detection and Reporting}{129}{subsection.8.5.1}%
+\contentsline {subsection}{\numberline {8.5.2}Safe Loss Aggregation}{129}{subsection.8.5.2}%
+\contentsline {subsection}{\numberline {8.5.3}Fallback Mechanism}{129}{subsection.8.5.3}%
+\contentsline {section}{\numberline {8.6}Testing for Numerical Stability}{130}{section.8.6}%
+\contentsline {subsection}{\numberline {8.6.1}Extreme Value Testing}{130}{subsection.8.6.1}%
+\contentsline {subsection}{\numberline {8.6.2}Gradient Testing}{130}{subsection.8.6.2}%
+\contentsline {subsection}{\numberline {8.6.3}Comprehensive Test Coverage}{130}{subsection.8.6.3}%
+\contentsline {section}{\numberline {8.7}The Importance of Numerical Stability for Deployment}{131}{section.8.7}%
+\contentsline {subsection}{\numberline {8.7.1}Critical Applications}{131}{subsection.8.7.1}%
+\contentsline {subsection}{\numberline {8.7.2}Technical Benefits}{132}{subsection.8.7.2}%
+\contentsline {section}{\numberline {8.8}Summary}{132}{section.8.8}%
+\contentsline {chapter}{\numberline {9}Expert Knowledge Integration}{135}{chapter.9}%
+\contentsline {section}{\numberline {9.1}The Importance of Expert Knowledge in Survival Analysis}{135}{section.9.1}%
+\contentsline {section}{\numberline {9.2}Why Expert Knowledge Matters in Survival Analysis}{135}{section.9.2}%
+\contentsline {subsection}{\numberline {9.2.1}Limitations of Data-Only Approaches}{135}{subsection.9.2.1}%
+\contentsline {subsection}{\numberline {9.2.2}The Gap Between Data and Understanding}{136}{subsection.9.2.2}%
+\contentsline {section}{\numberline {9.3}Types of Expert Knowledge in Survival Analysis}{137}{section.9.3}%
+\contentsline {subsection}{\numberline {9.3.1}Forms of Domain Expertise}{137}{subsection.9.3.1}%
+\contentsline {subsubsection}{Distributional Knowledge}{137}{section*.67}%
+\contentsline {subsubsection}{Feature Relationships}{137}{section*.68}%
+\contentsline {subsubsection}{Temporal Patterns}{138}{section*.69}%
+\contentsline {subsubsection}{Event Dependencies}{138}{section*.70}%
+\contentsline {subsubsection}{Population Heterogeneity}{138}{section*.71}%
+\contentsline {subsubsection}{Biological Mechanisms}{138}{section*.72}%
+\contentsline {subsection}{\numberline {9.3.2}Sources of Expert Knowledge}{139}{subsection.9.3.2}%
+\contentsline {section}{\numberline {9.4}Challenges in Knowledge Integration}{139}{section.9.4}%
+\contentsline {subsection}{\numberline {9.4.1}Formalization Challenges}{139}{subsection.9.4.1}%
+\contentsline {subsection}{\numberline {9.4.2}Integration Challenges}{140}{subsection.9.4.2}%
+\contentsline {subsection}{\numberline {9.4.3}Validation Challenges}{140}{subsection.9.4.3}%
+\contentsline {section}{\numberline {9.5}Knowledge Formalization Techniques}{140}{section.9.5}%
+\contentsline {subsection}{\numberline {9.5.1}Elicitation Methods}{141}{subsection.9.5.1}%
+\contentsline {subsection}{\numberline {9.5.2}Bayesian Frameworks}{141}{subsection.9.5.2}%
+\contentsline {section}{\numberline {9.6}Parameter Constraints in Survival Models}{142}{section.9.6}%
+\contentsline {subsection}{\numberline {9.6.1}Disease-Specific Shape Parameters}{142}{subsection.9.6.1}%
+\contentsline {subsection}{\numberline {9.6.2}Implementation Approaches for Parameter Constraints}{142}{subsection.9.6.2}%
+\contentsline {section}{\numberline {9.7}Feature-Level Expert Constraints}{143}{section.9.7}%
+\contentsline {subsection}{\numberline {9.7.1}Knowledge About Risk Factors}{143}{subsection.9.7.1}%
+\contentsline {subsection}{\numberline {9.7.2}Monotonicity Constraints}{144}{subsection.9.7.2}%
+\contentsline {section}{\numberline {9.8}Expert-Guided Neural Architectures}{144}{section.9.8}%
+\contentsline {subsection}{\numberline {9.8.1}Structure Constraints for Networks}{145}{subsection.9.8.1}%
+\contentsline {subsection}{\numberline {9.8.2}Dedicated Architecture for Expert Constraints}{145}{subsection.9.8.2}%
+\contentsline {section}{\numberline {9.9}Expert Knowledge as Regularization}{146}{section.9.9}%
+\contentsline {subsection}{\numberline {9.9.1}Training with Expert Priors}{146}{subsection.9.9.1}%
+\contentsline {subsection}{\numberline {9.9.2}Common Regularization Forms}{146}{subsection.9.9.2}%
+\contentsline {section}{\numberline {9.10}Knowledge Distillation from Expert Models}{146}{section.9.10}%
+\contentsline {subsection}{\numberline {9.10.1}Model Distillation Process}{147}{subsection.9.10.1}%
+\contentsline {section}{\numberline {9.11}Expert-Guided Ensemble Methods}{147}{section.9.11}%
+\contentsline {subsection}{\numberline {9.11.1}Combining Models with Expert Weights}{148}{subsection.9.11.1}%
+\contentsline {section}{\numberline {9.12}Case Study: Expert-Guided MENSA for Cardiovascular Disease}{148}{section.9.12}%
+\contentsline {subsection}{\numberline {9.12.1}Problem: Complex Dependencies in Cardiovascular Disease}{148}{subsection.9.12.1}%
+\contentsline {subsection}{\numberline {9.12.2}Expert Knowledge Integration}{149}{subsection.9.12.2}%
+\contentsline {subsection}{\numberline {9.12.3}Results and Evaluation}{149}{subsection.9.12.3}%
+\contentsline {section}{\numberline {9.13}Integrating Expert Knowledge in the Workflow}{149}{section.9.13}%
+\contentsline {section}{\numberline {9.14}Measuring the Impact of Expert Knowledge}{150}{section.9.14}%
+\contentsline {subsection}{\numberline {9.14.1}Evaluation Approaches}{150}{subsection.9.14.1}%
+\contentsline {section}{\numberline {9.15}Challenges and Future Research Directions}{150}{section.9.15}%
+\contentsline {subsection}{\numberline {9.15.1}Current Limitations}{152}{subsection.9.15.1}%
+\contentsline {subsection}{\numberline {9.15.2}Future Research Directions}{152}{subsection.9.15.2}%
+\contentsline {section}{\numberline {9.16}Summary: The Value of Expert Knowledge}{152}{section.9.16}%
+\contentsline {chapter}{\numberline {10}Conclusion}{155}{chapter.10}%
+\contentsline {section}{\numberline {10.1}Conclusion}{155}{section.10.1}%
+\contentsline {subsection}{\numberline {10.1.1}Key Contributions and Insights}{155}{subsection.10.1.1}%
+\contentsline {subsubsection}{Architectural Innovations}{155}{section*.73}%
+\contentsline {subsubsection}{Loss Function Innovations}{156}{section*.74}%
+\contentsline {subsubsection}{Incorporation of Domain Expertise}{156}{section*.75}%
+\contentsline {subsection}{\numberline {10.1.2}Current Challenges}{156}{subsection.10.1.2}%
+\contentsline {subsubsection}{Interpretability and Explainability}{157}{section*.76}%
+\contentsline {subsubsection}{Data Limitations}{157}{section*.77}%
+\contentsline {subsubsection}{Evaluation Metrics and Benchmarking}{157}{section*.78}%
+\contentsline {subsection}{\numberline {10.1.3}Future Directions}{157}{subsection.10.1.3}%
+\contentsline {subsubsection}{Integration with Multi-modal Data}{158}{section*.79}%
+\contentsline {subsubsection}{Causal Inference for Survival Outcomes}{158}{section*.80}%
+\contentsline {subsubsection}{Federated and Privacy-Preserving Learning}{158}{section*.81}%
+\contentsline {subsection}{\numberline {10.1.4}Practical Implementation Guidelines}{158}{subsection.10.1.4}%
+\contentsline {subsubsection}{Model Selection}{159}{section*.82}%
+\contentsline {subsubsection}{Implementation Best Practices}{159}{section*.83}%
+\contentsline {subsubsection}{Deployment Considerations}{159}{section*.84}%
+\contentsline {subsection}{\numberline {10.1.5}Ethical Considerations}{159}{subsection.10.1.5}%
+\contentsline {subsubsection}{Fairness and Equity}{160}{section*.85}%
+\contentsline {subsubsection}{Transparency and Accountability}{160}{section*.86}%
+\contentsline {subsubsection}{Patient Autonomy and Shared Decision-Making}{160}{section*.87}%
+\contentsline {subsection}{\numberline {10.1.6}Concluding Remarks}{160}{subsection.10.1.6}%
+\contentsline {chapter}{Bibliography}{163}{chapter*.88}%

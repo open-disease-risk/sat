@@ -274,7 +274,7 @@ Our benchmarks provide concrete insights into MENSA's performance characteristic
    - Provides unique insights via the dependency matrix at a modest performance cost
 
 3. **Scaling Patterns**:
-   - Training time increase from 2→8 events: 
+   - Training time increase from 2→8 events:
      - DSM: 17.8% increase
      - MENSA (no dependencies): 56.5% increase
      - MENSA (with dependencies): 75.9% increase

@@ -209,17 +209,17 @@ python -m sat.finetune experiments=metabric/dsm
    ```bash
    python -m sat.eda dataset=new_dataset
    ```
-   
+
 2. **Distribution Analysis Only**:
    ```bash
    python -m sat.eda dataset=metabric analysis.run_censoring_analysis=false analysis.run_covariate_analysis=false
    ```
-   
+
 3. **Focus on Specific Distributions**:
    ```bash
    python -m sat.eda dataset=seer analysis.distributions=[weibull,lognormal]
    ```
-   
+
 4. **Custom Output Directory**:
    ```bash
    python -m sat.eda dataset=metabric outputs.dir=my_custom_eda_results

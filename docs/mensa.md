@@ -8,7 +8,7 @@ MENSA (Multi-Event Neural Survival Analysis) is a specialized neural network arc
 
 ### Core Components
 
-1. **Mixture of Weibull Distributions**: 
+1. **Mixture of Weibull Distributions**:
    - Each event's survival function is modeled as a mixture of K Weibull distributions.
    - Parameters (shape, scale) for each mixture component are learned from data.
    - Mixture weights determine the contribution of each component to the overall distribution.
@@ -246,13 +246,13 @@ if hasattr(model.nets, "event_dependency_matrix"):
     # Get the normalized dependency weights
     dependency_matrix = F.softmax(model.nets.event_dependency_matrix, dim=1)
     print(f"Learned dependency matrix:\n{dependency_matrix.detach().cpu().numpy()}")
-    
+
     # Visualize as a heatmap
     import matplotlib.pyplot as plt
     import seaborn as sns
-    
+
     plt.figure(figsize=(8, 6))
-    sns.heatmap(dependency_matrix.detach().cpu().numpy(), 
+    sns.heatmap(dependency_matrix.detach().cpu().numpy(),
                 annot=True, cmap="viridis", vmin=0, vmax=1)
     plt.title("Event Dependency Matrix")
     plt.xlabel("Source Event")

@@ -33,7 +33,7 @@
             \node[below, font=\footnotesize, text=octonary] at (0,5.75) {Study start};
             \node[below, font=\footnotesize, text=octonary] at (24,5.75) {2 years};
             \node[below, font=\footnotesize, text=octonary] at (48,5.75) {4 years};
-            
+
             % Subject 1: Standard right censoring
             \addplot[
                 primaryDark,
@@ -42,13 +42,13 @@
             ] coordinates {
                 (0,1) (30,1)
             };
-            
+
             % Add censoring mark
-            \draw[censoringColor, very thick] 
+            \draw[censoringColor, very thick]
                 (30-0.7,1-0.7) -- (30+0.7,1+0.7);
-            \draw[censoringColor, very thick] 
+            \draw[censoringColor, very thick]
                 (30-0.7,1+0.7) -- (30+0.7,1-0.7);
-                
+
             % Subject 2: Event observed
             \addplot[
                 primaryDark,
@@ -57,10 +57,10 @@
             ] coordinates {
                 (0,2) (40,2)
             };
-            
+
             % Event mark
             \node[circle, fill=event1Color, inner sep=2pt] at (40,2) {};
-            
+
             % Subject 3: Left truncation (delayed entry) + event
             \addplot[
                 primaryDark,
@@ -70,7 +70,7 @@
             ] coordinates {
                 (0,3) (12,3)
             };
-            
+
             \addplot[
                 primaryDark,
                 thick,
@@ -78,10 +78,10 @@
             ] coordinates {
                 (12,3) (36,3)
             };
-            
+
             % Event mark
             \node[circle, fill=event1Color, inner sep=2pt] at (36,3) {};
-            
+
             % Subject 4: Left truncation + right censoring
             \addplot[
                 primaryDark,
@@ -91,7 +91,7 @@
             ] coordinates {
                 (0,4) (18,4)
             };
-            
+
             \addplot[
                 primaryDark,
                 thick,
@@ -99,13 +99,13 @@
             ] coordinates {
                 (18,4) (50,4)
             };
-            
+
             % Add censoring mark
-            \draw[censoringColor, very thick] 
+            \draw[censoringColor, very thick]
                 (50-0.7,4-0.7) -- (50+0.7,4+0.7);
-            \draw[censoringColor, very thick] 
+            \draw[censoringColor, very thick]
                 (50-0.7,4+0.7) -- (50+0.7,4-0.7);
-                
+
             % Subject 5: Competing risk
             \addplot[
                 primaryDark,
@@ -114,61 +114,61 @@
             ] coordinates {
                 (0,5) (44,5)
             };
-            
+
             % Competing risk event mark
             \node[circle, fill=event2Color, inner sep=2pt] at (44,5) {};
-            
+
             % Labels with arrows - positioned to avoid crossing lines
             % Subject 1: Right censoring
             \draw[->, thin, gray] (30,0.6) -- (30,0.9);
             \node[below, align=center, font=\footnotesize, text=gray] at (30,0.5) {Right censoring\\(lost to follow-up)};
-            
+
             % Subject 2: Event
             \draw[->, thin, gray] (40,1.6) -- (40,1.9);
             \node[below, align=center, font=\footnotesize, text=gray] at (40,1.5) {Event observed};
-            
+
             % Subject 3: Left truncation
             \draw[->, thin, gray] (8,2.6) -- (8,2.9);
             \node[below, align=center, font=\footnotesize, text=gray] at (8,2.5) {Left truncation\\(delayed entry)};
-            
+
             % Subject 3: Event
             \draw[->, thin, gray] (36,2.6) -- (36,2.9);
             \node[below, align=center, font=\footnotesize, text=gray] at (36,2.5) {Event};
-            
+
             % Subject 4: Left truncation
             \draw[->, thin, gray] (12,3.6) -- (12,3.9);
             \node[below, align=center, font=\footnotesize, text=gray] at (12,3.5) {Left truncation};
-            
+
             % Subject 4: Right censoring
             \draw[->, thin, gray] (50,3.6) -- (50,3.9);
             \node[below, align=center, font=\footnotesize, text=gray] at (50,3.5) {Right censoring\\(end of study)};
-            
+
             % Subject 5: Competing risk
             \draw[->, thin, gray] (44,4.6) -- (44,4.9);
             \node[below, align=center, font=\footnotesize, text=gray] at (44,4.5) {Competing risk\\event};
-            
+
             % Add a legend at the bottom of the plot instead of top-right
             \legend{}
-            
+
             % Create a separate legend below the plot using nodes
             \coordinate (legendpos) at (rel axis cs:0.5,-0.25);
-            
+
             % Symbol for observation time
             \node[inner sep=0] at ($(legendpos)+(-4.5,0)$) {\tikz{\draw[primaryDark, thick] (-0.15,0) -- (0.15,0);}};
             \node[right, font=\footnotesize] at ($(legendpos)+(-4.3,0)$) {Observation time};
-            
+
             % Symbol for unobserved time
             \node[inner sep=0] at ($(legendpos)+(-1.5,0)$) {\tikz{\draw[primaryDark, thick, opacity=0.3] (-0.15,0) -- (0.15,0);}};
             \node[right, font=\footnotesize] at ($(legendpos)+(-1.3,0)$) {Unobserved time};
-            
+
             % Symbol for event of interest
             \node[inner sep=0] at ($(legendpos)+(1.5,0)$) {\tikz{\draw[mark size=3pt, mark=*, mark options={fill=event1Color}] plot coordinates {(0,0)};}};
             \node[right, font=\footnotesize] at ($(legendpos)+(1.7,0)$) {Event of interest};
-            
+
             % Symbol for competing event
             \node[inner sep=0] at ($(legendpos)+(-4.5,-0.5)$) {\tikz{\draw[mark size=3pt, mark=*, mark options={fill=event2Color}] plot coordinates {(0,0)};}};
             \node[right, font=\footnotesize] at ($(legendpos)+(-4.3,-0.5)$) {Competing event};
-            
+
             % Symbol for censoring
             \node[inner sep=0] at ($(legendpos)+(-1.5,-0.5)$) {\tikz{\draw[censoringColor, very thick] (-0.1,-0.1) -- (0.1,0.1); \draw[censoringColor, very thick] (-0.1,0.1) -- (0.1,-0.1);}};
             \node[right, font=\footnotesize] at ($(legendpos)+(-1.3,-0.5)$) {Censoring};
@@ -207,7 +207,7 @@
             % Timeline reference points
             \draw[thin, octonary!60, dashed] (10,0.25) -- (10,4.75);
             \node[below, font=\footnotesize, text=octonary] at (10,4.75) {Screening time};
-            
+
             % Case 1: Event known to occur before screening
             % Unobserved event time
             \addplot[
@@ -218,10 +218,10 @@
             ] coordinates {
                 (0,1) (7,1)
             };
-            
+
             % Event mark (not directly observed)
             \node[circle, fill=event1Color, inner sep=2pt, opacity=0.5] at (7,1) {};
-            
+
             % Observed after event
             \addplot[
                 primaryDark,
@@ -230,7 +230,7 @@
             ] coordinates {
                 (10,1) (30,1)
             };
-            
+
             % Case 2: Condition present at screening
             % Unobserved event time
             \addplot[
@@ -241,16 +241,16 @@
             ] coordinates {
                 (0,2) (10,2)
             };
-            
+
             % Event before screening
             \node[circle, fill=event1Color, inner sep=2pt, opacity=0.5] at (5,2) {};
-            
+
             % Left censoring mark at screening
-            \draw[censoringColor, very thick, rotate=180] 
+            \draw[censoringColor, very thick, rotate=180]
                 (10-0.7,2-0.7) -- (10+0.7,2+0.7);
-            \draw[censoringColor, very thick, rotate=180] 
+            \draw[censoringColor, very thick, rotate=180]
                 (10-0.7,2+0.7) -- (10+0.7,2-0.7);
-                
+
             % Observed after positive screening
             \addplot[
                 primaryDark,
@@ -259,7 +259,7 @@
             ] coordinates {
                 (10,2) (40,2)
             };
-            
+
             % Case 3: Test detects condition with delay, then event
             % Unobserved period
             \addplot[
@@ -270,7 +270,7 @@
             ] coordinates {
                 (0,3) (10,3)
             };
-            
+
             % Tested negative at first
             \addplot[
                 primaryDark,
@@ -279,10 +279,10 @@
             ] coordinates {
                 (10,3) (25,3)
             };
-            
+
             % Test detects condition
             \node[diamond, fill=event3Color, inner sep=1.5pt] at (25,3) {};
-            
+
             % Followed until event
             \addplot[
                 primaryDark,
@@ -291,10 +291,10 @@
             ] coordinates {
                 (25,3) (45,3)
             };
-            
+
             % Event mark
             \node[circle, fill=event1Color, inner sep=2pt] at (45,3) {};
-            
+
             % Case 4: Left and right censoring
             % Left censored unobserved period
             \addplot[
@@ -305,13 +305,13 @@
             ] coordinates {
                 (0,4) (10,4)
             };
-            
+
             % Left censoring mark
-            \draw[censoringColor, very thick, rotate=180] 
+            \draw[censoringColor, very thick, rotate=180]
                 (10-0.7,4-0.7) -- (10+0.7,4+0.7);
-            \draw[censoringColor, very thick, rotate=180] 
+            \draw[censoringColor, very thick, rotate=180]
                 (10-0.7,4+0.7) -- (10+0.7,4-0.7);
-                
+
             % Observed period
             \addplot[
                 primaryDark,
@@ -320,78 +320,78 @@
             ] coordinates {
                 (10,4) (35,4)
             };
-            
+
             % Right censoring mark
-            \draw[censoringColor, very thick] 
+            \draw[censoringColor, very thick]
                 (35-0.7,4-0.7) -- (35+0.7,4+0.7);
-            \draw[censoringColor, very thick] 
+            \draw[censoringColor, very thick]
                 (35-0.7,4+0.7) -- (35+0.7,4-0.7);
-                
+
             % Labels with arrows - positioned to avoid crossing lines
             % Case 1
             \draw[->, thin, gray] (7,0.6) -- (7,0.9);
             \node[below, align=center, font=\footnotesize, text=gray] at (7,0.5) {Event occurred\\before screening};
-            
+
             \draw[->, thin, gray] (20,0.6) -- (20,0.9);
             \node[below, align=center, font=\footnotesize, text=gray] at (20,0.5) {Observed with\\condition};
-            
+
             % Case 2
             \draw[->, thin, gray] (5,1.6) -- (5,1.9);
             \node[below, align=center, font=\footnotesize, text=gray] at (5,1.5) {Unknown\\event time};
-            
+
             \draw[->, thin, gray] (10,1.6) -- (10,1.9);
             \node[below, align=center, font=\footnotesize, text=gray] at (10,1.5) {Left censoring\\at screening};
-            
+
             % Case 3
             \draw[->, thin, gray] (18,2.6) -- (18,2.9);
             \node[below, align=center, font=\footnotesize, text=gray] at (18,2.5) {Test negative};
-            
+
             \draw[->, thin, gray] (25,2.6) -- (25,2.9);
             \node[below, align=center, font=\footnotesize, text=gray] at (25,2.5) {Test positive};
-            
+
             \draw[->, thin, gray] (45,2.6) -- (45,2.9);
             \node[below, align=center, font=\footnotesize, text=gray] at (45,2.5) {Event};
-            
+
             % Case 4
             \draw[->, thin, gray] (10,3.6) -- (10,3.9);
             \node[below, align=center, font=\footnotesize, text=gray] at (10,3.5) {Left censoring};
-            
+
             \draw[->, thin, gray] (35,3.6) -- (35,3.9);
             \node[below, align=center, font=\footnotesize, text=gray] at (35,3.5) {Right censoring};
-            
+
             % Add a legend at the bottom of the plot instead of top-right
             \legend{}
-            
+
             % Create a separate legend below the plot using nodes
             \coordinate (legendpos) at (rel axis cs:0.5,-0.3);
-            
+
             % Row 1
             % Symbol for observed follow-up
             \node[inner sep=0] at ($(legendpos)+(-4.5,0.3)$) {\tikz{\draw[primaryDark, thick] (-0.15,0) -- (0.15,0);}};
             \node[right, font=\footnotesize] at ($(legendpos)+(-4.3,0.3)$) {Observed follow-up};
-            
+
             % Symbol for unobserved time
             \node[inner sep=0] at ($(legendpos)+(-1.5,0.3)$) {\tikz{\draw[primaryDark, thick, opacity=0.3] (-0.15,0) -- (0.15,0);}};
             \node[right, font=\footnotesize] at ($(legendpos)+(-1.3,0.3)$) {Unobserved time};
-            
+
             % Symbol for observed event
             \node[inner sep=0] at ($(legendpos)+(1.5,0.3)$) {\tikz{\draw[mark size=3pt, mark=*, mark options={fill=event1Color}] plot coordinates {(0,0)};}};
             \node[right, font=\footnotesize] at ($(legendpos)+(1.7,0.3)$) {Observed event};
-            
+
             % Row 2
             % Symbol for unobserved event
             \node[inner sep=0] at ($(legendpos)+(-4.5,0)$) {\tikz{\draw[mark size=3pt, mark=*, mark options={fill=event1Color, opacity=0.5}] plot coordinates {(0,0)};}};
             \node[right, font=\footnotesize] at ($(legendpos)+(-4.3,0)$) {Unobserved event};
-            
+
             % Symbol for test detection
             \node[inner sep=0] at ($(legendpos)+(-1.5,0)$) {\tikz{\draw[mark size=3pt, mark=diamond, mark options={fill=event3Color}] plot coordinates {(0,0)};}};
             \node[right, font=\footnotesize] at ($(legendpos)+(-1.3,0)$) {Test detection};
-            
+
             % Row 3
             % Symbol for right censoring
             \node[inner sep=0] at ($(legendpos)+(-4.5,-0.3)$) {\tikz{\draw[censoringColor, very thick] (-0.1,-0.1) -- (0.1,0.1); \draw[censoringColor, very thick] (-0.1,0.1) -- (0.1,-0.1);}};
             \node[right, font=\footnotesize] at ($(legendpos)+(-4.3,-0.3)$) {Right censoring};
-            
+
             % Symbol for left censoring
             \node[inner sep=0] at ($(legendpos)+(-1.5,-0.3)$) {\tikz{\draw[censoringColor, very thick, rotate=180] (-0.1,-0.1) -- (0.1,0.1); \draw[censoringColor, very thick, rotate=180] (-0.1,0.1) -- (0.1,-0.1);}};
             \node[right, font=\footnotesize] at ($(legendpos)+(-1.3,-0.3)$) {Left censoring};

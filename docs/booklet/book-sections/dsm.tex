@@ -131,14 +131,14 @@ Two fundamental types of uncertainty need to be addressed:
             ]
             % Mean prediction
             \addplot[blue, thick] {exp(-(x/5)^1.2)};
-            
+
             % Upper and lower confidence bounds with named paths
             \addplot[blue, dashed, name path=upper] {exp(-(x/6)^1.2)};
             \addplot[blue, dashed, name path=lower] {exp(-(x/4)^1.2)};
-            
+
             % Fill between the named paths
             \addplot[blue!20, forget plot] fill between[of=upper and lower];
-            
+
             \legend{Mean Prediction, Uncertainty Bounds}
         \end{axis}
     \end{tikzpicture}
@@ -168,15 +168,15 @@ The central innovation of DSM is to model survival as a mixture of parametric di
     \centering
     \begin{tikzpicture}[scale=1.0, transform shape]
         \node[draw, rounded corners, minimum width=3.5cm, minimum height=0.8cm, fill=blue!10] (input) at (0,0) {Input Covariates $\mathbf{x}$};
-        
+
         \node[draw, rounded corners, minimum width=3.5cm, minimum height=1.2cm, fill=orange!10] (shared) at (0,-1.5) {$\phi(\mathbf{x})$: Shared Representation};
-        
+
         \node[draw, rounded corners, minimum width=1.5cm, minimum height=0.8cm, fill=green!10] (k1) at (-1.75,-3) {$\theta_1(\phi(\mathbf{x}))$};
         \node at (0,-3) {$\ldots$};
         \node[draw, rounded corners, minimum width=1.5cm, minimum height=0.8cm, fill=green!10] (k2) at (1.75,-3) {$\theta_K(\phi(\mathbf{x}))$};
-        
+
         \node[draw, rounded corners, minimum width=3.5cm, minimum height=0.8cm, fill=red!10] (output) at (0,-4.5) {$S(t|\mathbf{x}) = \sum_k \pi_k S_k(t|\theta_k)$};
-        
+
         \draw[-latex, thick] (input) -- (shared);
         \draw[-latex, thick] (shared) -- (k1);
         \draw[-latex, thick] (shared) -- (k2);
@@ -430,10 +430,10 @@ The mixture approach allows DSM to model complex hazard patterns that would be i
             ]
             % Bathtub hazard (high early, low middle, rising late)
             \addplot[blue, thick] {0.5*exp(-0.5*x) + 0.05*x + 0.1};
-            
+
             % Bimodal hazard (two peaks)
             \addplot[red, thick] {0.4*x*exp(-0.5*x) + 0.2*(x-6)^2*exp(-2*(x-6)^2) + 0.1};
-            
+
             \legend{Bathtub Hazard, Bimodal Hazard}
         \end{axis}
     \end{tikzpicture}
@@ -477,17 +477,17 @@ The complete DSM architecture can be visualized as follows:
     \centering
     \begin{tikzpicture}
         \node[draw, rounded corners, minimum width=4cm, minimum height=0.8cm, fill=blue!10] (input) at (0,0) {$\mathbf{x} \in \mathbb{R}^d$};
-        
+
         \node[draw, rounded corners, minimum width=4cm, minimum height=0.8cm, fill=orange!10] (hidden1) at (0,-1.5) {$\mathbf{h}_1 = \sigma(W_1\mathbf{x} + \mathbf{b}_1)$};
-        
+
         \node[draw, rounded corners, minimum width=4cm, minimum height=0.8cm, fill=orange!10] (hidden2) at (0,-2.7) {$\phi(\mathbf{x}) = \sigma(W_2\mathbf{h}_1 + \mathbf{b}_2)$};
-        
+
         \node[draw, rounded corners, minimum width=2.5cm, minimum height=0.8cm, fill=green!10] (alpha) at (-3,-4) {$\alpha_k(\mathbf{x})$};
-        
+
         \node[draw, rounded corners, minimum width=2.5cm, minimum height=0.8cm, fill=green!10] (lambda) at (0,-4) {$\lambda_k(\mathbf{x})$};
-        
+
         \node[draw, rounded corners, minimum width=2.5cm, minimum height=0.8cm, fill=green!10] (pi) at (3,-4) {$\pi_k(\mathbf{x})$};
-        
+
         \draw[-latex, thick] (input) -- (hidden1);
         \draw[-latex, thick] (hidden1) -- (hidden2);
         \draw[-latex, thick] (hidden2) -- (alpha);

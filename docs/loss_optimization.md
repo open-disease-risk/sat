@@ -61,7 +61,7 @@ The `tests/models/benchmark_performance.py` file has been updated to remove refe
 
 After comprehensive testing, we have made the following additional changes:
 
-1. **Removed DeepHitRankingLoss**: 
+1. **Removed DeepHitRankingLoss**:
    - Completely removed this class as SampleRankingLoss provides identical functionality with better performance
    - Enhanced SampleRankingLoss documentation to clarify its purpose and usage
 
@@ -77,7 +77,7 @@ After comprehensive testing, we have made the following additional changes:
 
 The SAT library now has two complementary ranking losses with clear, distinct purposes:
 
-1. **SampleRankingLoss**: 
+1. **SampleRankingLoss**:
    - Focuses on within-event ranking (comparing different observations with the same event type)
    - Ensures that observations with earlier events have higher risk than those with later events
    - Useful for general survival analysis where timing of events is important

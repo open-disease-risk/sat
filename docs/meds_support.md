@@ -75,13 +75,13 @@ labelers:
     name: mortality
     event_codes: ["MEDS_DEATH"]
     max_time: 3650.0
-  
+
   # Competing risks labeler for diseases
   - type: competing_risk
     name: competing_risks
     event_codes:
       heart_disease: ["ICD10:I25.1", "ICD10:I25.10"]
-      diabetes: ["ICD10:E11", "ICD10:E11.9"] 
+      diabetes: ["ICD10:E11", "ICD10:E11.9"]
       hypertension: ["ICD10:I10"]
     max_time: 3650.0
 
@@ -92,7 +92,7 @@ featurizers:
     name: temporal_density
     window_sizes: [30, 90, 180, 365]
     event_types: ["diagnosis", "medication", "lab"]
-    
+
   # Temporal pattern features
   - type: temporal_pattern
     name: sequence_patterns
@@ -173,7 +173,7 @@ labelers:
     max_followup_days: 1095  # 3 years follow-up
     death_codes: ["SNOMED/419620001"]  # Using MEDS_DEATH_CODE
     enrollment_codes: ["ENROLLMENT"]
-    
+
   # Hospitalization event labeler
   - type: custom_event
     name: hospitalization
@@ -181,7 +181,7 @@ labelers:
     event_definition:
       codes: ["ENC_INPATIENT"]
     enrollment_codes: ["ENROLLMENT"]
-      
+
   # Custom event labeler for complex event definitions
   - type: custom_event
     name: diabetes_complications
@@ -193,7 +193,7 @@ labelers:
             - codes: ["ICD10:I50"]  # Heart failure
             - codes: ["ICD10:N18"]  # Kidney disease
     enrollment_codes: ["ENROLLMENT"]
-            
+
   # Risk factor labeler to identify conditions
   - type: risk_factor
     name: risk_factors
@@ -278,7 +278,7 @@ from sat.data.dataset.femr_extensions import ParallelLabeler, ParallelFeaturizer
 class MyCustomLabeler(ParallelLabeler):
     def __init__(self, name, **kwargs):
         super().__init__(name=name, **kwargs)
-        
+
     def label_patient(self, patient):
         # Custom labeling logic - only need to implement the single-patient case
         # Parallel processing is handled by the parent class
@@ -287,7 +287,7 @@ class MyCustomLabeler(ParallelLabeler):
 class MyCustomFeaturizer(ParallelFeaturizer):
     def __init__(self, name, **kwargs):
         super().__init__(name=name, **kwargs)
-        
+
     def featurize_patient(self, patient):
         # Custom featurizing logic - only need to implement the single-patient case
         # Parallel processing is handled by the parent class

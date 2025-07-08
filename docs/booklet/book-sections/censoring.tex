@@ -13,9 +13,9 @@ Censoring occurs when we have incomplete information about a subject's survival 
 Censoring occurs when the event time is not precisely observed but is known to occur within a certain time range. The three main types of censoring are:
 \begin{itemize}
     \item \textbf{Right censoring:} The most common type, occurs when a subject has not experienced the event of interest by the end of the study, is lost to follow-up, or withdraws from the study. Right censoring gives us a lower bound on the true time-to-event.
-    
+
     \item \textbf{Left censoring:} Occurs when the event is known to have occurred before the first observation time, but the exact time is unknown. We only know that $T < t_{first}$.
-    
+
     \item \textbf{Interval censoring:} Occurs when we only know that the event occurred within a certain time interval, but not the exact time. This happens when subjects are assessed periodically, and the event is detected at a follow-up visit.
 \end{itemize}
 \end{definitionbox}
@@ -49,12 +49,12 @@ Three types of censoring mechanisms are distinguished:
     \begin{equation}
         P(C = c | T = t, X = x) = P(C = c)
     \end{equation}
-    
+
     \item \textbf{Missing At Random (MAR):} Censoring depends on observed covariates but not on the event time itself. Examples include study withdrawal related to observed side effects.
     \begin{equation}
         P(C = c | T = t, X = x) = P(C = c | X = x)
     \end{equation}
-    
+
     \item \textbf{Missing Not At Random (MNAR):} Censoring depends on the unobserved event time. Examples include patients dropping out because of health deterioration not captured in observations.
     \begin{equation}
         P(C = c | T = t, X = x) \neq P(C = c | X = x)
@@ -72,30 +72,30 @@ where $T$ is the event time, $C$ is the censoring time, and $X$ represents covar
             \node[draw, circle, fill=blue!10] (T1) at (0,0) {$T$};
             \node[draw, circle, fill=red!10] (C1) at (1.5,0) {$C$};
             \node[draw, circle, fill=green!10] (X1) at (0.75,-1.5) {$X$};
-            
+
             \node[align=center, text width=2.5cm] at (0.75,1) {MCAR};
         \end{scope}
-        
+
         % MAR diagram
         \begin{scope}[shift={(0,0)}]
             \node[draw, circle, fill=blue!10] (T2) at (0,0) {$T$};
             \node[draw, circle, fill=red!10] (C2) at (1.5,0) {$C$};
             \node[draw, circle, fill=green!10] (X2) at (0.75,-1.5) {$X$};
-            
+
             \draw[->, thick] (X2) -- (C2);
-            
+
             \node[align=center, text width=2.5cm] at (0.75,1) {MAR};
         \end{scope}
-        
+
         % MNAR diagram
         \begin{scope}[shift={(3.5,0)}]
             \node[draw, circle, fill=blue!10] (T3) at (0,0) {$T$};
             \node[draw, circle, fill=red!10] (C3) at (1.5,0) {$C$};
             \node[draw, circle, fill=green!10] (X3) at (0.75,-1.5) {$X$};
-            
+
             \draw[->, thick] (X3) -- (C3);
             \draw[->, thick] (T3) -- (C3);
-            
+
             \node[align=center, text width=2.5cm] at (0.75,1) {MNAR};
         \end{scope}
     \end{tikzpicture}
@@ -117,7 +117,7 @@ For survival analysis methods to produce valid results, censoring must typically
 
 \begin{itemize}
     \item \textbf{Independent/non-informative:} The censoring mechanism should be unrelated to the event process. If subjects who are more likely to experience the event are also more likely to be censored, we have informative censoring, which can bias results.
-    
+
     \item \textbf{Random:} The distribution of censoring times should be random and not systematically related to subject characteristics or study conditions.
 \end{itemize}
 
@@ -140,7 +140,7 @@ Competing risks occur when subjects can experience multiple types of events, and
         \node[state, below left of=start] (event1) at (-2,-2) {Event 1};
         \node[state, below of=start] (event2) at (0,-2) {Event 2};
         \node[state, below right of=start] (event3) at (2,-2) {Event 3};
-        
+
         % Transitions
         \draw[arrow] (start) -- (event1) node[midway, left] {$h_1(t)$};
         \draw[arrow] (start) -- (event2) node[midway, right] {$h_2(t)$};
@@ -157,9 +157,9 @@ When analyzing data with competing risks, we consider:
 
 \begin{itemize}
     \item \textbf{Cause-specific hazards:} The instantaneous rate of occurrence of a specific event type among those still at risk.
-    
+
     \item \textbf{Cumulative Incidence Function (CIF):} The probability of experiencing a specific event type before time $t$ and before experiencing any competing event.
-    
+
     \item \textbf{Subdistribution hazard:} The instantaneous rate of occurrence of a specific event type among those who have not experienced that specific event yet (including those who have experienced competing events).
 \end{itemize}
 
@@ -170,13 +170,13 @@ Unlike in the standard survival setting where the survival function is directly 
 
 \begin{itemize}
     \item \textbf{Cause-specific Cox models:} Fit separate Cox models for each cause, treating competing events as censored.
-    
+
     \item \textbf{Fine and Gray model:} Models the subdistribution hazard directly, allowing for direct assessment of covariate effects on the CIF.
-    
+
     \item \textbf{Multi-state models:} Consider transitions between different states (e.g., healthy, diseased, dead) and can model complex disease processes.
-    
+
     \item \textbf{Joint modeling:} Simultaneously model multiple event types, accounting for their dependencies.
-    
+
     \item \textbf{Neural approaches (e.g., MENSA):} Use neural networks to model complex relationships between covariates and multiple event types.
 \end{itemize}
 

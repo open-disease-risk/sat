@@ -17,26 +17,40 @@ from sat.utils import config, logging, statistics
 logger = logging.get_default_logger()
 
 
-def _cv(cfg: DictConfig) -> None:
+def _cv(cfg: DictConfig) -> tuple[dict, dict]:
     cfg.cv.k = cfg.cv_kfold
     logger.info(f"Run {cfg.cv.k}-fold cross validation")
 
+    # Skip test predictions during CV to save computation time
+    cfg.compute_test_predictions = False
+
+    # Always use validation metrics for model selection (ML best practice)
+    metric_names = cfg.cv_ci_metrics.validation
+
+    # Create OnlineStats objects for each configured metric
     cv_metrics = {}
-    for metric in cfg.cv_metrics:
+    for metric in metric_names:
         cv_metrics[metric] = statistics.OnlineStats()
 
     for fold in range(cfg.cv.k):
         cfg.replication = fold
         logger.info("Run training pipeline")
-        metrics, test_metrics = _finetune(cfg)
+        val_metrics, test_metrics = _finetune(cfg)
+
+        # Always use validation metrics for model selection
+        metrics = val_metrics
 
         for metric, stat in cv_metrics.items():
-            stat.push(metrics[metric])
+            if metric in metrics:
+                stat.push(metrics[metric])
+            else:
+                logger.warning(f"Metric {metric} not found in results")
 
         logger.info(f"Finished run of fold number {fold}")
 
     cv_results = {"n": cfg.cv.k}
     for metric, stat in cv_metrics.items():
+        # Keep full metric name including prefix
         cv_results[metric] = {
             "mean": stat.mean(),
             "variance": stat.variance(),

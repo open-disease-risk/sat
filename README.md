@@ -130,7 +130,7 @@ relevant scripts to perform finetuning.
 
 *Note 1*: Different tasks share the data and pre-processing steps. E.g., in the
 above example, you could execute any other finetuning task without needing to
-execute steps 1.-3.. 
+execute steps 1.-3..
 
 Composable Loss Framework
 ============================
@@ -171,11 +171,11 @@ losses:
   - _target_: sat.loss.survival.SurvivalFocalLoss
     gamma: [2.0, 3.0]  # Different focus per event type
     num_events: ${data.num_events}
-    
+
   - _target_: sat.loss.ranking.SampleRankingLoss
     sigma: 0.1
     num_events: ${data.num_events}
-    
+
   - _target_: sat.loss.ranking.MultiEventRankingLoss
     sigma: 0.1
     num_events: ${data.num_events}
@@ -221,19 +221,19 @@ Five different balancing strategies are supported at both levels:
 1. **Fixed Weighting** (`fixed`): Standard approach using predefined coefficients
    - Simple and predictable
    - Requires manual tuning of weights
-   
+
 2. **Scale Normalization** (`scale`): Dynamically normalizes losses based on their magnitudes
    - Prevents losses with larger scales from dominating
    - Uses exponential moving average (EMA) tracking
-   
+
 3. **Gradient Normalization** (`grad`): Balances losses based on gradient magnitudes
    - Focuses on model optimization dynamics
    - Adapts to different loss optimization characteristics
-   
+
 4. **Homoscedastic Uncertainty Weighting** (`uncertainty`): Learns optimal weights
    - Automatically learns importances through principled approach
    - Adapts during training via gradient descent
-   
+
 5. **Adaptive Weighting** (`adaptive`): Adjusts weights based on improvement rates
    - Gives more weight to tasks that are improving slowly
    - Encourages balanced optimization across objectives
@@ -244,7 +244,7 @@ Five different balancing strategies are supported at both levels:
 # MTL survival model with automatic balancing between heads
 model:
   _target_: sat.models.heads.MTLForSurvival
-  
+
   # Configure the survival head
   survival_head:
     loss:
@@ -255,13 +255,13 @@ model:
         - _target_: sat.loss.ranking.SampleRankingLoss
           # ...
       balance_strategy: "scale"
-  
+
   # Configure the classification head
   classification_head:
     loss:
       _target_: sat.loss.classification.CrossEntropyLoss
       # ...
-  
+
   # Balance between the task heads
   mtl_balance_strategy: "uncertainty"
   mtl_balance_params:
@@ -341,19 +341,19 @@ analysis:
   run_distribution_analysis: true
   run_censoring_analysis: true
   run_covariate_analysis: true
-  
+
   # Distribution analysis settings
   distributions:
     - weibull
     - lognormal
     - loglogistic
   prefer_metric: bic
-  
+
   # Censoring analysis settings
   censoring:
     alpha: 0.05
     plot_survival_curves: true
-    
+
   # Covariate analysis settings
   covariates:
     top_n_features: 10
@@ -404,7 +404,7 @@ The framework uses a rigorous approach to determine when sufficient statistical 
    - Number of replications (n)
 
 2. It computes the confidence interval half-length using the t-distribution:
-   
+
    δ(n, α) = t(n-1, 1-α/2) × √(S²/n)
 
    Where:
@@ -412,9 +412,9 @@ The framework uses a rigorous approach to determine when sufficient statistical 
    - α is the significance level (e.g., 0.05 for 95% confidence)
 
 3. The framework checks if the relative error is within the desired precision:
-   
+
    δ(n, α) / |x̄| ≤ γ'
-   
+
    Where:
    - γ' is the adjusted relative error: γ' = γ/(1+γ)
    - γ is the desired precision/error margin
@@ -530,7 +530,7 @@ hydra:
   sweeper:
     study_name: custom_optimization
     storage: sqlite:///${optuna_db}/custom_optimization.db
-    
+
     # Define parameter search spaces
     params:
       learning_rate:
@@ -538,7 +538,7 @@ hydra:
         low: 1e-5
         high: 1e-3
         log: true
-      
+
       # Add other parameters to tune
       # ...
 
@@ -547,7 +547,7 @@ optuna:
   metric: test_your_metric  # Metric to optimize
   direction: minimize  # or maximize
   study_overwrite: true  # Set to false to resume existing study
-  
+
   # Optional pruning configuration
   pruner:
     type: median  # Options: median, percentile, threshold, hyperband, none
@@ -600,7 +600,7 @@ SAT now supports the Medical Event Data Standard (MEDS) format, providing integr
 
 2. **Configure Label Definitions**:
    Create a custom configuration file or modify the existing one at `conf/data/parse/meds.yaml`:
-   
+
    ```yaml
    label_definitions:
      - name: mortality

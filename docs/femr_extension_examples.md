@@ -194,7 +194,7 @@ for outcome_col in outcome_label_cols:
 if competing_times:
     # Find earliest competing event
     censor_time = min(competing_times)
-    
+
     # Censor outcome labels if they occur after competing event
     for outcome_col in outcome_label_cols:
         labels = labels_dict[outcome_col][i]

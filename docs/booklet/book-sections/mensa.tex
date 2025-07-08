@@ -406,50 +406,50 @@ MENSA builds on the DSM framework by extending it to handle multiple competing e
     ]
         % Input layer
         \node[box, fill=blue!10] (input) at (0,0) {Input Features $\mathbf{x}$};
-        
+
         % Shared representation
         \node[box, fill=orange!10] (shared) at (0,-1.5) {Shared Representation $\phi(\mathbf{x})$};
-        
+
         % Event-specific networks
         \node[box, fill=green!10] (net1) at (-4,-3) {Event 1 Network};
         \node[box, fill=green!10] (net2) at (0,-3) {Event 2 Network};
         \node[box, fill=green!10] (net3) at (4,-3) {Event 3 Network};
-        
+
         % Distribution parameters for each event
         \node[param, fill=red!10] (alpha1) at (-5,-4.5) {$\alpha_1(\mathbf{x})$};
         \node[param, fill=red!10] (lambda1) at (-3,-4.5) {$\lambda_1(\mathbf{x})$};
-        
+
         \node[param, fill=red!10] (alpha2) at (-1,-4.5) {$\alpha_2(\mathbf{x})$};
         \node[param, fill=red!10] (lambda2) at (1,-4.5) {$\lambda_2(\mathbf{x})$};
-        
+
         \node[param, fill=red!10] (alpha3) at (3,-4.5) {$\alpha_3(\mathbf{x})$};
         \node[param, fill=red!10] (lambda3) at (5,-4.5) {$\lambda_3(\mathbf{x})$};
-        
+
         % Mixture components (distributions)
         \node[box, fill=purple!10, minimum width=2cm, minimum height=0.6cm] (dist1) at (-4,-6) {$K$ distributions};
         \node[box, fill=purple!10, minimum width=2cm, minimum height=0.6cm] (dist2) at (0,-6) {$K$ distributions};
         \node[box, fill=purple!10, minimum width=2cm, minimum height=0.6cm] (dist3) at (4,-6) {$K$ distributions};
-        
+
         % Connections
         \draw[arrow] (input) -- (shared);
         \draw[arrow] (shared) -- (net1);
         \draw[arrow] (shared) -- (net2);
         \draw[arrow] (shared) -- (net3);
-        
+
         \draw[arrow] (net1) -- (alpha1);
         \draw[arrow] (net1) -- (lambda1);
         \draw[arrow] (net2) -- (alpha2);
         \draw[arrow] (net2) -- (lambda2);
         \draw[arrow] (net3) -- (alpha3);
         \draw[arrow] (net3) -- (lambda3);
-        
+
         \draw[arrow] (alpha1) -- (dist1);
         \draw[arrow] (lambda1) -- (dist1);
         \draw[arrow] (alpha2) -- (dist2);
         \draw[arrow] (lambda2) -- (dist2);
         \draw[arrow] (alpha3) -- (dist3);
         \draw[arrow] (lambda3) -- (dist3);
-        
+
         % Information sharing annotation
         \draw[<->, dashed, blue, thick] (-4,-2.5) -- (0,-2.5);
         \draw[<->, dashed, blue, thick] (0,-2.5) -- (4,-2.5);

@@ -26,11 +26,11 @@ Survival datasets, particularly in medical domains, frequently exhibit high cens
 
 \begin{definitionbox}[title=Event Sparsity in Mini-Batches]
   In a typical survival dataset with censoring rate $c \in [0,1]$, the expected number of events in a mini-batch of size $B$ is:
-  
+
   \begin{equation}
     \mathbb{E}[\text{events}] = B \cdot (1 - c)
   \end{equation}
-  
+
   For high censoring rates (e.g., $c = 0.9$), a batch size of $B = 32$ yields only $\mathbb{E}[\text{events}] = 3.2$ events per batch.
 \end{definitionbox}
 
@@ -112,7 +112,7 @@ Momentum Contrast (MoCo) addresses the event sparsity challenge by maintaining a
   \item $\mathcal{Q}_{\text{emb}} = \{e_1, e_2, \ldots, e_K\}$: Queue of embeddings
   \item $\mathcal{Q}_{\text{ref}} = \{r_1, r_2, \ldots, r_K\}$: Queue of corresponding references (event indicators and times)
   \end{itemize}
-  
+
   where $K$ is the buffer size, $e_i$ are sample embeddings, and $r_i$ are the corresponding reference values.
 \end{definitionbox}
 
@@ -187,13 +187,13 @@ The standard MoCo loss combines two components: a loss computed on the current b
 
 \begin{equationbox}[title=Standard MoCo Survival Loss]
   The MoCo-enhanced survival loss is defined as:
-  
+
   \begin{align}
     \mathcal{L}_{\text{MoCo}} &= w_{\text{batch}} \cdot \mathcal{L}_{\text{base}}(X_{\text{batch}}, Y_{\text{batch}}) + w_{\text{combined}} \cdot \mathcal{L}_{\text{base}}(X_{\text{combined}}, Y_{\text{combined}})\\
     X_{\text{combined}} &= [X_{\text{batch}}; X_{\text{buffer}}]\\
     Y_{\text{combined}} &= [Y_{\text{batch}}; Y_{\text{buffer}}]
   \end{align}
-  
+
   where:
   \begin{itemize}
   \item $\mathcal{L}_{\text{base}}$ is any base survival loss function
@@ -219,12 +219,12 @@ The Dynamic Weight MoCo variant introduces time-dependent weights that gradually
 
 \begin{equationbox}[title=Dynamic Weight MoCo Loss]
   The Dynamic Weight MoCo loss uses interpolated weights:
-  
+
   \begin{align}
     w_{\text{batch}}(t) &= w_{\text{batch}}^{\text{initial}} + \frac{t}{T} \cdot (w_{\text{batch}}^{\text{final}} - w_{\text{batch}}^{\text{initial}})\\
     w_{\text{buffer}}(t) &= w_{\text{buffer}}^{\text{initial}} + \frac{t}{T} \cdot (w_{\text{buffer}}^{\text{final}} - w_{\text{buffer}}^{\text{initial}})
   \end{align}
-  
+
   where:
   \begin{itemize}
   \item $t$ is the current training step
@@ -280,7 +280,7 @@ The Adaptive Buffer variant monitors training dynamics and adjusts buffer usage 
 
 \begin{equationbox}[title=Adaptive MoCo Buffer Adjustment]
   The adaptive buffer adjustment is based on loss variance:
-  
+
   \begin{align}
     v_t &= \text{Var}(\mathcal{L}_{t-w:t})\\
     \Delta v_t &= \frac{v_t - v_{t-1}}{v_{t-1}}\\
@@ -290,7 +290,7 @@ The Adaptive Buffer variant monitors training dynamics and adjusts buffer usage 
       K_t & \text{otherwise}
     \end{cases}
   \end{align}
-  
+
   where:
   \begin{itemize}
   \item $v_t$ is the variance of the loss over a window of size $w$
@@ -498,13 +498,13 @@ The recommender considers several factors when providing suggestions:
 
 \begin{equationbox}[title=Buffer Size Estimation]
   The recommended buffer size is estimated as:
-  
+
   \begin{align}
     B_{\text{events}} &= B \cdot (1 - c)\\
     R_{\text{required}} &= \frac{E_{\min}}{B_{\text{events}}}\\
     K_{\text{recommended}} &= \min(\max(B \cdot (R_{\text{required}} - 1), B), K_{\max})
   \end{align}
-  
+
   where:
   \begin{itemize}
   \item $B$ is the batch size

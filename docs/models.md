@@ -41,7 +41,7 @@ Based on our benchmarks, here's how the different models compare in terms of per
 |-------|---------------|-----------------|---------------------|--------------|
 | Survival Task Head | ★★★★☆ | ★★★★★ | ★★★★☆ | ★★★★★ |
 | DeepHit | ★★★☆☆ | ★★★★☆ | ★★★☆☆ | ★★★★☆ |
-| DSM | ★★☆☆☆ | ★★★☆☆ | ★★★★☆ | ★★★☆☆ | 
+| DSM | ★★☆☆☆ | ★★★☆☆ | ★★★★☆ | ★★★☆☆ |
 | MENSA (no deps) | ★★★★☆ | ★★★★★ | ★★★☆☆ | ★★★☆☆ |
 | MENSA (with deps) | ★★★☆☆ | ★★★★☆ | ★★☆☆☆ | ★★☆☆☆ |
 
@@ -114,7 +114,7 @@ task_heads:
     num_features: ${..num_features}
     num_events: ${..num_events}
     # ... other MENSA parameters
-  
+
   - _target_: sat.models.heads.EventClassificationTaskHead
     # ... classification parameters
 ```

@@ -76,11 +76,11 @@ class StreamingKFoldSplitter:
         self.split_names = split_names
 
     def _normalize_hash(self, s: str) -> float:
-        h = hashlib.md5(s.encode("utf-8")).hexdigest()
+        h = hashlib.md5(s.encode("utf-8"), usedforsecurity=False).hexdigest()
         return int(h, 16) / 2**128
 
     def _fold(self, s: str) -> int:
-        h = hashlib.md5(s.encode("utf-8")).hexdigest()
+        h = hashlib.md5(s.encode("utf-8"), usedforsecurity=False).hexdigest()
         return int(h, 16) % self.k
 
     def _get_fold(self, example: Dict[str, Any]) -> int:

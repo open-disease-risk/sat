@@ -37,7 +37,6 @@ def apply_lifelines_patch():
             # Monkey patch the trapz function in lifelines modules that use it
             # Get the path to lifelines fitters for reference (not used but kept for debugging)
             # fitters_init_path = Path(inspect.getfile(lifelines.fitters))
-
             # List of lifelines modules that might use trapz
             modules_to_patch = [
                 "lifelines.fitters",

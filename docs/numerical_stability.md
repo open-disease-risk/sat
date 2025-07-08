@@ -57,7 +57,7 @@ if time_points.shape[1] > 0 and time_points[:, 0].min() < 1e-5:
     safe_time_points[:, 0] = torch.max(safe_time_points[:, 0], torch.tensor(1e-5, device=device))
 ```
 
-**Rationale**: 
+**Rationale**:
 - Time values must be positive for survival distributions. The upper bound of 1e10 prevents overflow while allowing for essentially any realistic time value.
 - Special attention is needed for t=0, where hazard functions are theoretically undefined (division by zero in density/survival).
 - For hazard calculations, we may skip the first time point if it's very close to zero, or replace it with a small positive value.
@@ -139,7 +139,7 @@ log_likelihood = torch.nan_to_num(log_likelihood, nan=-10.0, posinf=10.0, neginf
 
 - **Location parameter (μ)**: Clamped within a wide range (min=-100.0, max=100.0)
   - Median survival time is exp(μ)
-  
+
 - **Scale parameter (σ)**: Clamped to be positive (min=eps) with a reasonable upper bound (max=100.0)
   - Larger σ corresponds to greater variance in survival times
 
