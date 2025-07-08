@@ -271,7 +271,7 @@ def optimize(cfg: DictConfig) -> None:
     else:
         logger.info("No trial information found in configuration")
 
-    objective(cfg)
+    return objective(cfg)
 
 
 if __name__ == "__main__":

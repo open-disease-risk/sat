@@ -22,10 +22,10 @@ hydra:
       swapping_prob: 0.5
       constraints_func: null
       seed: ${seed}
-    storage: sqlite:///${modelhub}/${dataset}/${modelname}/studies.db
+    storage: sqlite:///${data_dir}/studies.db
     study_name: ${dataset}_${modelname}
 optuna:
-  metric: [ipcw.mean, brier.mean]
+  metric: [validation_ipcw_weighted_avg.mean, validation_brier_weighted_avg.mean]
   metric_direction: [maximize, minimize]
   pruner:
     _target_: optuna.pruners.MedianPruner
