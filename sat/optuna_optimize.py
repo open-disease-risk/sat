@@ -133,17 +133,8 @@ def objective(cfg: DictConfig) -> float | tuple[float, ...]:
         missing_metrics = []
 
         for idx, metric_name in enumerate(metric_names):
-            # For harmonized structure, we need to extract the mean value
-            # First try direct access (for non-harmonized structure)
+            # Use glom to safely access the metric value
             metric_value = glom(val_metrics, metric_name, default=None)
-
-            # If not found, try harmonized structure with .mean suffix
-            if metric_value is None:
-                # Extract base metric name (remove prefix if present)
-                base_metric = metric_name.replace("validation_", "").replace(
-                    "test_", ""
-                )
-                metric_value = glom(val_metrics, f"{base_metric}.mean", default=None)
 
             if metric_value is not None:
                 metric_values.append(metric_value)
