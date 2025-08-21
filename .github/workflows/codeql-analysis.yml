@@ -68,7 +68,7 @@ jobs:
 
       ## If you need a specific version of Java, an LTS runtime can be targeted.  11 is defaulted today
       ## See https://github.com/actions/setup-java
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: 'temurin' # See 'Supported distributions' for available options
           java-version: '21'      # 21, 17, 11, or 8 are the allowed LTS options
