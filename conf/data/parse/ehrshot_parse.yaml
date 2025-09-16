@@ -1,0 +1,10 @@
+_target_: sat.data.dataset.parse_omop.omop
+source: ${modelhub}/cohort/ehrshot_multievent/
+processed_dir: ${modelhub}
+name: ehrshot_multievent
+time_field: time
+primary_key: patient_id
+scale_numerics: true
+scale_method: standard
+min_scale_numerics: 1.0
+batch_size: 1000

@@ -11,6 +11,7 @@ from torch import nn
 from transformers import AutoModel
 
 from sat.models.nets import SimpleMLP
+from sat.models.femr_wrapper import create_femr_model_from_config, is_femr_model
 from sat.utils import logging
 
 from .base import BaseConfig, ClassificationTask, MTLTask, RegressionTask, SurvivalTask
@@ -116,9 +117,17 @@ class MTLForSurvival(MTLTask):
                 logger.debug(
                     f"Load model from pretrained {self.config.pretrained_params}"
                 )
-            self.transformer = AutoModel.from_pretrained(
-                **self.config.pretrained_params
-            )
+
+            model_name = self.config.pretrained_params["pretrained_model_name_or_path"]
+
+            # Check if this is a FEMR model (like Motor-T)
+            if is_femr_model(model_name):
+                logger.info(f"Detected FEMR model: {model_name}, using FEMR wrapper")
+                self.transformer = create_femr_model_from_config(self.config.pretrained_params)
+            else:
+                self.transformer = AutoModel.from_pretrained(
+                    **self.config.pretrained_params
+                )
         else:
             if logger.isEnabledFor(logging.DEBUG):
                 logger.debug(f"Load model from config {self.config.pretrained_params}")

@@ -1,0 +1,16 @@
+# MOTOR-T transformer configuration for SAT
+# Stanford's MOTOR-T foundation model for medical sequences
+# Note: This is a gated model requiring HuggingFace authentication
+
+# MOTOR-T model from HuggingFace (requires access approval)
+pretrained_model_name_or_path: "StanfordShahLab/motor-t-base"
+trust_remote_code: true  # Required for MOTOR-T custom model code
+use_auth_token: true  # Will use HF_TOKEN env var or huggingface-cli login
+
+# Model architecture parameters (from MOTOR-T)
+# These are loaded from the pretrained model:
+# hidden_size: 768
+# num_hidden_layers: 12  
+# num_attention_heads: 12
+# intermediate_size: 3072
+# max_position_embeddings: 496  # MOTOR-T context window
