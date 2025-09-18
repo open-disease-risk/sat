@@ -8,7 +8,7 @@ defaults:
   - override /data/parse: ${data/load}
   - override /data/transform: default
   - override /tokenizers: ehrshot_motor
-  - override /transformers: motor_t
+  - override /transformers: embedding_db
   - override /tasks: survival
   - override /trainer: default
 

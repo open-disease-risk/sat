@@ -12,6 +12,7 @@ from transformers import AutoModel
 
 from sat.models.nets import SimpleMLP
 from sat.models.femr_wrapper import create_femr_model_from_config, is_femr_model
+from sat.models.embedding_wrapper import create_embedding_model_from_config, is_embedding_model
 from sat.utils import logging
 
 from .base import BaseConfig, ClassificationTask, MTLTask, RegressionTask, SurvivalTask
@@ -124,6 +125,10 @@ class MTLForSurvival(MTLTask):
             if is_femr_model(model_name):
                 logger.info(f"Detected FEMR model: {model_name}, using FEMR wrapper")
                 self.transformer = create_femr_model_from_config(self.config.pretrained_params)
+            # Check if this is an embedding database model
+            elif is_embedding_model(model_name):
+                logger.info(f"Detected embedding database model: {model_name}, using embedding wrapper")
+                self.transformer = create_embedding_model_from_config(self.config.pretrained_params)
             else:
                 self.transformer = AutoModel.from_pretrained(
                     **self.config.pretrained_params
@@ -260,6 +265,8 @@ class MTLForSurvival(MTLTask):
         labels: Optional[torch.Tensor] = None,
         output_attentions: Optional[bool] = None,
         output_hidden_states: Optional[bool] = None,
+        patient_id: Optional[torch.Tensor] = None,
+        anchor_time: Optional[list] = None,
         **kwargs,
     ) -> Union[Tuple[torch.Tensor], SAOutput]:
         r"""
@@ -270,7 +277,18 @@ class MTLForSurvival(MTLTask):
         """
         # Filter arguments for transformer
         forward_dict = locals()
-        del_args = [arg for arg in forward_dict if arg not in self.forward_args]
+
+        # For embedding database models, we need patient_id and anchor_time
+        if hasattr(self.transformer, '__class__') and 'EmbeddingDatabase' in self.transformer.__class__.__name__:
+            # Keep patient_id and anchor_time for embedding models
+            required_args = ['patient_id', 'anchor_time']
+            # Also keep standard transformer args that the embedding wrapper expects
+            keep_args = set(self.forward_args + required_args)
+            del_args = [arg for arg in forward_dict if arg not in keep_args]
+        else:
+            # Standard transformer filtering
+            del_args = [arg for arg in forward_dict if arg not in self.forward_args]
+
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(
                 f"Remove unsupported arguments to the transformers forward function: {del_args}"
@@ -281,7 +299,7 @@ class MTLForSurvival(MTLTask):
             logger.debug(
                 f"""
                 Score the transformer with
-                - input ids {input_ids.shape}
+                - input ids {input_ids.shape if input_ids is not None else 'None'}
                 """
             )
             logger.debug(
@@ -297,16 +315,42 @@ class MTLForSurvival(MTLTask):
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug(f"Got {sequence_output} from transformer")
 
-        # Process hidden states through token embedder
-        token_embeddings = self.token_embedder(
-            sequence_output.hidden_states,
-            sequence_output,
-            self.config.select_hidden_layers,
-            attention_mask,
-        )
+        # Check if this is an embedding database model
+        from sat.models.embedding_wrapper import is_embedding_database_model
+        if is_embedding_database_model(self.transformer):
+            # For pre-computed embeddings, bypass token/sentence embedders
+            # The embeddings are already in the right format
+            if self.return_dict:
+                sentence_embeddings = sequence_output.last_hidden_state.squeeze(1)  # Remove seq_len dimension
+            else:
+                sentence_embeddings = sequence_output[0].squeeze(1)  # Remove seq_len dimension
 
-        # Create sentence embeddings from token embeddings
-        sentence_embeddings = self.sentence_embedder(token_embeddings, attention_mask)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"MTL: Using pre-computed embeddings directly")
+                logger.debug(f"  Shape: {sentence_embeddings.shape}")
+                logger.debug(f"  Values - Mean: {sentence_embeddings.mean():.6f}, Std: {sentence_embeddings.std():.6f}")
+                logger.debug(f"  Values - Min: {sentence_embeddings.min():.6f}, Max: {sentence_embeddings.max():.6f}")
+                logger.debug(f"  Zero percentage: {(sentence_embeddings == 0).float().mean():.4f}")
+
+            # Validate sentence embeddings
+            if torch.isnan(sentence_embeddings).any():
+                logger.error("MTL: NaN values detected in sentence embeddings!")
+            if torch.isinf(sentence_embeddings).any():
+                logger.error("MTL: Inf values detected in sentence embeddings!")
+            if sentence_embeddings.std() < 1e-6:
+                logger.warning("MTL: Sentence embeddings have very low variation")
+        else:
+            # Standard transformer processing
+            # Process hidden states through token embedder
+            token_embeddings = self.token_embedder(
+                sequence_output.hidden_states,
+                sequence_output,
+                self.config.select_hidden_layers,
+                attention_mask,
+            )
+
+            # Create sentence embeddings from token embeddings
+            sentence_embeddings = self.sentence_embedder(token_embeddings, attention_mask)
 
         # Get batch size and reshape for the shared network if needed
         batch_size = sentence_embeddings.shape[0]
@@ -315,6 +359,18 @@ class MTLForSurvival(MTLTask):
             logits = self.net(sentence_embeddings.reshape((batch_size, -1)))
         else:
             logits = self.net(sentence_embeddings)
+
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"MTL: Shared network output")
+            logger.debug(f"  Input shape: {sentence_embeddings.shape} -> Output shape: {logits.shape}")
+            logger.debug(f"  Logits - Mean: {logits.mean():.6f}, Std: {logits.std():.6f}")
+            logger.debug(f"  Logits - Min: {logits.min():.6f}, Max: {logits.max():.6f}")
+
+        # Validate shared network output
+        if torch.isnan(logits).any():
+            logger.error("MTL: NaN values detected in shared network logits!")
+        if torch.isinf(logits).any():
+            logger.error("MTL: Inf values detected in shared network logits!")
 
         if logger.isEnabledFor(logging.DEBUG):
             logger.debug("Score the task heads")
@@ -328,8 +384,12 @@ class MTLForSurvival(MTLTask):
         logits_tasks = []
 
         # Process all task heads
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"MTL: Processing {len(self.heads)} task heads")
+
         for i, h in enumerate(self.heads):
             if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"MTL: Processing task head {i}: {h.__class__.__name__}")
                 logger.debug(f"Score {i}-th task head")
                 logger.debug(f"head: {h}")
 
@@ -339,11 +399,25 @@ class MTLForSurvival(MTLTask):
             )
 
             if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"MTL: Task head {i} output:")
+                logger.debug(f"  Logits shape: {outputs[i].logits.shape}")
+                logger.debug(f"  Logits - Mean: {outputs[i].logits.mean():.6f}, Std: {outputs[i].logits.std():.6f}")
+                if outputs[i].loss is not None:
+                    logger.debug(f"  Loss: {outputs[i].loss.item():.6f}, Weight: {h.config.loss_weight}")
+                    logger.debug(f"  Weighted loss: {outputs[i].loss.item() * h.config.loss_weight:.6f}")
+                else:
+                    logger.warning(f"  Loss is None!")
                 logger.debug(f"Got output {outputs[i]} from the {i}-th task head")
 
             logits_tasks.append(outputs[i].logits)
             if labels is not None:
-                loss += outputs[i].loss * h.config.loss_weight
+                if outputs[i].loss is not None:
+                    weighted_loss = outputs[i].loss * h.config.loss_weight
+                    loss += weighted_loss
+                    if logger.isEnabledFor(logging.DEBUG):
+                        logger.debug(f"  Adding weighted loss: {weighted_loss.item():.6f}, Running total: {loss.item():.6f}")
+                else:
+                    logger.warning(f"  Skipping task head {i} - loss is None")
 
             # Save outputs based on task head type
             if isinstance(h, SurvivalTask):
