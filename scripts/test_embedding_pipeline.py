@@ -4,19 +4,16 @@ Test script to verify CLMBR embedding pipeline works end-to-end.
 This script loads a small batch of EHRSHOT data and traces embeddings through the model.
 """
 
-import torch
-import pickle
-import pandas as pd
-from pathlib import Path
 import sys
-import os
+from pathlib import Path
+
+import torch
 
 # Add SAT to path
 sat_root = Path(__file__).parent.parent
 sys.path.insert(0, str(sat_root))
 
 from sat.models.embedding_wrapper import EmbeddingDatabaseWrapper
-from sat.models.heads.mtl import MTLForSurvival
 from sat.utils import logging
 
 # Set up logging
@@ -55,7 +52,7 @@ def test_embedding_retrieval(wrapper):
     batch_anchor_times = ['2020-01-01'] * len(patient_ids)  # Dummy anchor times
 
     # Forward pass through wrapper
-    print(f"\n📊 Running forward pass...")
+    print("\n📊 Running forward pass...")
 
     with torch.no_grad():
         outputs = wrapper(
@@ -139,7 +136,7 @@ def test_survival_head(logits):
     survival_times = torch.randint(1, 365, (batch_size, num_events)).float()
     event_indicators = torch.randint(0, 2, (batch_size, num_events)).float()
 
-    print(f"\n📊 Testing loss calculation...")
+    print("\n📊 Testing loss calculation...")
     print(f"✓ Survival times shape: {survival_times.shape}")
     print(f"✓ Event indicators shape: {event_indicators.shape}")
 

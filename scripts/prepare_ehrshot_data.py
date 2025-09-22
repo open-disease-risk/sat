@@ -12,10 +12,9 @@ This script:
 import argparse
 import logging
 from pathlib import Path
-from typing import List, Dict, Any
 
-import pandas as pd
 import numpy as np
+import pandas as pd
 from tqdm import tqdm
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -39,41 +38,41 @@ def extract_patient_sequences(
         DataFrame with patient sequences and labels
     """
     results = []
-    
+
     # Group medical events by patient for efficiency
     logger.info("Grouping medical events by patient...")
     medical_by_patient = medical_df.groupby('patient_id')
-    
+
     logger.info(f"Processing {len(cohort_df)} patients...")
     for _, patient_row in tqdm(cohort_df.iterrows(), total=len(cohort_df)):
         patient_id = patient_row['patient_id']
         anchor_time = patient_row['anchor_time']
-        
+
         # Get medical events before anchor
         if patient_id in medical_by_patient.groups:
             patient_events = medical_df.loc[medical_by_patient.groups[patient_id]]
             before_anchor = patient_events[patient_events['start'] <= anchor_time]
-            
+
             if len(before_anchor) > 0:
                 # Sort by time and extract codes
                 before_anchor = before_anchor.sort_values('start')
                 codes = before_anchor['code'].tolist()
-                
+
                 # Truncate to max length (keep most recent)
                 if len(codes) > max_sequence_length:
                     codes = codes[-max_sequence_length:]
-                
+
                 # Format as space-delimited string
                 sequence = ' '.join(codes)
             else:
                 sequence = ""  # Empty sequence
         else:
             sequence = ""  # No medical history
-        
+
         # Collect all event times and indicators
         durations = []
         events = []
-        
+
         # Process each event type - use actual EHRSHOT event columns
         # Map to the 7 events we want to study (matching original EHRSHOT paper)
         event_mappings = [
@@ -104,7 +103,7 @@ def extract_patient_sequences(
                 # If column missing entirely, use defaults
                 durations.append(365.0)  # Max follow-up
                 events.append(0)  # Censored
-        
+
         results.append({
             'patient_id': patient_id,
             'x': sequence,  # Medical code sequence for MOTOR-T
@@ -113,11 +112,11 @@ def extract_patient_sequences(
             'events': events,
             'anchor_time': anchor_time
         })
-    
+
     return pd.DataFrame(results)
 
 
-def assign_splits(df: pd.DataFrame, train_ratio: float = 0.6, 
+def assign_splits(df: pd.DataFrame, train_ratio: float = 0.6,
                   valid_ratio: float = 0.2) -> pd.DataFrame:
     """
     Assign train/validation/test splits.
@@ -133,23 +132,23 @@ def assign_splits(df: pd.DataFrame, train_ratio: float = 0.6,
     n = len(df)
     n_train = int(n * train_ratio)
     n_valid = int(n * valid_ratio)
-    
+
     # Random shuffle for splitting
     indices = np.random.permutation(n)
-    
+
     splits = ['test'] * n
     for i in indices[:n_train]:
         splits[i] = 'train'
     for i in indices[n_train:n_train + n_valid]:
         splits[i] = 'valid'
-    
+
     df['split'] = splits
     return df
 
 
 def main():
     parser = argparse.ArgumentParser(description='Prepare EHRSHOT sequences for MOTOR-T')
-    parser.add_argument('--cohort', type=str, 
+    parser.add_argument('--cohort', type=str,
                        default='multievent_dataset/cohort.csv',
                        help='Path to cohort CSV with survival labels')
     parser.add_argument('--medical', type=str,
@@ -166,21 +165,21 @@ def main():
                        help='Validation set ratio')
     parser.add_argument('--seed', type=int, default=42,
                        help='Random seed for splitting')
-    
+
     args = parser.parse_args()
-    
+
     # Set random seed
     np.random.seed(args.seed)
-    
+
     # Create output directory
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Load cohort
     logger.info(f"Loading cohort from {args.cohort}...")
     cohort_df = pd.read_csv(args.cohort)
     logger.info(f"Loaded {len(cohort_df)} patients with survival labels")
-    
+
     # Load medical events
     logger.info(f"Loading medical events from {args.medical}...")
     if args.medical.endswith('.gz'):
@@ -188,42 +187,42 @@ def main():
     else:
         medical_df = pd.read_csv(args.medical)
     logger.info(f"Loaded {len(medical_df)} medical events")
-    
+
     # Extract sequences
     logger.info("Extracting medical code sequences...")
     sequences_df = extract_patient_sequences(
         cohort_df, medical_df, args.max_sequence_length
     )
-    
+
     # Assign splits
     logger.info("Assigning train/valid/test splits...")
     sequences_df = assign_splits(sequences_df, args.train_ratio, args.valid_ratio)
-    
+
     # Summary statistics
     logger.info("\nDataset Statistics:")
     logger.info(f"Total patients: {len(sequences_df)}")
-    logger.info(f"Split distribution:")
+    logger.info("Split distribution:")
     for split in ['train', 'valid', 'test']:
         count = len(sequences_df[sequences_df['split'] == split])
         logger.info(f"  {split}: {count} ({count/len(sequences_df)*100:.1f}%)")
-    
+
     seq_lengths = sequences_df['sequence_length']
-    logger.info(f"Sequence length statistics:")
+    logger.info("Sequence length statistics:")
     logger.info(f"  Mean: {seq_lengths.mean():.1f}")
     logger.info(f"  Median: {seq_lengths.median():.1f}")
     logger.info(f"  Max: {seq_lengths.max()}")
     logger.info(f"  Empty sequences: {(seq_lengths == 0).sum()}")
-    
+
     # Save to parquet
     output_file = output_dir / 'sequences.parquet'
     logger.info(f"Saving to {output_file}...")
     sequences_df.to_parquet(output_file, index=False)
-    
+
     # Also save a sample for inspection
     sample_file = output_dir / 'sequences_sample.csv'
     sequences_df.head(10).to_csv(sample_file, index=False)
     logger.info(f"Saved sample to {sample_file}")
-    
+
     logger.info("Done!")
 
 

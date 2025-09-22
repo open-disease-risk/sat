@@ -7,6 +7,7 @@ import argparse
 import json
 from pathlib import Path
 
+
 def fix_tokenizer_special_tokens(tokenizer_path):
     """Add special tokens to existing tokenizer."""
 
@@ -89,7 +90,7 @@ def fix_tokenizer_special_tokens(tokenizer_path):
     with open(tokenizer_path, 'w') as f:
         json.dump(tokenizer_data, f, indent=2)
 
-    print(f"✓ Successfully updated tokenizer!")
+    print("✓ Successfully updated tokenizer!")
     print(f"  - New vocabulary size: {len(vocab)}")
     print(f"  - Added special tokens: {list(missing_tokens.keys())}")
 
@@ -111,7 +112,7 @@ def main():
 
     if not tokenizer_path.exists():
         print(f"Error: Tokenizer file not found at {tokenizer_path}")
-        print(f"Please check the path and try again.")
+        print("Please check the path and try again.")
         return
 
     fix_tokenizer_special_tokens(tokenizer_path)

@@ -3,13 +3,15 @@
 Convert Motor-T JAX checkpoint to PyTorch format for use with FEMR.
 """
 
-import pickle
 import json
-import msgpack
-from pathlib import Path
-import torch
-import numpy as np
+import pickle
 import warnings
+from pathlib import Path
+
+import msgpack
+import numpy as np
+import torch
+
 warnings.filterwarnings('ignore', category=DeprecationWarning)
 
 def load_jax_checkpoint(checkpoint_path):
@@ -46,7 +48,7 @@ def convert_jax_to_pytorch_weights(jax_checkpoint):
                     break
 
             if layer_num is not None:
-                if 'linear' in jax_key and not 'linear_1' in jax_key:
+                if 'linear' in jax_key and 'linear_1' not in jax_key:
                     # First linear layer (attention projection)
                     if 'w' in jax_weights:
                         weight = np.array(jax_weights['w'])
@@ -187,12 +189,12 @@ def main():
     print(f"Model files created in: {motor_t_dir}")
     print("Files:")
     print(f"  - pytorch_model.bin ({pytorch_model_path.stat().st_size / 1024 / 1024:.1f} MB)")
-    print(f"  - config.json")
-    print(f"  - dictionary.msgpack (dummy)")
+    print("  - config.json")
+    print("  - dictionary.msgpack (dummy)")
 
     # Print some stats
     total_params = sum(p.numel() for p in pytorch_state_dict.values())
-    print(f"\\nModel statistics:")
+    print("\\nModel statistics:")
     print(f"  - Total parameters: {total_params:,}")
     print(f"  - Model size: {total_params * 4 / 1024 / 1024:.1f} MB (float32)")
 
