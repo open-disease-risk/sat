@@ -16,7 +16,6 @@ from logdecorator import log_on_end, log_on_error, log_on_start
 from omegaconf import DictConfig
 from tokenizers.processors import TemplateProcessing
 from transformers import PreTrainedTokenizerFast, Trainer, TrainingArguments
-from transformers.data.data_collator import DefaultDataCollator
 from transformers.integrations import TensorBoardCallback
 
 from sat.callbacks import LossWeightLoggerCallback
@@ -295,6 +294,7 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
 
     # Create custom data collator for embedding database models
     from transformers import DefaultDataCollator
+
     from sat.models.embedding_wrapper import is_embedding_model
 
     class EmbeddingDataCollator(DefaultDataCollator):

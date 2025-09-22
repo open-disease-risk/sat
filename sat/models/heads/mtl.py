@@ -160,10 +160,20 @@ class MTLForSurvival(MTLTask):
 
         # Freeze transformer if specified
         if self.config.freeze_transformer:
-            if logger.isEnabledFor(logging.DEBUG):
-                logger.debug("Freeze the transformer")
-            for _, param in self.transformer.base_model.named_parameters():
-                param.requires_grad = False
+            # Skip freezing for embedding database models (they have no parameters)
+            from sat.models.embedding_wrapper import is_embedding_database_model
+            if not is_embedding_database_model(self.transformer):
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug("Freeze the transformer")
+                # Use base_model if available, otherwise freeze all parameters
+                if hasattr(self.transformer, 'base_model'):
+                    for _, param in self.transformer.base_model.named_parameters():
+                        param.requires_grad = False
+                else:
+                    for _, param in self.transformer.named_parameters():
+                        param.requires_grad = False
+            else:
+                logger.debug("Skipping freeze for EmbeddingDatabaseWrapper (no trainable parameters)")
 
         # Initialize embedding processors
         self.token_embedder = TokenEmbedder(
@@ -308,6 +318,10 @@ class MTLForSurvival(MTLTask):
             logger.debug(
                 f"Forward dictionary for the backend transformer {forward_dict}"
             )
+            if 'patient_id' in forward_dict:
+                logger.debug(f"patient_id present: True, value: {forward_dict.get('patient_id')}")
+            if 'anchor_time' in forward_dict:
+                logger.debug(f"anchor_time present: True, value: {forward_dict.get('anchor_time')}")
 
         # Always set output_hidden_states to True since we need them
         forward_dict["output_hidden_states"] = True
