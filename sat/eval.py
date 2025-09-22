@@ -14,9 +14,11 @@ from omegaconf import DictConfig
 from transformers import PreTrainedTokenizerFast
 from transformers.pipelines import pipeline
 
+# Register custom survival-analysis pipeline
+import sat.transformers.pipelines  # noqa: F401 - needed for pipeline registration
 from sat.data import load
 from sat.evaluate.evaluator import evaluator
-from sat.models.tasks import heads
+from sat.models import heads
 from sat.models.utils import get_device, load_model
 from sat.transformers.feature_extractor import SAFeatureExtractor
 from sat.utils import config, logging, rand
@@ -73,17 +75,34 @@ def _eval(cfg: DictConfig) -> None:
             truncation=True,
             split_into_words=True,
             pad_to_multiple_of=8,
-            return_tensors="pt",
         ):
-            return tokenizer(
-                text=examples[data_key],
+            # Handle both batched and non-batched cases
+            if isinstance(examples[data_key], list):
+                # Batched case
+                text_input = examples[data_key]
+            else:
+                # Non-batched case - convert single example to list for consistent processing
+                text_input = [examples[data_key]]
+
+            # For split_into_words=True, we need to split the text into token lists
+            if split_into_words:
+                if isinstance(text_input[0], str):
+                    text_input = [text.split() for text in text_input]
+
+            result = tokenizer(
+                text=text_input,
                 max_length=max_length,
                 padding=padding,
                 truncation=truncation,
                 is_split_into_words=split_into_words,
                 pad_to_multiple_of=pad_to_multiple_of,
-                return_tensors=return_tensors,
             )
+
+            # If we had a single example, convert result back to single example format
+            if not isinstance(examples[data_key], list):
+                result = {k: v[0] if isinstance(v, list) and len(v) == 1 else v for k, v in result.items()}
+
+            return result
 
         def map_label(element):
             return sa_features(element)

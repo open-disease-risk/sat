@@ -13,7 +13,7 @@ from omegaconf import DictConfig
 from transformers import PreTrainedTokenizerFast
 from transformers.pipelines import pipeline
 
-from sat.models.tasks import heads
+from sat.models import heads
 from sat.models.utils import get_device, load_model
 from sat.utils import config, logging, rand
 from sat.utils.output import write_interpolation, write_output
