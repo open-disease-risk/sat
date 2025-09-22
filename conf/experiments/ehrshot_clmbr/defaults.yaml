@@ -21,8 +21,8 @@ warmup_steps: 100
 weight_decay: 0.01
 dropout: 0.1
 
-# Transformer settings - embeddings are frozen
-freeze_transformer: true  # CLMBR embeddings are pre-computed, not trainable
+# Transformer settings - embeddings have no trainable parameters
+freeze_transformer: false  # CLMBR embeddings have no trainable parameters to freeze
 select_hidden_layers: null  # Use all layers
 
 # Shared network between transformer and task heads

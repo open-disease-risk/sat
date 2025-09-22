@@ -4,10 +4,10 @@ modelname: survival-moco
 
 defaults:
   - ehrshot_clmbr/defaults
-  - override /data/load: ehrshot_clmbr
+  - override /data/load: ehrshot_motor
   - override /data/parse: ${data/load}
   - override /data/transform: default
-  - override /tokenizers: ehrshot_clmbr
+  - override /tokenizers: ehrshot_motor
   - override /transformers: embedding_db
   - override /tasks: survival
   - override /tasks/losses: adaptive_moco_nllpch

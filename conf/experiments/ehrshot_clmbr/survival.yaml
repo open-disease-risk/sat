@@ -22,8 +22,3 @@ survival_loss_weight: 1.0
 
 survival_shared_intermediate_size: 256
 survival_shared_num_hidden_layers: 2
-
-# Override task config to freeze transformer for CLMBR
-tasks:
-  config:
-    freeze_transformer: true
