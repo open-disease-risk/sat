@@ -1,0 +1,1 @@
+- all python commands need to be preceeded by poetry run
