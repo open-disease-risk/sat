@@ -10,9 +10,12 @@ import torch
 from torch import nn
 from transformers import AutoModel
 
-from sat.models.nets import SimpleMLP
+from sat.models.embedding_wrapper import (
+    create_embedding_model_from_config,
+    is_embedding_model,
+)
 from sat.models.femr_wrapper import create_femr_model_from_config, is_femr_model
-from sat.models.embedding_wrapper import create_embedding_model_from_config, is_embedding_model
+from sat.models.nets import SimpleMLP
 from sat.utils import logging
 
 from .base import BaseConfig, ClassificationTask, MTLTask, RegressionTask, SurvivalTask
@@ -326,7 +329,7 @@ class MTLForSurvival(MTLTask):
                 sentence_embeddings = sequence_output[0].squeeze(1)  # Remove seq_len dimension
 
             if logger.isEnabledFor(logging.DEBUG):
-                logger.debug(f"MTL: Using pre-computed embeddings directly")
+                logger.debug("MTL: Using pre-computed embeddings directly")
                 logger.debug(f"  Shape: {sentence_embeddings.shape}")
                 logger.debug(f"  Values - Mean: {sentence_embeddings.mean():.6f}, Std: {sentence_embeddings.std():.6f}")
                 logger.debug(f"  Values - Min: {sentence_embeddings.min():.6f}, Max: {sentence_embeddings.max():.6f}")
@@ -361,7 +364,7 @@ class MTLForSurvival(MTLTask):
             logits = self.net(sentence_embeddings)
 
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(f"MTL: Shared network output")
+            logger.debug("MTL: Shared network output")
             logger.debug(f"  Input shape: {sentence_embeddings.shape} -> Output shape: {logits.shape}")
             logger.debug(f"  Logits - Mean: {logits.mean():.6f}, Std: {logits.std():.6f}")
             logger.debug(f"  Logits - Min: {logits.min():.6f}, Max: {logits.max():.6f}")
@@ -406,7 +409,7 @@ class MTLForSurvival(MTLTask):
                     logger.debug(f"  Loss: {outputs[i].loss.item():.6f}, Weight: {h.config.loss_weight}")
                     logger.debug(f"  Weighted loss: {outputs[i].loss.item() * h.config.loss_weight:.6f}")
                 else:
-                    logger.warning(f"  Loss is None!")
+                    logger.warning("  Loss is None!")
                 logger.debug(f"Got output {outputs[i]} from the {i}-th task head")
 
             logits_tasks.append(outputs[i].logits)

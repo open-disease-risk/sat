@@ -3,7 +3,7 @@
 # Note: This is a gated model requiring HuggingFace authentication
 
 # MOTOR-T model from HuggingFace (requires access approval)
-pretrained_model_name_or_path: "StanfordShahLab/motor-t-base"
+pretrained_model_name_or_path: "data/model-hub/motor-t"
 trust_remote_code: true  # Required for MOTOR-T custom model code
 use_auth_token: true  # Will use HF_TOKEN env var or huggingface-cli login
 

@@ -55,3 +55,4 @@ truncation_args:
 
 num_proc: 4
 cls_model_type: "BERT"
+return_tensors: null  # Motor-T needs lists for batched processing

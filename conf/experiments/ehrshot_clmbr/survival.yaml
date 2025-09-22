@@ -1,0 +1,29 @@
+# @package _global_
+dataset: ehrshot_clmbr
+modelname: survival
+
+defaults:
+  - ehrshot_clmbr/defaults
+  - override /data/load: ehrshot_motor
+  - override /data/parse: ${data/load}
+  - override /data/transform: default
+  - override /tokenizers: ehrshot_motor
+  - override /transformers: embedding_db
+  - override /tasks: survival
+  - override /trainer: default
+
+# Survival task specific parameters
+survival_intermediate_size: 128
+survival_batch_norm: true
+survival_hidden_dropout_prob: 0.1
+survival_bias: true
+survival_num_hidden_layers: 2
+survival_loss_weight: 1.0
+
+survival_shared_intermediate_size: 256
+survival_shared_num_hidden_layers: 2
+
+# Override task config to freeze transformer for CLMBR
+tasks:
+  config:
+    freeze_transformer: true

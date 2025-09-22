@@ -1,12 +1,13 @@
 """Embedding Database Wrapper for pre-computed embeddings integration with SAT framework"""
 
 import pickle
-from typing import Dict, Any, Optional, Tuple, Union
+from datetime import datetime
+from typing import Any, Dict, Optional, Tuple, Union
+
+import numpy as np
+import pandas as pd
 import torch
 from torch import nn
-import pandas as pd
-import numpy as np
-from datetime import datetime
 from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions
 
 from sat.utils import logging
@@ -53,7 +54,7 @@ class EmbeddingDatabaseWrapper(nn.Module):
 
             # Build efficient lookup index
             logger.info("Building patient lookup index...")
-            for idx, (patient_id, time) in enumerate(zip(patient_ids, labeling_times)):
+            for idx, (patient_id, time) in enumerate(zip(patient_ids, labeling_times, strict=False)):
                 if patient_id not in self.patient_lookup:
                     self.patient_lookup[patient_id] = []
                 self.patient_lookup[patient_id].append((time, idx))
@@ -188,7 +189,7 @@ class EmbeddingDatabaseWrapper(nn.Module):
 
         # Log statistics for debugging
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(f"EmbeddingDatabaseWrapper batch stats:")
+            logger.debug("EmbeddingDatabaseWrapper batch stats:")
             logger.debug(f"  Batch size: {batch_size}, Found: {found_embeddings}, Missing: {missing_embeddings}")
             logger.debug(f"  Embeddings shape: {last_hidden_state.shape}")
             logger.debug(f"  Values - Mean: {last_hidden_state.mean():.6f}, Std: {last_hidden_state.std():.6f}")

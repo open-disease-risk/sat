@@ -1,0 +1,40 @@
+# @package _global_
+dataset: ehrshot_clmbr
+modelname: mtl
+
+defaults:
+  - ehrshot_clmbr/defaults
+  - override /data/load: ehrshot_motor
+  - override /data/parse: ${data/load}
+  - override /data/transform: default
+  - override /tokenizers: ehrshot_motor
+  - override /transformers: embedding_db
+  - override /tasks: mtl
+  - override /trainer: default
+
+# MTL-specific parameters for multi-event survival using CLMBR embeddings
+survival_intermediate_size: 128
+survival_batch_norm: true
+survival_hidden_dropout_prob: 0.1
+survival_bias: true
+survival_num_hidden_layers: 2
+survival_loss_weight: 1.0
+
+classification_intermediate_size: 64
+classification_batch_norm: true
+classification_hidden_dropout_prob: 0.1
+classification_bias: true
+classification_num_hidden_layers: 1
+classification_loss_weight: 0.5
+
+regression_intermediate_size: 64
+regression_batch_norm: true
+regression_hidden_dropout_prob: 0.1
+regression_bias: true
+regression_num_hidden_layers: 1
+regression_loss_weight: 0.5
+
+# Override task config to freeze transformer for CLMBR
+tasks:
+  config:
+    freeze_transformer: true

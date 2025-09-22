@@ -4,3 +4,4 @@ vocab_size: 30000
 tokens:
   - pad
   - unk
+return_tensors: "pt"
