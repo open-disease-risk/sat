@@ -76,7 +76,7 @@ class SATNLLPCHazardLoss(Loss):
         device = references.device
 
         if logger.isEnabledFor(logging.DEBUG):
-            logger.debug(f"SATNLLPCHazardLoss: Computing loss")
+            logger.debug("SATNLLPCHazardLoss: Computing loss")
             logger.debug(f"  Logits shape: {logits.shape}")
             logger.debug(f"  References shape: {references.shape}")
             logger.debug(f"  Num events: {self.num_events}")

@@ -78,7 +78,7 @@ def _train_labeltransform(cfg: DictConfig) -> None:
     # Handle multi-event data
     events_data = np.array(train_data[cfg.data.event_col])
     durations_data = np.array(train_data[cfg.data.duration_col])
-    
+
     # Check if data is multi-event (nested arrays)
     if events_data.ndim > 1 and cfg.data.num_events > 1:
         # For multi-event, flatten all events and durations across all patients and events
@@ -88,7 +88,7 @@ def _train_labeltransform(cfg: DictConfig) -> None:
         # For single event, use as is
         events = events_data.ravel()
         durations = durations_data.ravel()
-    
+
     events_observed = events > 0
     if cfg.data.label_transform.event_type:
         events_observed = events == cfg.data.label_transform.event_type
@@ -96,13 +96,13 @@ def _train_labeltransform(cfg: DictConfig) -> None:
     # Filter out any invalid durations and check if we have any observed events
     valid_mask = np.isfinite(durations) & (durations > 0)
     events_observed = events_observed & valid_mask
-    
+
     if not np.any(events_observed):
         logger.warning("No observed events found in training data. Using all durations for quantiles.")
         durations_for_quantiles = durations[valid_mask]
     else:
         durations_for_quantiles = durations[events_observed]
-    
+
     if len(durations_for_quantiles) == 0:
         logger.warning("No valid durations found. Using default cuts.")
         max_duration = 365.0  # Default max duration
@@ -111,15 +111,15 @@ def _train_labeltransform(cfg: DictConfig) -> None:
     else:
         max_duration = np.max(durations[valid_mask])
         logger.debug(f"Max value of {cfg.data.duration_col}: {max_duration}")
-        
+
         horizons = np.linspace(0, 1.0, cfg.data.label_transform.cuts + 1)[1:-1]
         logger.debug(f"Compute duration quantiles for {horizons}")
         times = np.quantile(durations_for_quantiles, horizons).tolist()
-    
+
     # Ensure cuts are unique by removing duplicates and sorting
     cuts = np.array([0.0] + times + [max_duration])
     cuts = np.unique(cuts)
-    
+
     # If we still don't have enough unique cuts, generate them evenly
     if len(cuts) < cfg.data.label_transform.cuts + 1:
         logger.warning(f"Not enough unique cuts ({len(cuts)}). Generating {cfg.data.label_transform.cuts + 1} evenly spaced cuts.")
