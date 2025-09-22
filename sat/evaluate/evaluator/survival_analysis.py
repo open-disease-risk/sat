@@ -13,7 +13,6 @@ from evaluate.evaluator.base import (
     EVALUTOR_COMPUTE_START_DOCSTRING,
     Evaluator,
 )
-from evaluate.evaluator.utils import DatasetColumn
 from evaluate.module import EvaluationModule
 from evaluate.utils.file_utils import add_end_docstrings, add_start_docstrings
 from transformers import (
@@ -159,9 +158,29 @@ class SurvivalAnalysisEvaluator(Evaluator):
 
         data = load_dataset(data) if isinstance(data, str) else data
 
-        return {"references": np.array(data[label_column])}, DatasetColumn(
-            data, input_column
-        )
+        # For embedding database models, we need to pass full records with patient_id and anchor_time
+        # Check if dataset has these columns
+        has_patient_id = "patient_id" in data.column_names
+        has_anchor_time = "anchor_time" in data.column_names
+
+        if has_patient_id or has_anchor_time:
+            # For embedding database models, we need to pass full records with patient_id and anchor_time
+            # Create a list of full records instead of using DatasetColumn which only extracts one field
+            from evaluate.evaluator.utils import DatasetColumn
+
+            class FullRecordDatasetColumn(DatasetColumn):
+                """A DatasetColumn that returns full records instead of just one field"""
+
+                def __getitem__(self, i):
+                    # Return the full record instead of just the input column
+                    return self.dataset[i]
+
+            return {"references": np.array(data[label_column])}, FullRecordDatasetColumn(data, input_column)
+        else:
+            # Fall back to original behavior for standard models
+            return {"references": np.array(data[label_column])}, DatasetColumn(
+                data, input_column
+            )
 
     @add_start_docstrings(EVALUTOR_COMPUTE_START_DOCSTRING)
     @add_end_docstrings(EVALUATOR_COMPUTE_RETURN_DOCSTRING, TASK_DOCUMENTATION)
