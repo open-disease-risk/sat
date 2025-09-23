@@ -164,3 +164,36 @@ cython_debug/
 # VS Code debug
 .vscode/
 **/.claude/settings.local.json
+
+# Data directories and files
+data/ehrshot_motor/
+data/model-hub/
+data/optuna/
+data/studies.db
+data/synthetic_omop/
+data/debug/
+
+# Generated data files
+*.parquet
+*.pkl
+*.db
+
+# Log directories
+logs/
+outputs/
+
+# Analysis files
+*.png
+*.csv
+!scripts/*.csv  # Allow CSV files in scripts
+!conf/**/*.csv  # Allow config CSV files
+
+# Mac files
+.DS_Store
+
+# Temporary and cache files
+*.tex
+motor_t_integration_issue.md
+motor_t_integration_todo_issue.md
+pr.md
+studies.sh

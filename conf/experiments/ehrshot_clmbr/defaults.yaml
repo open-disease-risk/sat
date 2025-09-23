@@ -1,0 +1,60 @@
+# @package _global_
+defaults:
+  - ../defaults
+  - override /transformers: embedding_db
+  - override /tokenizers: ehrshot_motor
+  - override /data/load: ehrshot_motor
+  - override /data/parse: ehrshot_motor
+
+# CLMBR pre-computed embedding dimensions
+transformer_hidden_size: 768
+transformer_num_hidden_layers: 12
+transformer_num_attention_heads: 12
+transformer_intermediate_size: 3072
+
+# Maximum sequence length
+max_seq_length: 496  # MOTOR-T context window
+
+# Training hyperparameters for CLMBR embeddings
+learning_rate: 1e-3  # Standard LR for training on frozen embeddings
+warmup_steps: 100
+weight_decay: 0.01
+dropout: 0.1
+
+# Transformer settings - embeddings have no trainable parameters
+freeze_transformer: false  # CLMBR embeddings have no trainable parameters to freeze
+select_hidden_layers: null  # Use all layers
+
+# Shared network between transformer and task heads
+shared_intermediate_size: 256
+shared_num_labels: 32  # Number of discretized time bins
+shared_batch_norm: true
+shared_hidden_dropout_prob: 0.1
+shared_bias: true
+shared_num_hidden_layers: 1
+
+# Survival task settings
+survival_max_time: 365  # Maximum follow-up (1 year)
+survival_intermediate_size: 128
+survival_num_hidden_layers: 2
+survival_batch_norm: true
+survival_hidden_dropout_prob: 0.1
+survival_bias: true
+survival_loss_weight: 1.0
+
+# Classification task settings (event prediction)
+classification_event_time_thr: 30  # 30 days threshold
+classification_intermediate_size: 128
+classification_num_hidden_layers: 2
+classification_batch_norm: true
+classification_hidden_dropout_prob: 0.1
+classification_bias: true
+classification_loss_weight: 0.5
+
+# Regression task settings (time-to-event)
+regression_num_labels: 1
+regression_intermediate_size: 128
+regression_num_hidden_layers: 2
+regression_batch_norm: true
+regression_hidden_dropout_prob: 0.1
+regression_bias: true

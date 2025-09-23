@@ -1,0 +1,25 @@
+_target_: sat.data.dataset.ehrshot_cohort.EHRSHOTCohort
+source: ${base_dir}/EHRSHOT_ASSETS/
+condition_codes_path: ${base_dir}/sat/conf/data/condition_codes.yaml
+medical_history: ${base_dir}/EHRSHOT_ASSETS/data/ehrshot.csv
+processed_dir: ${modelhub}/cohort
+name: ehrshot_multievent
+primary_key: patient_id
+time_field: time
+max_events_per_patient: 10000
+validate_against_labels: true
+
+# Task groupings by anchor type
+label_dirs:
+  admission_anchored:
+    - guo_los      # Length of stay >= 7 days
+    - guo_icu      # ICU transfer during admission
+  
+  discharge_anchored:
+    - guo_readmission      # 30-day readmission
+    - new_hypertension     # New hypertension within 1 year
+    - new_hyperlipidemia   # New hyperlipidemia within 1 year
+    - new_pancan           # New pancreatic cancer within 1 year
+    - new_acutemi          # New acute MI within 1 year
+    - new_lupus            # New lupus within 1 year
+    - new_celiac           # New celiac disease within 1 year

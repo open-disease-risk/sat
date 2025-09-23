@@ -1,0 +1,42 @@
+# @package _global_
+dataset: ehrshot_clmbr
+modelname: survival-moco
+
+defaults:
+  - ehrshot_clmbr/defaults
+  - override /data/load: ehrshot_motor
+  - override /data/parse: ${data/load}
+  - override /data/transform: default
+  - override /tokenizers: ehrshot_motor
+  - override /transformers: embedding_db
+  - override /tasks: survival
+  - override /tasks/losses: adaptive_moco_nllpch
+  - override /trainer: default
+
+# Survival task specific parameters
+survival_intermediate_size: 128
+survival_batch_norm: true
+survival_hidden_dropout_prob: 0.1
+survival_bias: true
+survival_num_hidden_layers: 2
+survival_loss_weight: 1.0
+
+survival_shared_intermediate_size: 256
+survival_shared_num_hidden_layers: 2
+
+# MoCo parameters
+moco_buffer_size: 256
+moco_initial_buffer_size: 256
+moco_use_buffer: True
+moco_dynamic_buffer: False
+moco_batch_weight: 1.0
+moco_buffer_weight: 1.0
+moco_initial_batch_weight: 1.0
+moco_final_batch_weight: 0.5
+moco_initial_buffer_weight: 0.0
+moco_final_buffer_weight: 1.0
+moco_warmup_steps: 1000
+moco_adaptive_buffer: True
+moco_track_variance: True
+moco_variance_window: 10
+moco_variance_threshold: 0.15

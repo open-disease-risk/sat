@@ -1,0 +1,130 @@
+# Medical code mappings for EHRSHOT conditions
+# Based on analysis of ehrshot.csv and OMOP concept mappings
+
+conditions:
+  # Diagnosis tasks (discharge-anchored, 1-year horizon)
+  hypertension:
+    horizon_days: 365
+    codes:
+      - "SNOMED/38341003"  # Hypertensive disorder
+      - "SNOMED/59621000"  # Essential hypertension
+      - "ICD10CM/I10"      # Essential (primary) hypertension
+      - "ICD10CM/I15"      # Secondary hypertension
+      - "ICD9CM/401"       # Essential hypertension (legacy)
+  
+  hyperlipidemia:
+    horizon_days: 365
+    codes:
+      - "SNOMED/55822004"  # Hyperlipidemia
+      - "ICD10CM/E78"      # Disorders of lipoprotein metabolism
+      - "ICD10CM/E78.5"    # Hyperlipidemia, unspecified
+      - "ICD10CM/E78.0"    # Pure hypercholesterolemia
+      - "ICD10CM/E78.1"    # Pure hyperglyceridemia
+  
+  pancan:  # Pancreatic cancer
+    horizon_days: 365
+    codes:
+      - "SNOMED/363418001" # Malignant tumor of pancreas
+      - "SNOMED/93655004"  # Primary malignant neoplasm of pancreas
+      - "ICD10CM/C25"      # Malignant neoplasm of pancreas
+      - "ICDO3/C25"        # Pancreas site code
+  
+  acutemi:  # Acute myocardial infarction
+    horizon_days: 365
+    codes:
+      - "SNOMED/57054005"  # Acute myocardial infarction
+      - "SNOMED/401303003" # Acute ST segment elevation myocardial infarction
+      - "ICD10CM/I21"      # Acute myocardial infarction
+      - "ICD10CM/I22"      # Subsequent ST elevation
+  
+  lupus:
+    horizon_days: 365
+    codes:
+      - "SNOMED/55464009"  # Systemic lupus erythematosus
+      - "SNOMED/201436003" # Drug-induced systemic lupus erythematosus
+      - "ICD10CM/M32"      # Systemic lupus erythematosus
+      - "ICD10CM/M32.1"    # SLE with organ involvement
+  
+  celiac:
+    horizon_days: 365
+    codes:
+      - "SNOMED/396331005" # Celiac disease
+      - "SNOMED/4419001"   # Celiac sprue
+      - "ICD10CM/K90.0"    # Celiac disease
+  
+  # Operational outcomes (admission/discharge-anchored)
+  readmission:
+    horizon_days: 30
+    codes:
+      - "Visit/IP"         # Inpatient visit (readmission)
+  
+  los:  # Length of stay >= 7 days
+    horizon_days: 7
+    # This is calculated from admission to discharge dates
+    # Not based on diagnosis codes
+    codes: []
+  
+  icu:  # ICU transfer
+    horizon_days: 7  # During admission
+    codes:
+      - "Visit/ICU"        # ICU visit
+      - "CPT/99291"        # Critical care, first 30-74 minutes
+      - "CPT/99292"        # Critical care, additional 30 minutes
+
+# Lab result tasks (different structure - multiclass outcomes)
+lab_tasks:
+  anemia:
+    # Hemoglobin levels
+    # 0: Normal, 1: Mild, 2: Moderate, 3: Severe
+    lab_codes:
+      - "LOINC/718-7"      # Hemoglobin
+      - "LOINC/30313-1"    # Hemoglobin mass concentration
+    thresholds:
+      normal: [12.0, null]   # >= 12 g/dL (female), >= 13 (male)
+      mild: [10.0, 12.0]     # 10-12 g/dL
+      moderate: [7.0, 10.0]  # 7-10 g/dL  
+      severe: [null, 7.0]    # < 7 g/dL
+  
+  hyperkalemia:
+    # Potassium levels
+    lab_codes:
+      - "LOINC/2823-3"     # Potassium serum/plasma
+      - "LOINC/6298-4"     # Potassium blood
+    thresholds:
+      normal: [null, 5.0]    # < 5.0 mEq/L
+      mild: [5.0, 5.5]       # 5.0-5.5 mEq/L
+      moderate: [5.5, 6.0]   # 5.5-6.0 mEq/L
+      severe: [6.0, null]    # > 6.0 mEq/L
+  
+  hypoglycemia:
+    # Glucose levels
+    lab_codes:
+      - "LOINC/2345-7"     # Glucose serum/plasma
+      - "LOINC/2339-0"     # Glucose blood
+    thresholds:
+      normal: [70, null]     # >= 70 mg/dL
+      mild: [54, 70]         # 54-70 mg/dL
+      moderate: [40, 54]     # 40-54 mg/dL
+      severe: [null, 40]     # < 40 mg/dL
+  
+  hyponatremia:
+    # Sodium levels
+    lab_codes:
+      - "LOINC/2951-2"     # Sodium serum/plasma
+      - "LOINC/2947-0"     # Sodium blood
+    thresholds:
+      normal: [135, null]    # >= 135 mEq/L
+      mild: [130, 135]       # 130-135 mEq/L
+      moderate: [125, 130]   # 125-130 mEq/L
+      severe: [null, 125]    # < 125 mEq/L
+  
+  thrombocytopenia:
+    # Platelet count
+    lab_codes:
+      - "LOINC/777-3"      # Platelet count
+      - "LOINC/26515-7"    # Platelet count blood
+    thresholds:
+      normal: [150, null]    # >= 150 K/μL
+      mild: [100, 150]       # 100-150 K/μL
+      moderate: [50, 100]    # 50-100 K/μL
+      severe: [null, 50]     # < 50 K/μL

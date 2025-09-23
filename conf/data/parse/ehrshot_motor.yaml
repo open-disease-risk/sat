@@ -1,0 +1,6 @@
+# Data parsing configuration for EHRSHOT MOTOR sequences
+
+_target_: sat.data.dataset.parse_ehrshot_motor.EHRSHOTMotor
+source: ${base_dir}/data/ehrshot_motor/sequences.parquet
+processed_dir: ${modelhub}
+name: ${dataset}

@@ -16,7 +16,6 @@ from logdecorator import log_on_end, log_on_error, log_on_start
 from omegaconf import DictConfig
 from tokenizers.processors import TemplateProcessing
 from transformers import PreTrainedTokenizerFast, Trainer, TrainingArguments
-from transformers.data.data_collator import DefaultDataCollator
 from transformers.integrations import TensorBoardCallback
 
 from sat.callbacks import LossWeightLoggerCallback
@@ -98,10 +97,23 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
             truncation=True,
             split_into_words=True,
             pad_to_multiple_of=8,
-            return_tensors="pt",
+            return_tensors="pt",  # default, will be overridden by config
         ):
-            return tokenizer(
-                text=examples[data_key],
+            # Handle both batched and non-batched cases
+            if isinstance(examples[data_key], list):
+                # Batched case
+                text_input = examples[data_key]
+            else:
+                # Non-batched case - convert single example to list for consistent processing
+                text_input = [examples[data_key]]
+
+            # For split_into_words=True, we need to split the text into token lists
+            if split_into_words:
+                if isinstance(text_input[0], str):
+                    text_input = [text.split() for text in text_input]
+
+            result = tokenizer(
+                text=text_input,
                 max_length=max_length,
                 padding=padding,
                 truncation=truncation,
@@ -110,6 +122,12 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
                 return_tensors=return_tensors,
                 return_special_tokens_mask=True,
             )
+
+            # If we had a single example, convert result back to single example format
+            if not isinstance(examples[data_key], list):
+                result = {k: v[0] if isinstance(v, list) and len(v) == 1 else v for k, v in result.items()}
+
+            return result
 
         sa_features = SAFeatureExtractor.from_pretrained(
             cfg.data.label_transform.save_dir
@@ -132,9 +150,11 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
             os.makedirs(cache_dir, exist_ok=True)
 
         # Use caching for tokenized datasets to avoid redundant processing
+        # If return_tensors is None, don't use batched processing
+        use_batched = cfg.tokenizers.get("return_tensors", "pt") is not None
         tokenized_dataset = dataset.map(
             tokenize_function,
-            batched=True,
+            batched=use_batched,
             fn_kwargs={
                 "tokenizer": tokenizer,
                 "data_key": cfg.tokenizers.tokenize_column,
@@ -143,6 +163,7 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
                 "split_into_words": cfg.tokenizers.is_split_into_words,
                 "padding": cfg.tokenizers.padding_args.padding,
                 "pad_to_multiple_of": cfg.tokenizers.padding_args.pad_to_multiple_of,
+                "return_tensors": cfg.tokenizers.get("return_tensors", "pt"),
             },
             num_proc=None,  # Parallel processing for tokenization
         )
@@ -259,6 +280,7 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
     # Prune dataset columns to avoid collator errors (keep only columns needed for model)
     columns_to_keep = [
         cfg.data.id_col,
+        "patient_id",  # Explicitly keep patient_id column for embedding database models
         cfg.data.duration_col,
         cfg.data.event_col,
         "numerics",
@@ -267,7 +289,52 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
         "attention_mask",
         "labels",
         "token_type_ids",
+        "anchor_time",  # Required for embedding database models
     ]
+
+    # Create custom data collator for embedding database models
+    from transformers import DefaultDataCollator
+
+    from sat.models.embedding_wrapper import is_embedding_model
+
+    class EmbeddingDataCollator(DefaultDataCollator):
+        """Custom data collator that handles anchor_time and patient_id fields for embedding database models"""
+
+        def __call__(self, features):
+            # Extract fields that can't/shouldn't be tensorized
+            anchor_times = []
+            patient_ids = []
+
+            if features and "anchor_time" in features[0]:
+                anchor_times = [f.pop("anchor_time") for f in features]
+            if features and "patient_id" in features[0]:
+                patient_ids = [f.pop("patient_id") for f in features]
+
+            # Use default collation for the rest
+            batch = super().__call__(features)
+
+            # Add back as list/tensor as appropriate
+            if anchor_times:
+                batch["anchor_time"] = anchor_times
+            if patient_ids:
+                # Convert to tensor for model compatibility
+                if logger.isEnabledFor(logging.DEBUG):
+                    logger.debug(f"EmbeddingDataCollator: Processing {len(patient_ids)} patient IDs: {patient_ids[:3]}...")  # Log first 3
+                batch["patient_id"] = torch.tensor(patient_ids)
+
+            return batch
+
+    # Determine which data collator to use based on the model type
+    use_embedding_collator = False
+    if hasattr(cfg, 'transformers') and hasattr(cfg.transformers, 'pretrained_model_name_or_path'):
+        model_name = cfg.transformers.pretrained_model_name_or_path
+        use_embedding_collator = is_embedding_model(model_name)
+        if use_embedding_collator:
+            logger.info(f"Using EmbeddingDataCollator for embedding database model: {model_name}")
+        else:
+            logger.info(f"Using DefaultDataCollator for standard transformer model: {model_name}")
+    else:
+        logger.info("Using DefaultDataCollator (no model name found in config)")
     for split in mapped_labels_dataset.keys():
         mapped_labels_dataset[split] = mapped_labels_dataset[split].remove_columns(
             [
@@ -280,7 +347,7 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
     trainer_kwargs = {
         "model": model,
         "args": args,
-        "data_collator": DefaultDataCollator(),
+        "data_collator": EmbeddingDataCollator() if use_embedding_collator else DefaultDataCollator(),
         "train_dataset": mapped_labels_dataset["train"],
         "eval_dataset": mapped_labels_dataset["valid"],
         "compute_metrics": compute_metrics,

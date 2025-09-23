@@ -1,0 +1,8 @@
+# Embedding Database Transformer Configuration
+# Uses pre-computed CLMBR embeddings instead of running a transformer model
+
+# Model identification for MTL to detect as embedding database model
+pretrained_model_name_or_path: "embedding-database"
+
+# Path to the pre-computed embeddings
+embedding_path: "${modelhub}/clmbr_embeddings.pkl"

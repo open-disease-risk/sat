@@ -69,8 +69,29 @@ class SATNLLPCHazardLoss(Loss):
         Returns:
             torch.Tensor: The loss value.
         """
+        from sat.utils import logging
+        logger = logging.get_default_logger()
+
         logits = predictions.logits
         device = references.device
+
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug("SATNLLPCHazardLoss: Computing loss")
+            logger.debug(f"  Logits shape: {logits.shape}")
+            logger.debug(f"  References shape: {references.shape}")
+            logger.debug(f"  Num events: {self.num_events}")
+            logger.debug(f"  Logits - Mean: {logits.mean():.6f}, Std: {logits.std():.6f}")
+            logger.debug(f"  References - Mean: {references.mean():.6f}, Std: {references.std():.6f}")
+
+        # Check for NaN/Inf
+        if torch.isnan(logits).any():
+            logger.error("NaN values detected in logits!")
+        if torch.isinf(logits).any():
+            logger.error("Inf values detected in logits!")
+        if torch.isnan(references).any():
+            logger.error("NaN values detected in references!")
+        if torch.isinf(references).any():
+            logger.error("Inf values detected in references!")
 
         # Pre-extract common data to avoid redundant operations
         # Note: These were intended for a different implementation approach and are unused
@@ -84,6 +105,8 @@ class SATNLLPCHazardLoss(Loss):
         loss_values = []
         for i in range(self.num_events):
             event_loss = self.nllp_hazard_loss(logits, references, i)
+            if logger.isEnabledFor(logging.DEBUG):
+                logger.debug(f"  Event {i} loss: {event_loss.item():.6f}, Weight: {self.weights[i+1].item():.4f}")
             loss_values.append(event_loss)
 
         # Combine all loss values efficiently
@@ -95,4 +118,9 @@ class SATNLLPCHazardLoss(Loss):
             combined_loss = torch.sum(torch.stack(loss_values))
 
         # Return properly formed tensor
-        return self.ensure_tensor(combined_loss, device=device)
+        final_loss = self.ensure_tensor(combined_loss, device=device)
+
+        if logger.isEnabledFor(logging.DEBUG):
+            logger.debug(f"  Final loss: {final_loss.item():.6f}")
+
+        return final_loss
