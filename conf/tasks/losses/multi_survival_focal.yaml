@@ -1,0 +1,9 @@
+# @package _group_.loss
+_target_: sat.loss.survival.SurvivalFocalLoss
+gamma: [2.0, 3.0]  # Multiple focusing parameters, one per event type
+importance_sample_weights: ${paths.importance_sample_weights_path}  # Path to importance weights CSV
+reduction: mean
+num_events: ${data.num_events}
+balance_strategy: fixed
+balance_params:
+  coeffs: [1.0]  # Default coefficient

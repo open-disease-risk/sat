@@ -1,0 +1,9 @@
+# @package _group_
+_target_: sat.loss.ObservationEventRankingLoss
+duration_cuts: ${paths.duration_cuts}
+importance_sample_weights: ${paths.importance_sample_weights}
+sigma: 0.1
+num_events: ${tasks.num_events}
+balance_strategy: fixed
+balance_params: 
+  coeffs: [1.0]
