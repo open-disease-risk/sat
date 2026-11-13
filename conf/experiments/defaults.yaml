@@ -13,11 +13,11 @@ ranking_loss_sigma: 0.25
 event_ranking_loss_sigma: 0.25
 
 # Loss balancing parameters
-balance_strategy: "adaptive"  # Options: none, scale_normalization, grad_normalization, homoscedastic, adaptive
+balance_strategy: "none"  # Options: none, scale_normalization, grad_normalization, homoscedastic, adaptive
 ema_momentum: 0.9  # Momentum for exponential moving average when using scale normalization
 
 # DeepHit-specific parameters
-deehit_alpha: 0  # Weight for ranking component (0=only likelihood, 1=only ranking)
+deehit_alpha: 0.1  # Weight for ranking component (0=only likelihood, 1=only ranking)
 deehit_sigma: 0.1  # Temperature parameter for ranking component
 
 # ListMLE loss parameters

@@ -9,7 +9,8 @@ Folder Structure
     ├── envs                    # Conda environment files for Azure execution
     ├── sat                     # Python source files
     ├── project.toml            # project definitions/dependencies
-    └── README.md
+    ├── README.md               # This file
+    └── STABILITY.md            # Guide for numerical stability features
 
 ### Configuration structure
 
@@ -616,6 +617,40 @@ relevant scripts to perform finetuning.
 *Note 1*: Different tasks share the data and pre-processing steps. E.g., in the
 above example, you could execute any other finetuning task without needing to
 execute steps 1.-3.. 
+
+Numerical Stability Features
+============================
+
+Training deep neural networks for survival analysis often involves challenges with numerical stability due to the complex loss landscapes, gradient behavior, and the nature of time-to-event data. SAT provides specialized components designed to ensure stable training and reliable predictions:
+
+### StableLinear and StableMLPSequence
+
+These components implement several numerical stability techniques:
+
+- **Gradient scaling** during forward/backward passes to prevent exploding gradients
+- **Layer normalization** to stabilize activations
+- **Controlled weight initialization** to start training in stable regions
+- **NaN/Inf detection and replacement** to recover from numerical errors
+- **Output clamping** to prevent extreme activation values
+- **Residual connections** to improve gradient flow in deeper networks
+
+All stability parameters are fully configurable to match your specific dataset and training requirements:
+
+```python
+from sat.models.tasks.heads.nets import StableMLPSequence
+
+stable_mlp = StableMLPSequence(
+    input_size=128,
+    hidden_sizes=[256, 128],
+    output_size=10,
+    grad_scale=0.1,           # Controls gradient magnitude
+    weight_init_std=0.02,      # Weight initialization variance
+    output_clamp_min=-10.0,    # Minimum output value
+    output_clamp_max=10.0      # Maximum output value
+)
+```
+
+For comprehensive documentation on numerical stability features and best practices, refer to the [STABILITY.md](STABILITY.md) guide.
 
 To-Dos
 ============================

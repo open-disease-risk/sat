@@ -1,0 +1,23 @@
+# @package _global_
+
+# Ultimate stability parameters for metabric dataset
+stability:
+  # StableLinear parameters
+  grad_scale: 0.001
+  eps: 1e-2
+  max_norm: 0.01
+  init_gain: 0.0001
+  weight_clamp_value: 0.001
+  noise_scale: 1e-3
+  nan_value: 0.0
+  posinf_value: 0.01
+  neginf_value: -0.01
+  output_min: -1.0
+  output_max: 1.0
+  
+  # StableMLPSequence additional parameters
+  weight_init_std: 0.0001
+  softplus_beta: 0.01
+  leaky_relu_negative_slope: 0.0001
+  use_residual: false  # Disable residual connections for stability
+  layer_norm_eps: 1e-2

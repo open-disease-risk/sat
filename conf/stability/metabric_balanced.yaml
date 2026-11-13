@@ -1,0 +1,27 @@
+# @package _global_
+
+# Balanced stability parameters for metabric dataset - focusing on learning while preventing catastrophic failures
+stability:
+  # StableLinear parameters
+  grad_scale: 0.5  # Increased from 0.1 to allow more learning
+  eps: 1e-6        # Reasonable epsilon value
+  max_norm: 1.0    # Allow larger gradients
+  init_gain: 0.1   # More standard initialization
+  weight_clamp_value: 0.5  # Much larger clamping value
+  noise_scale: 0.0  # Disable noise addition
+  
+  # NaN/Inf handling - only extreme cases
+  nan_value: 0.0
+  posinf_value: 100.0    # Higher cap for positive infinity
+  neginf_value: -100.0   # Lower cap for negative infinity
+  
+  # Output constraints - much wider
+  output_min: -100.0
+  output_max: 100.0
+  
+  # Other network parameters
+  weight_init_std: 0.05     # More standard value
+  softplus_beta: 1.0        # Standard softplus beta
+  leaky_relu_negative_slope: 0.01  # Standard value
+  use_residual: True
+  layer_norm_eps: 1e-5

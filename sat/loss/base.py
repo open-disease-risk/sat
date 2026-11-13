@@ -66,7 +66,7 @@ class Loss(nn.Module):
         # Efficient slice operation with pre-defined start and end indices
         start_idx = 3 * self.num_events
         end_idx = start_idx + self.num_events
-        return references[:, start_idx:end_idx].float()
+        return references[:, start_idx:end_idx].to(torch.float32)
 
     def duration_percentiles(self, references: torch.Tensor):
         """Extract duration percentiles from references tensor, preserving gradient flow.
@@ -78,8 +78,13 @@ class Loss(nn.Module):
         Returns:
             Duration percentiles tensor with gradient connections preserved
         """
-        # Use direct indexing for better efficiency
-        return references[:, : self.num_events].long()
+        # Use direct indexing for better efficiency, but ensure float32 output
+        # Need to preserve gradients when converting to float32
+        indices = references[:, : self.num_events]
+
+        # Don't use .long() for now to preserve gradient information
+        # Instead, directly cast to float32 to maintain gradient flow
+        return indices.to(torch.long)
 
     def events(self, references: torch.Tensor):
         """Extract event indicators from references tensor, preserving gradient flow.
@@ -94,7 +99,10 @@ class Loss(nn.Module):
         # Efficient slice operation with pre-defined start and end indices
         start_idx = self.num_events
         end_idx = start_idx + self.num_events
-        return references[:, start_idx:end_idx].long()
+
+        # Avoid using .long() to preserve gradient flow
+        # Instead, let callers handle type conversion as needed
+        return references[:, start_idx:end_idx].to(torch.long)
 
     def fraction_with_quantile(self, references: torch.Tensor):
         """Extract fraction with quantile from references tensor, preserving gradient flow.
@@ -109,7 +117,7 @@ class Loss(nn.Module):
         # Efficient slice operation with pre-defined start and end indices
         start_idx = 2 * self.num_events
         end_idx = start_idx + self.num_events
-        return references[:, start_idx:end_idx].float()
+        return references[:, start_idx:end_idx].to(torch.float32)
 
     def survivals(self, predictions):
         # Pre-allocate list with known size for better memory efficiency

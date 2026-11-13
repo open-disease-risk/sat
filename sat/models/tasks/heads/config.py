@@ -43,6 +43,24 @@ class BaseConfig(abc.ABC, PretrainedConfig):
         initializer: str = "kaiming_uniform",
         num_events: int = 1,
         loss: Dict[str, Any] = {},
+        # Stability parameters for StableLinear
+        grad_scale: float = 0.1,
+        eps: float = 1e-8,
+        max_norm: float = 1.0,
+        init_gain: float = 0.01,
+        weight_clamp_value: float = 0.1,
+        noise_scale: float = 1e-5,
+        nan_value: float = 0.0,
+        posinf_value: float = 1.0,
+        neginf_value: float = -1.0,
+        output_min: float = -10.0,
+        output_max: float = 10.0,
+        # Additional parameters for StableMLPSequence
+        weight_init_std: float = 0.02,
+        softplus_beta: float = 1.0,
+        leaky_relu_negative_slope: float = 0.01,
+        use_residual: bool = True,
+        layer_norm_eps: float = 1e-12,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -54,6 +72,24 @@ class BaseConfig(abc.ABC, PretrainedConfig):
         self.task_specific_params: Dict[str, Any] = {}
         self.num_events = num_events
         self.loss = loss
+        
+        # Stability parameters
+        self.grad_scale = grad_scale
+        self.eps = eps
+        self.max_norm = max_norm
+        self.init_gain = init_gain
+        self.weight_clamp_value = weight_clamp_value
+        self.noise_scale = noise_scale
+        self.nan_value = nan_value
+        self.posinf_value = posinf_value
+        self.neginf_value = neginf_value
+        self.output_min = output_min
+        self.output_max = output_max
+        self.weight_init_std = weight_init_std
+        self.softplus_beta = softplus_beta
+        self.leaky_relu_negative_slope = leaky_relu_negative_slope
+        self.use_residual = use_residual
+        self.layer_norm_eps = layer_norm_eps
 
     # deal with nested dictionaries
     def to_json_string(self, use_diff=True):

@@ -79,7 +79,7 @@ def _finetune(cfg: DictConfig) -> pd.DataFrame:
         "selective_compile": cfg.get("selective_compile", {}),
         "m_series_mac_defaults": cfg.get("m_series_mac_defaults", {"enabled": True}),
     }
-    model = compile_model(model, config=compile_config)
+    # model = compile_model(model, config=compile_config)
 
     model.train()
     logging.log_gpu_utilization()

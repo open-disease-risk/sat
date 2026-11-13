@@ -5,6 +5,7 @@ seed: null
 
 defaults:
   - paths: default
+  - stability: default
   - data/parse: null
   - data/load: null
   - data/transform: default

@@ -24,6 +24,23 @@ config:
   num_hidden_layers: ${shared_num_hidden_layers}
   select_hidden_layers: ${select_hidden_layers}
   return_dict: true
+  # Stability parameters
+  grad_scale: ${stability.grad_scale}
+  eps: ${stability.eps}
+  max_norm: ${stability.max_norm}
+  init_gain: ${stability.init_gain}
+  weight_clamp_value: ${stability.weight_clamp_value}
+  noise_scale: ${stability.noise_scale}
+  nan_value: ${stability.nan_value}
+  posinf_value: ${stability.posinf_value}
+  neginf_value: ${stability.neginf_value}
+  output_min: ${stability.output_min}
+  output_max: ${stability.output_max}
+  weight_init_std: ${stability.weight_init_std}
+  softplus_beta: ${stability.softplus_beta}
+  leaky_relu_negative_slope: ${stability.leaky_relu_negative_slope}
+  use_residual: ${stability.use_residual}
+  layer_norm_eps: ${stability.layer_norm_eps}
   task_heads:
     - _target_: sat.models.tasks.heads.EventClassificationTaskConfig
       _recursive_: false
@@ -39,3 +56,20 @@ config:
       event_time_thr: ${classification_event_time_thr}
       loss: ${tasks.losses}
       loss_weight: ${classification_loss_weight}
+      # Stability parameters
+      grad_scale: ${stability.grad_scale}
+      eps: ${stability.eps}
+      max_norm: ${stability.max_norm}
+      init_gain: ${stability.init_gain}
+      weight_clamp_value: ${stability.weight_clamp_value}
+      noise_scale: ${stability.noise_scale}
+      nan_value: ${stability.nan_value}
+      posinf_value: ${stability.posinf_value}
+      neginf_value: ${stability.neginf_value}
+      output_min: ${stability.output_min}
+      output_max: ${stability.output_max}
+      weight_init_std: ${stability.weight_init_std}
+      softplus_beta: ${stability.softplus_beta}
+      leaky_relu_negative_slope: ${stability.leaky_relu_negative_slope}
+      use_residual: ${stability.use_residual}
+      layer_norm_eps: ${stability.layer_norm_eps}

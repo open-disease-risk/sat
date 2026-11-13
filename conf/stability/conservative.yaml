@@ -1,0 +1,23 @@
+# @package _global_
+
+# Conservative stability parameters for challenging datasets
+stability:
+  # StableLinear parameters
+  grad_scale: 0.5
+  eps: 1e-6
+  max_norm: 0.5
+  init_gain: 0.01
+  weight_clamp_value: 0.05
+  noise_scale: 1e-5
+  nan_value: 0.0
+  posinf_value: 1.0
+  neginf_value: -1.0
+  output_min: -10.0
+  output_max: 10.0
+  
+  # StableMLPSequence additional parameters
+  weight_init_std: 0.01
+  softplus_beta: 0.5
+  leaky_relu_negative_slope: 0.005
+  use_residual: true
+  layer_norm_eps: 1e-6

@@ -1,14 +1,14 @@
+custom: false
+
 training_arguments:
   _target_: transformers.TrainingArguments
   report_to: "tensorboard"
-  # Use Adam with extremely conservative settings for numerical stability
   optim: adamw_torch
-  overwrite_output_dir: True
+  overwrite_output_dir: true
   num_train_epochs: 200
-  # Further reduce batch size to improve numerical stability
-  per_device_train_batch_size: 64
-  per_device_eval_batch_size: 128
-  load_best_model_at_end: True
+  per_device_train_batch_size: 256
+  per_device_eval_batch_size: 512
+  load_best_model_at_end: true
   greater_is_better: ${tasks.eval_metric_greater_is_better}
   eval_strategy: "steps"
   eval_steps: 10
@@ -20,7 +20,7 @@ training_arguments:
   weight_decay: ${weight_decay}
   metric_for_best_model: ${tasks.eval_metric}
   learning_rate: ${learning_rate}
-  lr_scheduler_type: linear
+  lr_scheduler_type: cosine
   gradient_accumulation_steps: 2
   warmup_steps: ${warmup_steps}
   save_total_limit: 2
@@ -29,14 +29,3 @@ training_arguments:
   gradient_checkpointing: false
   dataloader_pin_memory: true
   remove_unused_columns: false
-  # Extreme gradient clipping to prevent any gradient explosion
-  max_grad_norm: 0.1
-  # Disable mixed precision and other potentially unstable optimizations
-  adafactor: false
-  fp16: false
-  # Use more conservative Adam parameters
-  adam_beta1: 0.9
-  adam_beta2: 0.999
-  adam_epsilon: 1e-8
-  # No momentum for AdamW
-  optim_args: "eps=1e-8"

@@ -1,0 +1,16 @@
+# @package _global_
+
+# Learning rate adjustments for numerical stability
+
+# Much lower learning rate
+learning_rate: 0.00005
+
+# Higher weight decay for regularization
+weight_decay: 0.01
+
+# More warmup steps
+warmup_steps: 100
+
+# Include stability settings from one of the other configs
+# defaults:
+#   - /stability/metabric_medium

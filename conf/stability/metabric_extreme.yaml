@@ -1,0 +1,28 @@
+# @package _global_
+
+# Extremely conservative stability settings for metabric survival model
+stability:
+  # StableLinear parameters - extremely conservative
+  grad_scale: 0.0001
+  eps: 1e-2
+  max_norm: 0.005
+  init_gain: 0.0001
+  weight_clamp_value: 0.0005
+  noise_scale: 1e-4
+  nan_value: 0.0
+  posinf_value: 0.05
+  neginf_value: -0.05
+  output_min: -1.0
+  output_max: 1.0
+  
+  # StableMLPSequence additional parameters
+  weight_init_std: 0.00005
+  softplus_beta: 0.01
+  leaky_relu_negative_slope: 0.0001
+  use_residual: false  # Disable residual connections for extreme stability
+  layer_norm_eps: 1e-2
+
+# Very conservative learning parameters
+learning_rate: 0.00001  # Extremely low learning rate
+weight_decay: 0.05      # Very high weight decay
+warmup_steps: 200       # Extended warmup

@@ -92,6 +92,110 @@ class SurvivalEvaluationModule(EvaluationModule):
             logger.debug(f"Got predictions: {predictions}")
             # Return empty array if we encounter any exception
             return np.array([])
+    
+    def filter_nan_predictions(self, predictions, references, additional_inputs=None):
+        """
+        Filter out samples with NaN or Inf values in predictions.
+        
+        Args:
+            predictions: numpy array of predictions with shape (batch_size, ...)
+            references: numpy array of reference values with shape (batch_size, ...)
+            additional_inputs: optional dict of additional inputs to filter
+            
+        Returns:
+            tuple: (filtered_predictions, filtered_references, additional_filtered_inputs, 
+                   stats_dict)
+        """
+        # Initialize stats dictionary
+        stats_dict = {
+            "total_samples": 0,
+            "valid_samples": 0, 
+            "nan_inf_rate": 0.0,
+            "nan_count": 0,
+            "inf_count": 0,
+        }
+        
+        # Check if predictions are valid
+        if predictions is None or not hasattr(predictions, "shape") or predictions.size == 0:
+            logger.warning("Cannot filter NaN/Inf values: predictions is None or empty")
+            return predictions, references, additional_inputs, stats_dict
+            
+        # Get total sample count
+        total_samples = len(predictions)
+        stats_dict["total_samples"] = total_samples
+        
+        # Generate a mask for samples with any NaN or Inf values across all dimensions after the first
+        if len(predictions.shape) > 1:
+            # For multi-dimensional arrays, check across all dimensions except the first (batch)
+            check_dims = tuple(range(1, len(predictions.shape)))
+            nan_mask = np.isnan(predictions).any(axis=check_dims)
+            inf_mask = np.isinf(predictions).any(axis=check_dims)
+        else:
+            # For 1D arrays, check directly
+            nan_mask = np.isnan(predictions)
+            inf_mask = np.isinf(predictions)
+        
+        # Combined mask for valid samples (neither NaN nor Inf)
+        invalid_mask = nan_mask | inf_mask
+        valid_mask = ~invalid_mask
+        
+        # Count NaN and Inf occurrences
+        nan_count = np.sum(nan_mask)
+        inf_count = np.sum(inf_mask)
+        valid_count = np.sum(valid_mask)
+        
+        # Calculate removal rate
+        stats_dict["nan_count"] = nan_count
+        stats_dict["inf_count"] = inf_count
+        stats_dict["valid_samples"] = valid_count
+        stats_dict["nan_inf_rate"] = (nan_count + inf_count) / total_samples if total_samples > 0 else 0
+        
+        # Log filtering results
+        if nan_count > 0 or inf_count > 0:
+            logger.warning(
+                f"Filtering out {nan_count + inf_count}/{total_samples} samples "
+                f"({stats_dict['nan_inf_rate']:.2%}) with NaN/Inf values: "
+                f"{nan_count} NaNs, {inf_count} Infs"
+            )
+            
+            # Add warning for high removal rates
+            if stats_dict["nan_inf_rate"] > 0.5:
+                logger.warning(
+                    f"WARNING: High NaN/Inf rate ({stats_dict['nan_inf_rate']:.2%}). "
+                    f"Metric results may be unreliable."
+                )
+        else:
+            logger.info("No NaN/Inf values found in predictions")
+            # Return original data if nothing to filter
+            return predictions, references, additional_inputs, stats_dict
+        
+        # Filter predictions
+        filtered_predictions = predictions[valid_mask]
+        
+        # Filter references if provided
+        filtered_references = None
+        if references is not None:
+            if len(references) != total_samples:
+                logger.warning(
+                    f"References length ({len(references)}) doesn't match "
+                    f"predictions length ({total_samples})"
+                )
+                filtered_references = references
+            else:
+                filtered_references = references[valid_mask]
+        
+        # Filter additional inputs if provided
+        filtered_additional = {}
+        if additional_inputs is not None and isinstance(additional_inputs, dict):
+            for key, value in additional_inputs.items():
+                if hasattr(value, "__len__") and len(value) == total_samples:
+                    filtered_additional[key] = value[valid_mask]
+                else:
+                    filtered_additional[key] = value  # Keep as is if not filterable
+        else:
+            filtered_additional = additional_inputs
+        
+        return filtered_predictions, filtered_references, filtered_additional, stats_dict
 
 
 class ComputeBrier(SurvivalEvaluationModule):
@@ -128,83 +232,100 @@ class ComputeBrier(SurvivalEvaluationModule):
         preds = predictions[:, 2, event]
 
         train_set = np.stack([events_train, durations_train], axis=1)
+        et_test = np.stack([events_test, durations_test], axis=1)
 
+        # Initialize metric dictionary
         metric_dict = {}
         quantile_incr = 1.0 / preds.shape[1]
         horizons = np.arange(1, preds.shape[1]) * quantile_incr
+        
+        # Filter out samples with NaN/Inf values in predictions
+        filtered_preds, _, _, filter_stats = self.filter_nan_predictions(
+            preds, None, None
+        )
+        
+        # Add filtering stats to the metrics
+        metric_dict[f"brier_{event}th_event_total_samples"] = filter_stats["total_samples"]
+        metric_dict[f"brier_{event}th_event_valid_samples"] = filter_stats["valid_samples"]
+        metric_dict[f"brier_{event}th_event_nan_rate"] = filter_stats["nan_inf_rate"]
+        
+        # If all predictions are invalid, return NaN metrics
+        if filter_stats["valid_samples"] == 0:
+            logger.warning(f"All predictions for event {event} are NaN/Inf, cannot compute Brier score")
+            for j, horizon in enumerate(horizons):
+                metric_dict[f"brier_{event}th_event_{horizon}"] = float("nan")
+            metric_dict[f"brier_{event}th_event"] = float("nan")
+            metric_dict[f"brier_{event}th_event_n"] = 0
+            return metric_dict
 
-        n = events_test.sum()
-        et_test = np.stack([events_test, durations_test], axis=1)
-
-        # Check for NaNs in prediction data first (can happen with torch.compile)
-        has_nans = np.isnan(preds).any()
-        if has_nans:
-            logger.warning(
-                f"NaN values detected in predictions for event {event}, attempting to sanitize"
-            )
-            preds = np.nan_to_num(preds, nan=0.0, posinf=1.0, neginf=0.0)
-
-        # Check that predictions are properly bounded
-        min_pred, max_pred = np.min(preds), np.max(preds)
-        if min_pred < 0 or max_pred > 1:
-            logger.warning(
-                f"Predictions for event {event} out of bounds [{min_pred}, {max_pred}], clipping"
-            )
-            preds = np.clip(preds, 0.0, 1.0)
-
-        # Also check for NaNs in durations and events
-        if np.isnan(durations_test).any():
-            logger.warning(
-                f"NaN values detected in durations for event {event}, attempting to sanitize"
-            )
-            valid_mask = ~np.isnan(durations_test)
-            if (
-                valid_mask.sum() < len(durations_test) * 0.5
-            ):  # If more than half are NaN
-                logger.error(
-                    f"Too many NaN values in durations for event {event}, cannot compute valid metrics"
+        # Use filtered data for computation if needed
+        if filter_stats["nan_inf_rate"] > 0:
+            # Create mask for valid predictions (not NaN or Inf)
+            valid_mask = ~(np.isnan(preds).any(axis=1) | np.isinf(preds).any(axis=1))
+            
+            # Filter test data
+            filtered_et_test = et_test[valid_mask]
+            n = filtered_et_test[:, 0].sum()  # Count events in filtered data
+            
+            # Check that predictions are properly bounded
+            min_pred, max_pred = np.min(filtered_preds), np.max(filtered_preds)
+            if min_pred < 0 or max_pred > 1:
+                logger.warning(
+                    f"Predictions for event {event} out of bounds [{min_pred}, {max_pred}], clipping"
                 )
+                filtered_preds = np.clip(filtered_preds, 0.0, 1.0)
+            
+            # Use the filtered predictions for computation
+            try:
+                ibrs, brs = brier_score.compute(
+                    references=filtered_et_test,
+                    predictions=filtered_preds[:, :-1],
+                    train_set=train_set,
+                    duration_cuts=self.duration_cuts,
+                    per_horizon=self.per_horizon,
+                )
+            except Exception as e:
+                logger.error(f"Error computing Brier score with filtered data for event {event}: {e}")
+                # Return a placeholder to avoid breaking the entire evaluation
                 return {
                     f"brier_{event}th_event": float("nan"),
                     f"brier_{event}th_event_n": 0,
+                    **{k: v for k, v in metric_dict.items()}  # Keep the filtering stats
+                }
+        else:
+            # Use original data if no filtering needed
+            n = events_test.sum()
+            
+            # Check that predictions are properly bounded
+            min_pred, max_pred = np.min(preds), np.max(preds)
+            if min_pred < 0 or max_pred > 1:
+                logger.warning(
+                    f"Predictions for event {event} out of bounds [{min_pred}, {max_pred}], clipping"
+                )
+                preds = np.clip(preds, 0.0, 1.0)
+            
+            try:
+                ibrs, brs = brier_score.compute(
+                    references=et_test,
+                    predictions=preds[:, :-1],
+                    train_set=train_set,
+                    duration_cuts=self.duration_cuts,
+                    per_horizon=self.per_horizon,
+                )
+            except Exception as e:
+                logger.error(f"Error computing Brier score for event {event}: {e}")
+                # Return a placeholder to avoid breaking the entire evaluation
+                return {
+                    f"brier_{event}th_event": float("nan"),
+                    f"brier_{event}th_event_n": 0,
+                    **{k: v for k, v in metric_dict.items()}  # Keep the filtering stats
                 }
 
-            # Filter out NaN entries
-            durations_test = durations_test[valid_mask]
-            events_test = events_test[valid_mask]
-            preds = preds[valid_mask]
-
-            # Rebuild stack
-            et_test = np.stack([events_test, durations_test], axis=1)
-
-        # Also ensure train_set doesn't have NaNs
-        if isinstance(train_set, np.ndarray) and np.isnan(train_set).any():
-            logger.warning(
-                f"NaN values detected in training set for event {event}, attempting to sanitize"
-            )
-            train_set = np.nan_to_num(train_set, nan=0.0)
-
-        try:
-            # Compute metrics with wrapped exception handling
-            ibrs, brs = brier_score.compute(
-                references=et_test,
-                predictions=preds[:, :-1],
-                train_set=train_set,
-                duration_cuts=self.duration_cuts,
-                per_horizon=self.per_horizon,
-            )
-        except Exception as e:
-            logger.error(f"Error computing brier score for event {event}: {e}")
-            # Return a placeholder to avoid breaking the entire evaluation
-            return {
-                f"brier_{event}th_event": float("nan"),
-                f"brier_{event}th_event_n": 0,
-            }
-
-        # Record results
+        # Record results for all time horizons
         for j in range(len(brs)):
             metric_dict[f"brier_{event}th_event_{horizons[j]}"] = brs[j]
 
+        # Record integrated Brier score and sample size
         metric_dict[f"brier_{event}th_event"] = ibrs
         metric_dict[f"brier_{event}th_event_n"] = n
 
@@ -214,80 +335,85 @@ class ComputeBrier(SurvivalEvaluationModule):
         try:
             predictions = self.survival_predictions(predictions)
             logger.debug(f"survival predictions shape {predictions.shape}")
-
-            # Check for NaN or inf values in predictions
-            if torch.is_tensor(predictions):
-                if torch.isnan(predictions).any() or torch.isinf(predictions).any():
-                    logger.warning(
-                        "NaN or Inf detected in predictions tensor, attempting to sanitize"
-                    )
-                    predictions = torch.nan_to_num(
-                        predictions, nan=0.0, posinf=1.0, neginf=0.0
-                    )
-            elif isinstance(predictions, np.ndarray):
-                if np.isnan(predictions).any() or np.isinf(predictions).any():
-                    logger.warning(
-                        "NaN or Inf detected in predictions array, attempting to sanitize"
-                    )
-                    predictions = np.nan_to_num(
-                        predictions, nan=0.0, posinf=1.0, neginf=0.0
-                    )
-
-            # Check reference values too
-            if isinstance(references, dict) and "events" in references:
-                for k, v in references.items():
-                    if torch.is_tensor(v) and (
-                        torch.isnan(v).any() or torch.isinf(v).any()
-                    ):
-                        logger.warning(
-                            f"NaN or Inf detected in references[{k}], attempting to sanitize"
-                        )
-                        references[k] = torch.nan_to_num(
-                            v, nan=0.0, posinf=1.0, neginf=0.0
-                        )
-                    elif isinstance(v, np.ndarray) and (
-                        np.isnan(v).any() or np.isinf(v).any()
-                    ):
-                        logger.warning(
-                            f"NaN or Inf detected in references[{k}], attempting to sanitize"
-                        )
-                        references[k] = np.nan_to_num(
-                            v, nan=0.0, posinf=1.0, neginf=0.0
-                        )
         except Exception as e:
             logger.error(f"Error in data preparation: {e}")
             # Return empty metrics to avoid crashing
             return {"brier_mean": float("nan"), "brier_n": 0}
 
+        # Initialize metrics and NaN tracking variables
         brier_mean = 0.0
         brier_balanced_mean = 0.0
         brier_n = 0
-
         metrics_dict = {}
+        
+        # Track overall NaN rate statistics
+        total_nan_rate = 0.0
+        total_samples = 0
+        valid_samples = 0
+
+        # Process each event
         for i in range(self.cfg.num_events):
             try:
                 metric_results = self.compute_event(predictions, references, i)
                 metrics_dict.update(metric_results)
+                
+                # Extract event metrics
+                event_brier = metric_results.get(f"brier_{i}th_event", 0.5)  # Default if missing
+                event_n = metric_results.get(f"brier_{i}th_event_n", 0)
+                
+                # Track NaN filtering stats
+                event_total = metric_results.get(f"brier_{i}th_event_total_samples", 0)
+                event_valid = metric_results.get(f"brier_{i}th_event_valid_samples", 0)
+                event_nan_rate = metric_results.get(f"brier_{i}th_event_nan_rate", 0.0)
+                
+                # Accumulate statistics
+                brier_mean += event_brier * event_n
+                brier_balanced_mean += event_brier
+                brier_n += event_n
+                
+                # Accumulate NaN statistics
+                total_samples += event_total
+                valid_samples += event_valid
+                total_nan_rate += event_nan_rate
+                
             except Exception as e:
                 logger.error(f"Error computing metrics for event {i}: {e}")
                 # Add placeholder metrics for this event to avoid breaking calculation
                 metrics_dict[f"brier_{i}th_event"] = float("nan")
                 metrics_dict[f"brier_{i}th_event_n"] = 0
-            brier_mean += (
-                metrics_dict[f"brier_{i}th_event"]
-                * metrics_dict[f"brier_{i}th_event_n"]
-            )
-            brier_balanced_mean += metrics_dict[f"brier_{i}th_event"]
-            brier_n += metrics_dict[f"brier_{i}th_event_n"]
 
-        # Prevent division by zero
+        # Compute overall NaN rate statistics
+        if self.cfg.num_events > 0:
+            metrics_dict["nan_inf_rate_avg"] = total_nan_rate / self.cfg.num_events
+        else:
+            metrics_dict["nan_inf_rate_avg"] = 0.0
+            
+        metrics_dict["total_samples"] = total_samples
+        metrics_dict["valid_samples"] = valid_samples
+        
+        if total_samples > 0:
+            metrics_dict["overall_nan_inf_rate"] = 1.0 - (valid_samples / total_samples)
+        else:
+            metrics_dict["overall_nan_inf_rate"] = 0.0
+
+        # Prevent division by zero for weighted average
         if brier_n > 0:
             brier_mean /= brier_n
         else:
             brier_mean = 0.5  # Default value when no events
 
+        # Calculate and add summary metrics
         metrics_dict["brier_weighted_avg"] = brier_mean
         metrics_dict["brier_avg"] = brier_balanced_mean / max(1, self.cfg.num_events)
+        
+        # Add a flag if NaN rate is high enough to be concerning
+        metrics_dict["high_nan_rate"] = metrics_dict["overall_nan_inf_rate"] > 0.2
+        
+        if metrics_dict["high_nan_rate"]:
+            logger.warning(
+                f"High overall NaN rate ({metrics_dict['overall_nan_inf_rate']:.2%}). "
+                f"Brier score results may be unreliable."
+            )
 
         return metrics_dict
 
@@ -326,21 +452,56 @@ class ComputeCIndex(SurvivalEvaluationModule):
         preds = predictions[:, 1, event]  # Get risk predictions
 
         train_set = np.stack([events_train, durations_train], axis=1)
+        et_test = np.stack([events_test, durations_test], axis=1)
 
+        # Initialize metric dictionary
         metric_dict = {}
         quantile_incr = 1.0 / preds.shape[1]
         horizons = np.arange(1, preds.shape[1] + 1) * quantile_incr
-
-        n = events_test.sum()
-        et_test = np.stack([events_test, durations_test], axis=1)
-
-        # Compute c-index with error handling
-        cindeces = c_index.compute(
-            references=et_test,
-            predictions=preds,
-            train_set=train_set,
-            duration_cuts=self.duration_cuts,
+        
+        # Filter out samples with NaN/Inf values
+        filtered_preds, _, _, filter_stats = self.filter_nan_predictions(
+            preds, None, None
         )
+        
+        # Add filtering stats to the metrics
+        metric_dict[f"ipcw_{event}th_event_total_samples"] = filter_stats["total_samples"]
+        metric_dict[f"ipcw_{event}th_event_valid_samples"] = filter_stats["valid_samples"]
+        metric_dict[f"ipcw_{event}th_event_nan_rate"] = filter_stats["nan_inf_rate"]
+        
+        # If all predictions are invalid, return NaN metrics
+        if filter_stats["valid_samples"] == 0:
+            logger.warning(f"All predictions for event {event} are NaN/Inf, cannot compute c-index")
+            for j, horizon in enumerate(horizons):
+                metric_dict[f"ipcw_{event}th_event_{horizon}"] = float("nan")
+            metric_dict[f"ipcw_avg_{event}th_event"] = float("nan")
+            metric_dict[f"ipcw_{event}th_event"] = float("nan")
+            metric_dict[f"ipcw_{event}th_event_n"] = 0
+            return metric_dict
+        
+        # Use filtered data to compute c-index if we have any NaN/Inf values
+        if filter_stats["nan_inf_rate"] > 0:
+            # Filter the test data
+            valid_mask = ~(np.isnan(preds).any(axis=1) | np.isinf(preds).any(axis=1))
+            filtered_et_test = et_test[valid_mask]
+            n = filtered_et_test[:, 0].sum()  # Count events in filtered data
+            
+            # Compute c-index with filtered data
+            cindeces = c_index.compute(
+                references=filtered_et_test,
+                predictions=filtered_preds,
+                train_set=train_set,
+                duration_cuts=self.duration_cuts,
+            )
+        else:
+            # Use original data if no NaN/Inf values
+            n = events_test.sum()
+            cindeces = c_index.compute(
+                references=et_test,
+                predictions=preds,
+                train_set=train_set,
+                duration_cuts=self.duration_cuts,
+            )
 
         # Record results
         for j in range(len(cindeces)):
@@ -361,19 +522,50 @@ class ComputeCIndex(SurvivalEvaluationModule):
         cindex_avg_mean = 0.0
         cindex_n = 0
         metrics_dict = {}
+        
+        # Track overall NaN rate statistics
+        total_nan_rate = 0.0
+        total_samples = 0
+        valid_samples = 0
 
         for i in range(self.cfg.num_events):
             metric_results = self.compute_event(predictions, references, i)
             metrics_dict.update(metric_results)
-            cindex_mean += (
-                metrics_dict[f"ipcw_{i}th_event"] * metrics_dict[f"ipcw_{i}th_event_n"]
-            )
-            cindex_weighted_avg_mean += (
-                metrics_dict[f"ipcw_avg_{i}th_event"]
-                * metrics_dict[f"ipcw_{i}th_event_n"]
-            )
-            cindex_avg_mean += metrics_dict[f"ipcw_avg_{i}th_event"]
-            cindex_n += metrics_dict[f"ipcw_{i}th_event_n"]
+            
+            # Extract event-specific metrics
+            event_cindex = metric_results.get(f"ipcw_{i}th_event", 0.5)  # Default to 0.5 if missing
+            event_n = metric_results.get(f"ipcw_{i}th_event_n", 0)
+            event_avg = metric_results.get(f"ipcw_avg_{i}th_event", 0.5)
+            
+            # Track NaN filtering stats
+            event_total = metric_results.get(f"ipcw_{i}th_event_total_samples", 0)
+            event_valid = metric_results.get(f"ipcw_{i}th_event_valid_samples", 0)
+            event_nan_rate = metric_results.get(f"ipcw_{i}th_event_nan_rate", 0.0)
+            
+            # Accumulate statistics
+            cindex_mean += event_cindex * event_n
+            cindex_weighted_avg_mean += event_avg * event_n
+            cindex_avg_mean += event_avg
+            cindex_n += event_n
+            
+            # Accumulate NaN statistics
+            total_samples += event_total
+            valid_samples += event_valid
+            total_nan_rate += event_nan_rate  # Will average later
+
+        # Compute overall NaN rate statistics
+        if self.cfg.num_events > 0:
+            metrics_dict["nan_inf_rate_avg"] = total_nan_rate / self.cfg.num_events
+        else:
+            metrics_dict["nan_inf_rate_avg"] = 0.0
+            
+        metrics_dict["total_samples"] = total_samples
+        metrics_dict["valid_samples"] = valid_samples
+        
+        if total_samples > 0:
+            metrics_dict["overall_nan_inf_rate"] = 1.0 - (valid_samples / total_samples)
+        else:
+            metrics_dict["overall_nan_inf_rate"] = 0.0
 
         # Prevent division by zero
         if cindex_n > 0:
@@ -386,6 +578,15 @@ class ComputeCIndex(SurvivalEvaluationModule):
         metrics_dict["ipcw"] = cindex_mean
         metrics_dict["ipcw_weighted_avg"] = weighted_avg
         metrics_dict["ipcw_avg"] = cindex_avg_mean / max(1, self.cfg.num_events)
+        
+        # Add a flag if NaN rate is high enough to be concerning
+        metrics_dict["high_nan_rate"] = metrics_dict["overall_nan_inf_rate"] > 0.2
+        
+        if metrics_dict["high_nan_rate"]:
+            logger.warning(
+                f"High overall NaN rate ({metrics_dict['overall_nan_inf_rate']:.2%}). "
+                f"C-index results may be unreliable."
+            )
 
         return metrics_dict
 

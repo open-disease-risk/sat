@@ -1,0 +1,7 @@
+sat-transformer:
+  _target_: sat.models.tasks.heads.distribution_head.DistributionHead
+  input_dim: ${model.encoder.output_dim}
+  distribution_type: "Weibull"  # Options: "Weibull", "LogNormal"
+  num_events: ${data.num_events}
+  hidden_dims: [256, 128]
+  dropout: 0.1
