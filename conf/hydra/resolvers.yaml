@@ -1,0 +1,6 @@
+# Hydra config for custom resolvers
+hydra:
+  resolvers:
+    # Register custom resolvers for FEMR extensions
+    femr_labeler: sat.data.dataset.femr_extensions.registry.resolve_labeler
+    femr_featurizer: sat.data.dataset.femr_extensions.registry.resolve_featurizer

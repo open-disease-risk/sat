@@ -1,0 +1,86 @@
+{
+  "labels_dict": {
+    "anchor": [
+      [
+        {
+          "prediction_time": "2023-01-01T12:00:00",
+          "boolean_value": true,
+          "label_type": {
+            "_value_": "anchor",
+            "_name_": "ANCHOR",
+            "__objclass__": "{'_generate_next_value_': <function Enum._generate_next_value_ at 0x104df2f20>, '__module__': 'sat.data.dataset.femr_extensions.schema', '_new_member_': <built-in method __new__ of type object at 0x105879e30>, '_use_args_': True, '_member_names_': ['ANCHOR', 'OUTCOME', 'INCLUSION', 'EXCLUSION'], '_member_map_': {'ANCHOR': <LabelType.ANCHOR: 'anchor'>, 'OUTCOME': <LabelType.OUTCOME: 'outcome'>, 'INCLUSION': <LabelType.INCLUSION: 'inclusion'>, 'EXCLUSION': <LabelType.EXCLUSION: 'exclusion'>}, '_value2member_map_': {'anchor': <LabelType.ANCHOR: 'anchor'>, 'outcome': <LabelType.OUTCOME: 'outcome'>, 'inclusion': <LabelType.INCLUSION: 'inclusion'>, 'exclusion': <LabelType.EXCLUSION: 'exclusion'>}, '_unhashable_values_': [], '_member_type_': <class 'str'>, '_value_repr_': <slot wrapper '__repr__' of 'str' objects>, '__dict__': <attribute '__dict__' of 'LabelType' objects>, '__weakref__': <attribute '__weakref__' of 'LabelType' objects>, '__doc__': None, 'ANCHOR': <LabelType.ANCHOR: 'anchor'>, 'OUTCOME': <LabelType.OUTCOME: 'outcome'>, 'INCLUSION': <LabelType.INCLUSION: 'inclusion'>, 'EXCLUSION': <LabelType.EXCLUSION: 'exclusion'>, '__repr__': <function Enum.__repr__ at 0x104df3060>, '__str__': <function Enum.__str__ at 0x104df3100>, '__format__': <function Enum.__format__ at 0x104df3240>, '__new__': <function Enum.__new__ at 0x104df2de0>}",
+            "_sort_order_": 0
+          }
+        }
+      ]
+    ],
+    "outcome_target": [
+      [
+        {
+          "prediction_time": null,
+          "boolean_value": false,
+          "competing_event": false,
+          "label_type": {
+            "_value_": "outcome",
+            "_name_": "OUTCOME",
+            "__objclass__": "{'_generate_next_value_': <function Enum._generate_next_value_ at 0x104df2f20>, '__module__': 'sat.data.dataset.femr_extensions.schema', '_new_member_': <built-in method __new__ of type object at 0x105879e30>, '_use_args_': True, '_member_names_': ['ANCHOR', 'OUTCOME', 'INCLUSION', 'EXCLUSION'], '_member_map_': {'ANCHOR': <LabelType.ANCHOR: 'anchor'>, 'OUTCOME': <LabelType.OUTCOME: 'outcome'>, 'INCLUSION': <LabelType.INCLUSION: 'inclusion'>, 'EXCLUSION': <LabelType.EXCLUSION: 'exclusion'>}, '_value2member_map_': {'anchor': <LabelType.ANCHOR: 'anchor'>, 'outcome': <LabelType.OUTCOME: 'outcome'>, 'inclusion': <LabelType.INCLUSION: 'inclusion'>, 'exclusion': <LabelType.EXCLUSION: 'exclusion'>}, '_unhashable_values_': [], '_member_type_': <class 'str'>, '_value_repr_': <slot wrapper '__repr__' of 'str' objects>, '__dict__': <attribute '__dict__' of 'LabelType' objects>, '__weakref__': <attribute '__weakref__' of 'LabelType' objects>, '__doc__': None, 'ANCHOR': <LabelType.ANCHOR: 'anchor'>, 'OUTCOME': <LabelType.OUTCOME: 'outcome'>, 'INCLUSION': <LabelType.INCLUSION: 'inclusion'>, 'EXCLUSION': <LabelType.EXCLUSION: 'exclusion'>, '__repr__': <function Enum.__repr__ at 0x104df3060>, '__str__': <function Enum.__str__ at 0x104df3100>, '__format__': <function Enum.__format__ at 0x104df3240>, '__new__': <function Enum.__new__ at 0x104df2de0>}",
+            "_sort_order_": 1
+          }
+        }
+      ]
+    ]
+  },
+  "anchor_times": [
+    "2023-01-01T12:00:00"
+  ],
+  "provenance": [
+    {
+      "step": "Loaded raw data",
+      "num_patients": 1,
+      "columns": [
+        "patient_id",
+        "events"
+      ]
+    },
+    {
+      "step": "Applied labeler: DummyLabeler(anchor)",
+      "num_patients": 1,
+      "columns": [
+        "patient_id",
+        "events"
+      ]
+    },
+    {
+      "step": "Applied labeler: DummyLabeler(outcome_target)",
+      "num_patients": 1,
+      "columns": [
+        "patient_id",
+        "events"
+      ]
+    },
+    {
+      "step": "Filtered patients without anchor event",
+      "num_patients": 1,
+      "columns": [
+        "patient_id",
+        "events"
+      ]
+    },
+    {
+      "step": "Applied competing risk censoring and time relativization",
+      "num_patients": 1,
+      "columns": [
+        "patient_id",
+        "events"
+      ]
+    },
+    {
+      "step": "Kept events up to anchor time, sorted by time",
+      "num_patients": 1,
+      "columns": [
+        "patient_id",
+        "events"
+      ]
+    }
+  ]
+}

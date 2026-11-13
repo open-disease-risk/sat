@@ -1,0 +1,8 @@
+{
+  "dataset_name": "synthetic_meds",
+  "description": "Synthetic MEDS-format dataset for survival analysis",
+  "num_patients": 100,
+  "num_events": 1582,
+  "date_generated": "2025-04-21 15:36:48",
+  "version": "1.0"
+}

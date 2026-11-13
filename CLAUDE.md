@@ -1,0 +1,2 @@
+- Always assume we have meds and femr installed as a dependency, so there is no need to do a module check and use fallback mechanisms.
+- You need to run python commands through poetry run
