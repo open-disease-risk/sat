@@ -9,7 +9,7 @@ data:
   duration_col: durations  # List of 7 event times
   event_col: events  # List of 7 event indicators
   id_col: patient_id
-  num_events: 7  # 7 discharge-anchored events
+  num_events: 4  # 7 discharge-anchored events
   validation_ratio: 0.2  # Already split in preprocessing
   test_ratio: 0.2
   transformed_duration_cols:

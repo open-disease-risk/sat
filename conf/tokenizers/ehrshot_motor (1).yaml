@@ -1,0 +1,57 @@
+# Tokenizer configuration for EHRSHOT MOTOR-T sequences
+
+# Custom tokenizer directory (not the HuggingFace model)
+tokenizer_dir: ${modelhub}/${dataset}/tokenizer
+
+# Column containing medical code sequences
+tokenize_column: x
+
+# MOTOR-T specific settings
+max_seq_length: 496  # MOTOR-T context window limit
+do_padding: true
+do_truncation: true
+is_split_into_words: true  # Medical codes are space-delimited
+
+# Special tokens for MOTOR-T
+pad_token: "[PAD]"
+mask_token: "[MASK]"
+cls_token: "[CLS]"
+sep_token: "[SEP]"
+unk_token: "[UNK]"
+
+# Tokenizer instantiation for training
+tokenizer:
+  _target_: tokenizers.Tokenizer
+  model:
+    _target_: tokenizers.models.WordLevel
+    unk_token: ${tokenizers.unk_token}
+
+pre_tokenizer:
+  _target_: tokenizers.pre_tokenizers.WhitespaceSplit
+
+trainer:
+  _target_: tokenizers.trainers.WordLevelTrainer
+  vocab_size: 30000  # Adjust based on medical code vocabulary
+  min_frequency: 2
+
+special_tokens:
+  "unk_token": ${tokenizers.unk_token}
+  "sep_token": ${tokenizers.sep_token}
+  "pad_token": ${tokenizers.pad_token}
+  "cls_token": ${tokenizers.cls_token}
+  "mask_token": ${tokenizers.mask_token}
+
+# Padding configuration
+padding_args:
+  direction: right
+  padding: max_length
+  length: ${tokenizers.max_seq_length}
+  pad_to_multiple_of: 8  # For GPU efficiency
+
+# Truncation settings
+truncation_args:
+  direction: right  # Keep most recent medical events
+  max_length: ${tokenizers.max_seq_length}
+
+num_proc: 4
+cls_model_type: "BERT"
