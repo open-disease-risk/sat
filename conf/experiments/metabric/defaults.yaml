@@ -2,9 +2,9 @@
 defaults:
   - ../defaults
 
-learning_rate: 0.001
+learning_rate: 0.01
 warmup_steps: 80
-weight_decay: 0.00001
+weight_decay: 0.0001
 
 select_hidden_layers: null
 
